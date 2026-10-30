@@ -6,6 +6,7 @@ import { dataIso } from '@/lib/formato'
 import { leggiCatalogo, leggiScheda } from '@/lib/scheda-db'
 import { riepilogoHome, ultimeVolte, ultimoPesoCorporeo } from '@/lib/storico'
 import { primoParametro } from '@/lib/url'
+import { richiediUtente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: i suggerimenti vengono dall'ultima seduta.
 export const dynamic = 'force-dynamic'
@@ -15,8 +16,9 @@ export const metadata: Metadata = { title: 'Sessione' }
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function SessionePage({ searchParams }: Props) {
+  const userId = await richiediUtente()
   const richiesto = primoParametro((await searchParams).r)
-  const [giorni, catalogo, { ultima }] = await Promise.all([leggiScheda(), leggiCatalogo(), riepilogoHome()])
+  const [giorni, catalogo, { ultima }] = await Promise.all([leggiScheda(userId), leggiCatalogo(userId), riepilogoHome(userId)])
 
   if (giorni.length === 0) {
     return <p className={`${stileCarta} p-5 text-muto`}>La scheda è vuota: non c'è nessuna sessione da avviare.</p>
@@ -24,8 +26,8 @@ export default async function SessionePage({ searchParams }: Props) {
 
   const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima?.giornoId ?? null)
   const [ultime, pesoCorporeo] = await Promise.all([
-    ultimeVolte(catalogo.map((voce) => voce.id)),
-    ultimoPesoCorporeo(),
+    ultimeVolte(userId, catalogo.map((voce) => voce.id)),
+    ultimoPesoCorporeo(userId),
   ])
 
   // `key` fa ripartire il form (e la sua bozza) quando si cambia giornata.

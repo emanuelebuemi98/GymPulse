@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
 import { formatDataLunga, formatNumero } from '@/lib/formato'
 import { elencoSessioni } from '@/lib/storico'
+import { richiediUtente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: l'elenco cambia dopo ogni seduta salvata.
 export const dynamic = 'force-dynamic'
@@ -13,7 +14,8 @@ const giornoDelMese = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome'
 const meseBreve = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', month: 'short' })
 
 export default async function StoricoPage() {
-  const sessioni = await elencoSessioni()
+  const userId = await richiediUtente()
+  const sessioni = await elencoSessioni(userId)
 
   return (
     <div className="space-y-5">

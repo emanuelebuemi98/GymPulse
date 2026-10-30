@@ -9,6 +9,7 @@ import { massimoKg } from '@/lib/progressi'
 import { leggiScheda } from '@/lib/scheda-db'
 import { riepilogoHome, ultimeVolte } from '@/lib/storico'
 import { primoParametro } from '@/lib/url'
+import { richiediUtente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: la scheda si può modificare e i carichi cambiano dopo ogni seduta.
 export const dynamic = 'force-dynamic'
@@ -18,15 +19,16 @@ export const metadata: Metadata = { title: 'Scheda' }
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function SchedaPage({ searchParams }: Props) {
+  const userId = await richiediUtente()
   const richiesto = primoParametro((await searchParams).r)
-  const [giorni, { ultima }] = await Promise.all([leggiScheda(), riepilogoHome()])
+  const [giorni, { ultima }] = await Promise.all([leggiScheda(userId), riepilogoHome(userId)])
 
   if (giorni.length === 0) {
     return <p className={`${stileCarta} p-5 text-muto`}>La scheda è vuota. Esegui <code className="text-testo">npm run db:seed</code>.</p>
   }
 
   const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima?.giornoId ?? null)
-  const ultime = await ultimeVolte(giorno.esercizi.map((e) => e.id))
+  const ultime = await ultimeVolte(userId, giorno.esercizi.map((e) => e.id))
 
   return (
     <div className="space-y-5">

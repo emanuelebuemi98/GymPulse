@@ -6,6 +6,7 @@ import { formatData, formatDataBreve, formatDataNumerica, formatNumero } from '@
 import { miglioreRM } from '@/lib/progressi'
 import { andamentoEsercizio, eserciziConDati, recordPerEsercizio } from '@/lib/storico'
 import { primoParametro } from '@/lib/url'
+import { richiediUtente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: i grafici si aggiornano dopo ogni seduta.
 export const dynamic = 'force-dynamic'
@@ -15,8 +16,9 @@ export const metadata: Metadata = { title: 'Progressi' }
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function ProgressiPage({ searchParams }: Props) {
+  const userId = await richiediUtente()
   const richiesto = primoParametro((await searchParams).e)
-  const [esercizi, record] = await Promise.all([eserciziConDati(), recordPerEsercizio()])
+  const [esercizi, record] = await Promise.all([eserciziConDati(userId), recordPerEsercizio(userId)])
 
   if (esercizi.length === 0) {
     return (
@@ -28,7 +30,7 @@ export default async function ProgressiPage({ searchParams }: Props) {
   }
 
   const scelto = esercizi.find((e) => e.id === richiesto) ?? esercizi[0]
-  const sedute = await andamentoEsercizio(scelto.id)
+  const sedute = await andamentoEsercizio(userId, scelto.id)
   const conCarico = sedute.some((s) => s.massimoKg !== null)
   const daVerificare = sedute.some((s) => s.datiIniziali)
 

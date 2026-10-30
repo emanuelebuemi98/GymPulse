@@ -6,12 +6,14 @@ import { giornoConsigliato } from '@/lib/allenamento'
 import { formatDataLunga } from '@/lib/formato'
 import { leggiScheda } from '@/lib/scheda-db'
 import { riepilogoHome } from '@/lib/storico'
+import { richiediUtente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: il giorno consigliato cambia dopo ogni seduta.
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const [giorni, { totale, ultima }] = await Promise.all([leggiScheda(), riepilogoHome()])
+  const userId = await richiediUtente()
+  const [giorni, { totale, ultima }] = await Promise.all([leggiScheda(userId), riepilogoHome(userId)])
 
   if (giorni.length === 0) {
     return (
