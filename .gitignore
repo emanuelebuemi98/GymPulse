@@ -9,4 +9,5 @@ dist
 *.log
 *.tsbuildinfo
 src/generated
+next-env.d.ts
 .DS_Store
