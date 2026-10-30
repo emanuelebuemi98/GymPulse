@@ -1,4 +1,4 @@
-import type { Obiettivo } from '../data/scheda'
+import type { Obiettivo } from './scheda-tipi'
 
 // Valore intermedio dell'intervallo 3,5–6 per il sollevamento pesi.
 export const MET_PESI = 5

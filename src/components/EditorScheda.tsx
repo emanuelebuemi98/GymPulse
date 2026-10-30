@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaScheda } from '@/app/actions'
-import type { Giorno } from '@/data/scheda'
+import type { Giorno } from '@/lib/scheda-tipi'
 import {
   nuovaVoceForm,
   voceFormDaEsercizio,

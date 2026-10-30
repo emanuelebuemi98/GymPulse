@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaSessione } from '@/app/actions'
-import type { Esercizio, Giorno } from '@/data/scheda'
+import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
 import { formatTimer, ripetizioniTarget, serieIniziali, stimaKcal } from '@/lib/allenamento'
 import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
 import { formatDataNumerica, formatNumero } from '@/lib/formato'

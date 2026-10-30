@@ -1,4 +1,4 @@
-import type { Esercizio } from '../data/scheda'
+import type { Esercizio } from './scheda-tipi'
 import { parseIntero, parseNumero } from './numeri'
 import { RECUPERO_PREDEFINITO } from './voci'
 

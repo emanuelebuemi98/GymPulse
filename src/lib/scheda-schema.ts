@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Obiettivo } from '../data/scheda'
+import type { Obiettivo } from './scheda-tipi'
 import { RECUPERO_PREDEFINITO } from './voci'
 
 // Regole per la modifica di una giornata della scheda. Il server ricontrolla tutto.

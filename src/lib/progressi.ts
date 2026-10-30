@@ -1,4 +1,4 @@
-import type { Esercizio } from '../data/scheda'
+import type { Esercizio } from './scheda-tipi'
 import { prossimoCarico, stimaRM } from './allenamento'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
 

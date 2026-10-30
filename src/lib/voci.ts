@@ -1,4 +1,4 @@
-import type { Esercizio, Obiettivo } from '../data/scheda'
+import type { Esercizio, Obiettivo } from './scheda-tipi'
 
 // Una voce della scheda come è salvata nel database: l'obiettivo è spezzato in colonne facoltative.
 export type VoceDb = {
