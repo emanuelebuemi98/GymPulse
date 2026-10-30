@@ -1,5 +1,10 @@
 // Schema del database GymPulse.
 // PostgreSQL: in locale tramite Docker, online su Supabase.
+//
+// Ogni persona ha il proprio account e i propri dati: giornate, esercizi, sedute e serie portano
+// sempre lo userId. Le chiavi composite (userId, id) fanno sì che due persone possano avere entrambe
+// una giornata "A" o un esercizio con lo stesso id senza toccarsi, e le chiavi esterne composite
+// impediscono a un dato di puntare a quello di un'altra persona.
 
 generator client {
   provider = "prisma-client"
@@ -10,33 +15,45 @@ datasource db {
   provider = "postgresql"
 }
 
-// Atleta. Quando arriverà il login (Better Auth) verrà collegato alla sua tabella utenti.
+// Account. username e passwordHash servono al login: passwordHash è un hash scrypt, mai la password.
 model User {
-  id        String     @id
-  name      String
-  email     String?    @unique
-  createdAt DateTime   @default(now())
-  sessioni  Sessione[]
+  id           String         @id
+  name         String
+  email        String?        @unique
+  username     String?        @unique
+  passwordHash String?
+  createdAt    DateTime       @default(now())
+  giorni       GiornoScheda[]
+  esercizi     Esercizio[]
+  sessioni     Sessione[]
 }
 
-// Giornata della scheda. L'id è la sigla: A, B, C.
+// Giornata della scheda di una persona. L'id è la sigla: A, B, C.
 model GiornoScheda {
-  id       String       @id
+  userId   String
+  id       String
   numero   Int
   titolo   String
   focus    String
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   voci     VoceScheda[]
   sessioni Sessione[]
+
+  @@id([userId, id])
 }
 
-// Catalogo degli esercizi. Quelli aggiunti dall'utente hanno personalizzato = true.
+// Esercizi noti a una persona: quelli della sua scheda e quelli che ha aggiunto.
 model Esercizio {
-  id             String          @id
+  userId         String
+  id             String
   nome           String
   muscoli        String
   personalizzato Boolean         @default(false)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   voci           VoceScheda[]
   serie          SerieEseguita[]
+
+  @@id([userId, id])
 }
 
 // Un esercizio dentro una giornata, con il suo obiettivo. È la parte modificabile dall'app.
@@ -45,6 +62,7 @@ model Esercizio {
 // tipo = "libero": da serieMin a serieMax serie a scelta
 model VoceScheda {
   id           String       @id @default(cuid())
+  userId       String
   giornoId     String
   esercizioId  String
   ordine       Int
@@ -58,11 +76,11 @@ model VoceScheda {
   serieMax     Int?
   nota         String?
   incrementoKg Float?
-  giorno       GiornoScheda @relation(fields: [giornoId], references: [id], onDelete: Cascade)
-  esercizio    Esercizio    @relation(fields: [esercizioId], references: [id])
+  giorno       GiornoScheda @relation(fields: [userId, giornoId], references: [userId, id], onDelete: Cascade)
+  esercizio    Esercizio    @relation(fields: [userId, esercizioId], references: [userId, id], onDelete: NoAction)
 
-  @@unique([giornoId, esercizioId])
-  @@index([giornoId, ordine])
+  @@unique([userId, giornoId, esercizioId])
+  @@index([userId, giornoId, ordine])
 }
 
 // Un allenamento svolto in palestra in una certa data.
@@ -78,24 +96,27 @@ model Sessione {
   kcalStimate    Int?
   datiIniziali   Boolean         @default(false)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  giorno         GiornoScheda    @relation(fields: [giornoId], references: [id])
+  giorno         GiornoScheda    @relation(fields: [userId, giornoId], references: [userId, id], onDelete: NoAction)
   serie          SerieEseguita[]
 
+  @@unique([id, userId])
   @@index([userId, data])
 }
 
 // Una serie registrata. Il peso è vuoto per gli esercizi a corpo libero.
 // ordine = posizione della serie nella sessione (1, 2, 3, ...), anche tra esercizi diversi.
+// userId deve essere lo stesso della sessione e dell'esercizio: lo garantiscono le due chiavi esterne.
 model SerieEseguita {
   id          String    @id @default(cuid())
+  userId      String
   sessioneId  String
   esercizioId String
   ordine      Int
   pesoKg      Float?
   ripetizioni Int
-  sessione    Sessione  @relation(fields: [sessioneId], references: [id], onDelete: Cascade)
-  esercizio   Esercizio @relation(fields: [esercizioId], references: [id])
+  sessione    Sessione  @relation(fields: [sessioneId, userId], references: [id, userId], onDelete: Cascade)
+  esercizio   Esercizio @relation(fields: [userId, esercizioId], references: [userId, id], onDelete: NoAction)
 
   @@index([sessioneId])
-  @@index([esercizioId])
+  @@index([userId, esercizioId])
 }
