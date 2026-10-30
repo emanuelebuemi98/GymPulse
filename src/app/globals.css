@@ -1,5 +1,34 @@
 @import "tailwindcss";
 
+/* Tema chiaro "carta" con accento terracotta. I colori hanno un nome per ruolo, così si cambiano in un posto solo.
+   Contrasti misurati: testo su carta 17,9:1, muto 6,5:1, accento 5,1:1, verde 6,4:1, errore 6,4:1,
+   valori suggeriti sui campi 4,7:1. */
+@theme {
+  --color-fondo: #f2eee3;
+  --color-carta: #fffdf7;
+  --color-carta-alta: #e9e3d3;
+  --color-bordo: #ddd6c3;
+  --color-testo: #17150f;
+  --color-muto: #625c4c;
+  --color-suggerito: #6f6957;
+  --color-accento: #c8380c;
+  --color-su-accento: #ffffff;
+  --color-accento-chiaro: #ff7a4d;
+  --color-inchiostro: #17150f;
+  --color-su-inchiostro: #f6f2e6;
+  --color-ok: #1f6b3a;
+  --color-attenzione: #8a5200;
+  --color-errore: #b3261e;
+}
+
+@theme inline {
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
 }

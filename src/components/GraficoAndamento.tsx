@@ -7,7 +7,8 @@ import { asseY, indiceVicino, indiciEtichette, posizione } from '@/lib/grafico'
 export type PuntoGrafico = {
   x: number // istante in millisecondi: posiziona il punto sull'asse X
   y: number // valore sull'asse Y
-  data: string // etichetta della data, già formattata sul server
+  data: string // data completa, per tooltip e lettori di schermo
+  dataBreve: string // data corta, per l'asse X
   valore: string // valore con unità, già formattato sul server
 }
 
@@ -16,22 +17,22 @@ type Props = {
   titolo: string
 }
 
-// Colori del tema scuro della palette dei grafici: slot 1 categorico per la serie unica,
-// superficie della card, griglia un passo più scura del fondo, testo muto per gli assi.
+// Colori del tema chiaro: la serie usa lo slot 1 della palette dei grafici (validato sulla superficie della carta,
+// #fffdf7); griglia e assi sono toni recessivi, il testo usa i colori del testo e non quello della serie.
 const COLORI = {
-  serie: '#3987e5',
-  superficie: '#0f172a',
-  griglia: '#1e293b',
-  asse: '#94a3b8',
-  mirino: '#475569',
-  inchiostro: '#f1f5f9',
+  serie: '#2a78d6',
+  superficie: '#fffdf7',
+  griglia: '#e6dfcc',
+  asse: '#52514e',
+  mirino: '#b9b29c',
+  inchiostro: '#17150f',
 }
 
 const ALTEZZA = 240
 const MARGINI = { sinistra: 48, destra: 16, sopra: 16, sotto: 28 }
 const LARGHEZZA_MINIMA = 280
 // Stima della larghezza di un'etichetta di data a 12 px, con un po' di margine.
-const LARGHEZZA_CARATTERE_X = 6.5
+const LARGHEZZA_CARATTERE_X = 7
 
 export function GraficoAndamento({ punti, titolo }: Props) {
   const contenitore = useRef<HTMLDivElement>(null)
@@ -70,7 +71,7 @@ export function GraficoAndamento({ punti, titolo }: Props) {
   const ultimo = coordinate[coordinate.length - 1]
   const indiciX = indiciEtichette(
     coordinate.map((c) => c.x),
-    punti.map((p) => p.data.length * LARGHEZZA_CARATTERE_X),
+    punti.map((p) => p.dataBreve.length * LARGHEZZA_CARATTERE_X),
   )
 
   function ancoraggioX(indice: number): 'start' | 'middle' | 'end' {
@@ -86,7 +87,7 @@ export function GraficoAndamento({ punti, titolo }: Props) {
     setAttivo(indiceVicino(x, coordinate.map((c) => c.x)))
   }
 
-  // Il suggerimento resta dentro la card anche quando il punto è vicino al bordo.
+  // Il suggerimento resta dentro la carta anche quando il punto è vicino al bordo.
   const sinistraSuggerimento =
     attivo === null ? 0 : Math.min(Math.max(coordinate[attivo].x, 64), larghezza - 64)
 
@@ -171,7 +172,7 @@ export function GraficoAndamento({ punti, titolo }: Props) {
             fontSize={12}
             fill={COLORI.asse}
           >
-            {punti[i].data}
+            {punti[i].dataBreve}
           </text>
         ))}
 
@@ -180,7 +181,7 @@ export function GraficoAndamento({ punti, titolo }: Props) {
           y={ultimo.y - 10}
           textAnchor="end"
           fontSize={12}
-          fontWeight={600}
+          fontWeight={700}
           fill={COLORI.inchiostro}
         >
           {punti[punti.length - 1].valore}
@@ -189,11 +190,11 @@ export function GraficoAndamento({ punti, titolo }: Props) {
 
       {attivo !== null && (
         <div
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 shadow-lg"
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-2xl bg-inchiostro px-3 py-2 text-su-inchiostro shadow-lg"
           style={{ left: sinistraSuggerimento, top: coordinate[attivo].y - 12 }}
         >
-          <p className="font-semibold text-slate-100">{punti[attivo].valore}</p>
-          <p className="text-xs text-slate-400">{punti[attivo].data}</p>
+          <p className="font-bold">{punti[attivo].valore}</p>
+          <p className="text-xs text-su-inchiostro/70">{punti[attivo].data}</p>
         </div>
       )}
     </div>

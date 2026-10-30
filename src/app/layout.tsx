@@ -1,39 +1,38 @@
 import type { Metadata, Viewport } from 'next'
-import Link from 'next/link'
+import { Bricolage_Grotesque } from 'next/font/google'
+import { NavSuperiore } from '@/components/NavSuperiore'
 import './globals.css'
 
+const bricolage = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-bricolage', display: 'swap' })
+
 export const metadata: Metadata = {
-  title: 'GymPulse',
-  description: 'Registra i tuoi allenamenti in palestra.',
+  title: { default: 'GymPulse', template: '%s · GymPulse' },
+  description: 'Il tuo diario di allenamento: scheda A, B e C, sedute, storico e progressi.',
   applicationName: 'GymPulse',
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.svg' },
+  appleWebApp: { capable: true, title: 'GymPulse', statusBarStyle: 'default' },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0f172a',
+  themeColor: '#f2eee3',
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="it">
-      <body className="min-h-dvh bg-slate-950 text-slate-100 antialiased">
-        <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-          <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
-            <Link href="/" className="text-lg font-bold tracking-tight">
-              Gym<span className="text-blue-500">Pulse</span>
-            </Link>
-            <nav className="flex gap-4 text-sm text-slate-400">
-              <Link href="/" className="hover:text-slate-100">
-                Scheda
-              </Link>
-              <Link href="/storico" className="hover:text-slate-100">
-                Storico
-              </Link>
-            </nav>
+    <html lang="it" className={bricolage.variable}>
+      <body className="min-h-dvh bg-fondo font-sans text-testo antialiased">
+        <header className="sticky top-0 z-20 border-b border-bordo bg-fondo/95 backdrop-blur">
+          <div className="mx-auto max-w-2xl px-4 pt-3">
+            <p className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+              <span aria-hidden="true" className="size-2.5 rounded-full bg-accento" />
+              GymPulse
+            </p>
+            <NavSuperiore />
           </div>
         </header>
-        <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-2xl px-4 pt-6 pb-20">{children}</main>
       </body>
     </html>
   )

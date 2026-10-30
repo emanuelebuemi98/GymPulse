@@ -19,32 +19,64 @@ model User {
   sessioni  Sessione[]
 }
 
-// Giorno della scheda (Giorno 1, 2, 3). L'id è lo stesso di src/data/scheda.ts.
+// Giornata della scheda. L'id è la sigla: A, B, C.
 model GiornoScheda {
-  id       String     @id
+  id       String       @id
   numero   Int
   titolo   String
   focus    String
+  voci     VoceScheda[]
   sessioni Sessione[]
 }
 
-// Catalogo degli esercizi. L'id è lo stesso di src/data/scheda.ts.
+// Catalogo degli esercizi. Quelli aggiunti dall'utente hanno personalizzato = true.
 model Esercizio {
-  id      String          @id
-  nome    String
-  muscoli String
-  serie   SerieEseguita[]
+  id             String          @id
+  nome           String
+  muscoli        String
+  personalizzato Boolean         @default(false)
+  voci           VoceScheda[]
+  serie          SerieEseguita[]
+}
+
+// Un esercizio dentro una giornata, con il suo obiettivo. È la parte modificabile dall'app.
+// tipo = "serie":  serie × ripMin-ripMax, con recuperoSec
+// tipo = "totale": ripTotali da accumulare su più serie
+// tipo = "libero": da serieMin a serieMax serie a scelta
+model VoceScheda {
+  id           String       @id @default(cuid())
+  giornoId     String
+  esercizioId  String
+  ordine       Int
+  tipo         String       @default("serie")
+  serie        Int?
+  ripMin       Int?
+  ripMax       Int?
+  recuperoSec  Int?
+  ripTotali    Int?
+  serieMin     Int?
+  serieMax     Int?
+  nota         String?
+  incrementoKg Float?
+  giorno       GiornoScheda @relation(fields: [giornoId], references: [id], onDelete: Cascade)
+  esercizio    Esercizio    @relation(fields: [esercizioId], references: [id])
+
+  @@unique([giornoId, esercizioId])
+  @@index([giornoId, ordine])
 }
 
 // Un allenamento svolto in palestra in una certa data.
+// datiIniziali = true: serie importate a mano, con ripetizioni pari all'obiettivo e non registrate.
 model Sessione {
   id             String          @id @default(cuid())
   userId         String
   giornoId       String
   data           DateTime        @default(now())
+  note           String?
   pesoCorporeoKg Float?
   durataMinuti   Int?
   kcalStimate    Int?
+  datiIniziali   Boolean         @default(false)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   giorno         GiornoScheda    @relation(fields: [giornoId], references: [id])
   serie          SerieEseguita[]
@@ -53,6 +85,7 @@ model Sessione {
 }
 
 // Una serie registrata. Il peso è vuoto per gli esercizi a corpo libero.
+// ordine = posizione della serie nella sessione (1, 2, 3, ...), anche tra esercizi diversi.
 model SerieEseguita {
   id          String    @id @default(cuid())
   sessioneId  String
@@ -64,4 +97,5 @@ model SerieEseguita {
   esercizio   Esercizio @relation(fields: [esercizioId], references: [id])
 
   @@index([sessioneId])
+  @@index([esercizioId])
 }

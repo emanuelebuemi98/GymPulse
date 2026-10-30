@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { trovaGiorno } from '../data/scheda'
+import { istanteDaData } from './formato'
 
 // Regole per una sessione registrata. Il browser non è fidato: il server ricontrolla tutto.
 
@@ -16,8 +16,19 @@ const serieSchema = z.object({
     .max(999, 'Ripetizioni troppo alte'),
 })
 
+// Un esercizio della scheda o del catalogo (esercizioId) oppure uno nuovo (nomeNuovo): mai entrambi.
+const esercizioSchema = z
+  .object({
+    esercizioId: z.string().min(1).nullable(),
+    nomeNuovo: z.string().trim().min(1, 'Nome esercizio mancante').max(60, 'Nome esercizio troppo lungo').nullable(),
+    serie: z.array(serieSchema).max(50, 'Troppe serie per un esercizio'),
+  })
+  .refine((e) => (e.esercizioId === null) !== (e.nomeNuovo === null), { message: 'Esercizio non valido' })
+
 const sessioneSchema = z.object({
   giornoId: z.string().min(1, 'Giorno mancante'),
+  data: z.string(),
+  note: z.string().trim().max(500, 'Le note sono troppo lunghe').nullable(),
   durataMinuti: z
     .number({ error: 'Durata non valida' })
     .int('La durata deve essere in minuti interi')
@@ -29,62 +40,40 @@ const sessioneSchema = z.object({
     .min(20, 'Peso corporeo troppo basso')
     .max(400, 'Peso corporeo troppo alto')
     .nullable(),
-  esercizi: z
-    .array(
-      z.object({
-        esercizioId: z.string().min(1),
-        serie: z.array(serieSchema).max(50, 'Troppe serie per un esercizio'),
-      }),
-    )
-    .max(50),
+  esercizi: z.array(esercizioSchema).max(50),
 })
 
 export type SessioneInput = z.infer<typeof sessioneSchema>
-export type EsitoValidazione = { ok: true; dati: SessioneInput } | { ok: false; errore: string }
+export type EsitoValidazione =
+  | { ok: true; dati: SessioneInput; istante: Date }
+  | { ok: false; errore: string }
 
-export function validaSessione(input: unknown): EsitoValidazione {
+export function validaSessione(input: unknown, ora = new Date()): EsitoValidazione {
   const parsed = sessioneSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, errore: parsed.error.issues[0]?.message ?? 'Dati non validi' }
   }
 
   const dati = parsed.data
-  const giorno = trovaGiorno(dati.giornoId)
-  if (!giorno) return { ok: false, errore: 'Giorno non valido' }
+  const istante = istanteDaData(dati.data, ora)
+  if (!istante) return { ok: false, errore: 'La data non è valida o è nel futuro' }
 
-  const ammessi = new Set([...giorno.esercizi, giorno.addome].map((e) => e.id))
-  const visti = new Set<string>()
+  const ids = new Set<string>()
+  const nomi = new Set<string>()
   for (const esercizio of dati.esercizi) {
-    if (!ammessi.has(esercizio.esercizioId)) {
-      return { ok: false, errore: 'Esercizio non presente in questo giorno' }
+    if (esercizio.esercizioId !== null) {
+      if (ids.has(esercizio.esercizioId)) return { ok: false, errore: 'Esercizio ripetuto' }
+      ids.add(esercizio.esercizioId)
+    } else {
+      const nome = esercizio.nomeNuovo!.toLowerCase()
+      if (nomi.has(nome)) return { ok: false, errore: 'Esercizio ripetuto' }
+      nomi.add(nome)
     }
-    if (visti.has(esercizio.esercizioId)) return { ok: false, errore: 'Esercizio ripetuto' }
-    visti.add(esercizio.esercizioId)
   }
 
   if (dati.esercizi.every((esercizio) => esercizio.serie.length === 0)) {
-    return { ok: false, errore: 'Registra almeno una serie' }
+    return { ok: false, errore: 'Conferma almeno una serie' }
   }
 
-  return { ok: true, dati }
-}
-
-// Converte il testo del form. La virgola è accettata come separatore decimale.
-export function parseNumero(testo: string): number | null {
-  const pulito = testo.trim().replace(',', '.')
-  if (pulito === '') return null
-  const valore = Number(pulito)
-  return Number.isFinite(valore) ? valore : null
-}
-
-export function parseIntero(testo: string): number | null {
-  const valore = parseNumero(testo)
-  return valore !== null && Number.isInteger(valore) ? valore : null
-}
-
-// Ultimo allenamento dello stesso giorno, usato per precompilare il form.
-export type SerieUltima = { pesoKg: number | null; ripetizioni: number }
-export type UltimaSessione = {
-  pesoCorporeoKg: number | null
-  serie: Record<string, SerieUltima[]>
+  return { ok: true, dati, istante }
 }

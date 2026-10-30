@@ -1,4 +1,6 @@
-// Scheda importata dal PDF "Scheda di Allenamento Palestra 3D".
+// Scheda predefinita, importata dal PDF "Scheda di Allenamento Palestra 3D".
+// Serve solo a inizializzare il database (npm run db:seed): da lì in poi la scheda
+// si modifica dall'app (Scheda → Personalizza) e vive nel database.
 // Recupero in secondi, carico in kg.
 
 export type Obiettivo =
@@ -17,12 +19,11 @@ export type Esercizio = {
 }
 
 export type Giorno = {
-  id: string
+  id: string // sigla: A, B, C
   numero: number
   titolo: string
   focus: string
   esercizi: Esercizio[]
-  addome: Esercizio
 }
 
 const serieReps = (serie: number, ripMin: number, ripMax: number, recuperoSec: number): Obiettivo => ({
@@ -41,8 +42,8 @@ const libero = (serieMin: number, serieMax: number): Obiettivo => ({
   serieMax,
 })
 
-const giorno1: Giorno = {
-  id: 'giorno-1',
+const giornoA: Giorno = {
+  id: 'A',
   numero: 1,
   titolo: 'Petto, dorso, braccia',
   focus: 'Petto, dorso e braccia',
@@ -84,24 +85,30 @@ const giorno1: Giorno = {
       nota: 'Senza compensi',
     },
     {
+      id: 'curl-manubri',
+      nome: 'Curl con manubri',
+      muscoli: 'Bicipiti',
+      obiettivo: serieReps(3, 8, 8, 90),
+    },
+    {
       id: 'dip-macchina',
       nome: 'Dip alla macchina',
       muscoli: 'Tricipiti / petto basso',
       obiettivo: serieReps(3, 8, 10, 60),
       nota: 'Busto leggermente inclinato',
     },
+    {
+      id: 'addome-giorno-1',
+      nome: 'Addome a piacere',
+      muscoli: 'Addominali',
+      obiettivo: libero(3, 4),
+      nota: 'Crunch a terra, plank o reverse crunch',
+    },
   ],
-  addome: {
-    id: 'addome-giorno-1',
-    nome: 'Addome a piacere',
-    muscoli: 'Addominali',
-    obiettivo: libero(3, 4),
-    nota: 'Crunch a terra, plank o reverse crunch',
-  },
 }
 
-const giorno2: Giorno = {
-  id: 'giorno-2',
+const giornoB: Giorno = {
+  id: 'B',
   numero: 2,
   titolo: 'Gambe, addome',
   focus: 'Gambe e polpacci',
@@ -149,18 +156,18 @@ const giorno2: Giorno = {
       obiettivo: serieReps(3, 10, 12, 90),
       nota: 'Bloccare bene il cuscinetto sulle cosce',
     },
+    {
+      id: 'addome-giorno-2',
+      nome: 'Addome alla sbarra',
+      muscoli: 'Addominali (leg / knee raise)',
+      obiettivo: totale(50),
+      nota: 'Somma delle ripetizioni su più serie',
+    },
   ],
-  addome: {
-    id: 'addome-giorno-2',
-    nome: 'Addome alla sbarra',
-    muscoli: 'Addominali (leg / knee raise)',
-    obiettivo: totale(50),
-    nota: 'Somma delle ripetizioni su più serie',
-  },
 }
 
-const giorno3: Giorno = {
-  id: 'giorno-3',
+const giornoC: Giorno = {
+  id: 'C',
   numero: 3,
   titolo: 'Stacco, dorso, spalle',
   focus: 'Stacco, dorso e spalle',
@@ -215,17 +222,13 @@ const giorno3: Giorno = {
       obiettivo: serieReps(3, 8, 10, 90),
       nota: 'Gomiti leggermente flessi',
     },
+    {
+      id: 'addome-giorno-3',
+      nome: 'Addome alla macchina',
+      muscoli: 'Addominali (ab crunch)',
+      obiettivo: serieReps(4, 15, 20, 60),
+    },
   ],
-  addome: {
-    id: 'addome-giorno-3',
-    nome: 'Addome alla macchina',
-    muscoli: 'Addominali (ab crunch)',
-    obiettivo: serieReps(4, 15, 20, 60),
-  },
 }
 
-export const giorni: Giorno[] = [giorno1, giorno2, giorno3]
-
-export function trovaGiorno(id: string | undefined): Giorno | undefined {
-  return giorni.find((giorno) => giorno.id === id)
-}
+export const schedaPredefinita: Giorno[] = [giornoA, giornoB, giornoC]

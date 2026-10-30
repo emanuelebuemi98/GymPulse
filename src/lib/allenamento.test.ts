@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { giorni } from '../data/scheda'
+import { schedaPredefinita } from '../data/scheda'
 import {
   descrizioneObiettivo,
   formatRecupero,
+  formatTimer,
+  giornoConsigliato,
   indiceGiornoSuccessivo,
   prossimoCarico,
+  ripetizioniTarget,
+  serieIniziali,
   stimaKcal,
   stimaRM,
 } from './allenamento'
@@ -85,14 +89,58 @@ describe('formatRecupero', () => {
   })
 })
 
-describe('dati della scheda', () => {
-  it('contiene 3 giorni e 19 esercizi principali, come nel PDF', () => {
-    expect(giorni).toHaveLength(3)
-    expect(giorni.reduce((tot, g) => tot + g.esercizi.length, 0)).toBe(19)
+describe('formatTimer', () => {
+  it('mostra minuti e secondi come un timer', () => {
+    expect(formatTimer(90)).toBe('1:30')
+    expect(formatTimer(120)).toBe('2:00')
+    expect(formatTimer(5)).toBe('0:05')
+    expect(formatTimer(0)).toBe('0:00')
+  })
+})
+
+describe('giornoConsigliato', () => {
+  const giorni3 = [{ id: 'A' }, { id: 'B' }, { id: 'C' }]
+
+  it('parte dalla prima giornata senza storico', () => {
+    expect(giornoConsigliato(giorni3, null).id).toBe('A')
+  })
+
+  it("propone la giornata dopo l'ultima, in ciclo", () => {
+    expect(giornoConsigliato(giorni3, 'A').id).toBe('B')
+    expect(giornoConsigliato(giorni3, 'C').id).toBe('A')
+  })
+
+  it("riparte dalla prima se l'ultima giornata non esiste più", () => {
+    expect(giornoConsigliato(giorni3, 'Z').id).toBe('A')
+  })
+})
+
+describe('serieIniziali e ripetizioniTarget', () => {
+  it('usa il numero di serie della scheda', () => {
+    expect(serieIniziali({ tipo: 'serie', serie: 4, ripMin: 6, ripMax: 6, recuperoSec: 120 })).toBe(4)
+    expect(serieIniziali({ tipo: 'libero', serieMin: 3, serieMax: 4 })).toBe(3)
+    expect(serieIniziali({ tipo: 'totale', ripTotali: 50 })).toBe(3)
+  })
+
+  it('punta al massimo del range, o a niente se l\'obiettivo non lo fissa', () => {
+    expect(ripetizioniTarget({ tipo: 'serie', serie: 3, ripMin: 6, ripMax: 8, recuperoSec: 120 })).toBe(8)
+    expect(ripetizioniTarget({ tipo: 'totale', ripTotali: 50 })).toBeNull()
+  })
+})
+
+describe('scheda predefinita', () => {
+  const esercizi = schedaPredefinita.flatMap((g) => g.esercizi)
+
+  it('ha le giornate A, B e C', () => {
+    expect(schedaPredefinita.map((g) => g.id)).toEqual(['A', 'B', 'C'])
+  })
+
+  it('contiene 22 esercizi: i 19 del PDF, il curl con manubri e i 3 addominali', () => {
+    expect(esercizi).toHaveLength(23)
   })
 
   it('usa un id unico per ogni esercizio', () => {
-    const ids = giorni.flatMap((g) => [...g.esercizi, g.addome]).map((e) => e.id)
+    const ids = esercizi.map((e) => e.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
 })

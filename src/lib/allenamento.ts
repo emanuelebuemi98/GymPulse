@@ -12,6 +12,12 @@ export function indiceGiornoSuccessivo(ultimoIndice: number | null, totaleGiorni
   return (ultimoIndice + 1) % totaleGiorni
 }
 
+// Giornata da proporre dopo l'ultima registrata. Se l'ultima non è più nella scheda, si riparte dalla prima.
+export function giornoConsigliato<T extends { id: string }>(giorni: T[], ultimoId: string | null): T {
+  const indice = ultimoId === null ? -1 : giorni.findIndex((giorno) => giorno.id === ultimoId)
+  return giorni[indiceGiornoSuccessivo(indice === -1 ? null : indice, giorni.length)]
+}
+
 // Carico suggerito: se ogni serie ha raggiunto il massimo del range, aggiunge l'incremento.
 // Restituisce null se non c'è ancora uno storico.
 export function prossimoCarico(
@@ -57,4 +63,28 @@ export function formatRecupero(secondi: number): string {
   if (minuti === 0) return `${resto} s`
   if (resto === 0) return `${minuti} min`
   return `${minuti} min ${resto} s`
+}
+
+// Conto alla rovescia, come su un timer: 90 → "1:30".
+export function formatTimer(secondi: number): string {
+  const minuti = Math.floor(secondi / 60)
+  const resto = secondi % 60
+  return `${minuti}:${String(resto).padStart(2, '0')}`
+}
+
+// Serie da mostrare all'inizio di una sessione per un esercizio con questo obiettivo.
+export function serieIniziali(obiettivo: Obiettivo): number {
+  switch (obiettivo.tipo) {
+    case 'serie':
+      return obiettivo.serie
+    case 'libero':
+      return obiettivo.serieMin
+    case 'totale':
+      return 3
+  }
+}
+
+// Ripetizioni a cui puntare in ogni serie. Null se l'obiettivo non le fissa.
+export function ripetizioniTarget(obiettivo: Obiettivo): number | null {
+  return obiettivo.tipo === 'serie' ? obiettivo.ripMax : null
 }

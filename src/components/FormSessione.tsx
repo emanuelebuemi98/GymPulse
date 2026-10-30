@@ -1,253 +1,543 @@
 'use client'
 
-import { useState, useTransition, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { salvaSessione } from '@/app/actions'
-import { ExerciseCard } from '@/components/ExerciseCard'
-import type { Esercizio, Giorno, Obiettivo } from '@/data/scheda'
-import { stimaKcal } from '@/lib/allenamento'
-import { formatNumero } from '@/lib/formato'
-import { parseIntero, parseNumero, type UltimaSessione } from '@/lib/sessione-schema'
-import type { SuggerimentoCarico } from '@/lib/progressi'
+import type { Esercizio, Giorno } from '@/data/scheda'
+import { formatTimer, ripetizioniTarget, serieIniziali, stimaKcal } from '@/lib/allenamento'
+import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
+import { formatDataNumerica, formatNumero } from '@/lib/formato'
+import { parseIntero, parseNumero } from '@/lib/numeri'
+import { suggerimentoSerie, suggerisciCarichi, type SuggerimentoCarico } from '@/lib/progressi'
+import type { UltimeVolte, VoceCatalogo } from '@/lib/tipi'
+import { IconaCestino, IconaMeno, IconaPiu, IconaSpunta } from './icone'
+import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
-type RigaSerie = { pesoKg: string; ripetizioni: string }
+type RigaSerie = { pesoKg: string; ripetizioni: string; confermata: boolean }
+
+type EsSessione = {
+  chiave: string
+  esercizioId: string | null // null = esercizio nuovo, creato al salvataggio
+  nomeNuovo: string
+  nome: string
+  serie: RigaSerie[]
+}
+
+type Bozza = {
+  esercizi: EsSessione[]
+  data: string
+  note: string
+  durata: string
+  pesoCorporeo: string
+}
 
 type Props = {
   giorno: Giorno
-  ultima: UltimaSessione | null
-  suggerimenti: Record<string, SuggerimentoCarico>
+  ultime: UltimeVolte
+  catalogo: VoceCatalogo[]
+  pesoCorporeoIniziale: number | null
+  oggi: string
 }
 
-function testoSuggerimento(suggerimento: SuggerimentoCarico): string {
-  return suggerimento.aumenta
-    ? `Prossimo carico: ${formatNumero(suggerimento.kg)} kg`
-    : `Resta a ${formatNumero(suggerimento.kg)} kg: completa ${suggerimento.ripMax} rip in ogni serie per salire`
-}
+const rigaVuota = (): RigaSerie => ({ pesoKg: '', ripetizioni: '', confermata: false })
 
-const classeInput =
-  'w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-center font-mono text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none'
-
-const rigaVuota = (): RigaSerie => ({ pesoKg: '', ripetizioni: '' })
-
-function serieIniziali(obiettivo: Obiettivo): number {
-  switch (obiettivo.tipo) {
-    case 'serie':
-      return obiettivo.serie
-    case 'libero':
-      return obiettivo.serieMin
-    case 'totale':
-      return 1
+function esercizioIniziale(esercizio: Esercizio): EsSessione {
+  return {
+    chiave: esercizio.id,
+    esercizioId: esercizio.id,
+    nomeNuovo: '',
+    nome: esercizio.nome,
+    serie: Array.from({ length: serieIniziali(esercizio.obiettivo) }, rigaVuota),
   }
 }
 
-function placeholderRipetizioni(obiettivo: Obiettivo): string {
-  if (obiettivo.tipo !== 'serie') return 'rip'
-  return obiettivo.ripMin === obiettivo.ripMax
-    ? String(obiettivo.ripMin)
-    : `${obiettivo.ripMin}-${obiettivo.ripMax}`
+function testoSuggerimento(s: SuggerimentoCarico): string {
+  if (s.daVerificare) return `Ultimo carico: ${formatNumero(s.kg)} kg (ripetizioni da verificare)`
+  return s.aumenta
+    ? `Prossimo carico: ${formatNumero(s.kg)} kg`
+    : `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripMax} rip in ogni serie per salire`
 }
 
-// Se c'è un allenamento precedente dello stesso giorno, ne riprende i valori.
-function righeIniziali(esercizio: Esercizio, ultima: UltimaSessione | null): RigaSerie[] {
-  const precedenti = ultima?.serie[esercizio.id] ?? []
-  if (precedenti.length > 0) {
-    return precedenti.map((serie) => ({
-      pesoKg: serie.pesoKg === null ? '' : String(serie.pesoKg),
-      ripetizioni: String(serie.ripetizioni),
-    }))
-  }
-  return Array.from({ length: serieIniziali(esercizio.obiettivo) }, rigaVuota)
-}
+export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, oggi }: Props) {
+  const router = useRouter()
+  const definizioni = new Map(giorno.esercizi.map((e) => [e.id, e]))
+  const suggerimentiCarico = suggerisciCarichi(giorno.esercizi, ultime)
 
-export function FormSessione({ giorno, ultima, suggerimenti }: Props) {
-  const tutti = [...giorno.esercizi, giorno.addome]
-
-  const [righe, setRighe] = useState<Record<string, RigaSerie[]>>(() =>
-    Object.fromEntries(tutti.map((esercizio) => [esercizio.id, righeIniziali(esercizio, ultima)])),
-  )
+  const [esercizi, setEsercizi] = useState<EsSessione[]>(() => giorno.esercizi.map(esercizioIniziale))
+  const [data, setData] = useState(oggi)
+  const [note, setNote] = useState('')
   const [durata, setDurata] = useState('')
-  const [pesoCorporeo, setPesoCorporeo] = useState(String(ultima?.pesoCorporeoKg ?? ''))
+  const [pesoCorporeo, setPesoCorporeo] = useState(pesoCorporeoIniziale === null ? '' : String(pesoCorporeoIniziale))
   const [errore, setErrore] = useState<string | null>(null)
+  const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
+  const [aggiunta, setAggiunta] = useState('')
+  const [nomeLibero, setNomeLibero] = useState('')
+  const [timer, setTimer] = useState<{ fine: number; totale: number } | null>(null)
+  const [restano, setRestano] = useState(0)
+  const [bozzaPronta, setBozzaPronta] = useState(false)
   const [inCorso, startTransition] = useTransition()
+  const contatore = useRef(0)
 
+  // All'apertura riprende la bozza di questa giornata, se c'è: si legge qui e non nello stato iniziale
+  // perché il server non ha il localStorage e le due versioni della pagina non coinciderebbero.
+  useEffect(() => {
+    const bozza = leggiBozza<Bozza>(giorno.id)
+    if (bozza) {
+      setEsercizi(bozza.esercizi)
+      setData(bozza.data)
+      setNote(bozza.note)
+      setDurata(bozza.durata)
+      setPesoCorporeo(bozza.pesoCorporeo)
+    }
+    setBozzaPronta(true)
+  }, [giorno.id])
+
+  useEffect(() => {
+    if (!bozzaPronta) return
+    salvaBozza(giorno.id, { esercizi, data, note, durata, pesoCorporeo } satisfies Bozza)
+  }, [bozzaPronta, giorno.id, esercizi, data, note, durata, pesoCorporeo])
+
+  useEffect(() => {
+    if (!timer) return
+    const aggiorna = () => {
+      const mancano = Math.max(0, Math.ceil((timer.fine - Date.now()) / 1000))
+      setRestano(mancano)
+      if (mancano === 0) {
+        try {
+          navigator.vibrate?.([200, 100, 200])
+        } catch {
+          // la vibrazione non è disponibile ovunque
+        }
+      }
+    }
+    aggiorna()
+    const intervallo = setInterval(aggiorna, 250)
+    return () => clearInterval(intervallo)
+  }, [timer])
+
+  const righeTotali = esercizi.reduce((totale, e) => totale + e.serie.length, 0)
+  const righeConfermate = esercizi.reduce((totale, e) => totale + e.serie.filter((s) => s.confermata).length, 0)
   const durataMinuti = parseIntero(durata)
   const pesoCorporeoKg = parseNumero(pesoCorporeo)
   const kcalStimate =
     durataMinuti !== null && pesoCorporeoKg !== null ? stimaKcal(pesoCorporeoKg, durataMinuti) : null
 
-  function aggiornaRiga(esercizioId: string, indice: number, campo: keyof RigaSerie, valore: string) {
-    setRighe((prec) => ({
-      ...prec,
-      [esercizioId]: prec[esercizioId].map((riga, i) => (i === indice ? { ...riga, [campo]: valore } : riga)),
+  function ultimaDi(es: EsSessione) {
+    return es.esercizioId ? ultime[es.esercizioId] : undefined
+  }
+
+  function suggerimento(es: EsSessione, indice: number) {
+    const ultima = ultimaDi(es)
+    const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
+    return suggerimentoSerie(
+      ultima?.serie ?? [],
+      indice,
+      definizione ? ripetizioniTarget(definizione.obiettivo) : null,
+      ultima ? !ultima.datiIniziali : false,
+    )
+  }
+
+  function aggiorna(chiave: string, cambia: (es: EsSessione) => EsSessione) {
+    setEsercizi((prec) => prec.map((es) => (es.chiave === chiave ? cambia(es) : es)))
+  }
+
+  function modificaRiga(chiave: string, indice: number, patch: Partial<RigaSerie>) {
+    aggiorna(chiave, (es) => ({
+      ...es,
+      serie: es.serie.map((riga, i) => (i === indice ? { ...riga, ...patch } : riga)),
     }))
   }
 
-  function aggiungiRiga(esercizioId: string) {
-    setRighe((prec) => ({ ...prec, [esercizioId]: [...prec[esercizioId], rigaVuota()] }))
+  function conferma(es: EsSessione, indice: number) {
+    const riga = es.serie[indice]
+    if (riga.confermata) {
+      modificaRiga(es.chiave, indice, { confermata: false })
+      return
+    }
+
+    // Con i campi vuoti vale quello che l'app suggeriva in grigio.
+    const proposto = suggerimento(es, indice)
+    const kg = riga.pesoKg.trim() !== '' ? riga.pesoKg : proposto.pesoKg === null ? '' : String(proposto.pesoKg)
+    const rip = riga.ripetizioni.trim() !== '' ? riga.ripetizioni : proposto.ripetizioni === null ? '' : String(proposto.ripetizioni)
+
+    if (kg.trim() !== '' && parseNumero(kg) === null) {
+      setErroreEsercizio({ chiave: es.chiave, testo: `Serie ${indice + 1}: il peso non è valido` })
+      return
+    }
+    const ripetizioni = parseIntero(rip)
+    if (ripetizioni === null || ripetizioni < 1) {
+      setErroreEsercizio({ chiave: es.chiave, testo: `Serie ${indice + 1}: indica le ripetizioni fatte` })
+      return
+    }
+
+    setErroreEsercizio(null)
+    modificaRiga(es.chiave, indice, { pesoKg: kg, ripetizioni: String(ripetizioni), confermata: true })
+
+    const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
+    if (definizione?.obiettivo.tipo === 'serie' && definizione.obiettivo.recuperoSec > 0) {
+      const totale = definizione.obiettivo.recuperoSec
+      setTimer({ fine: Date.now() + totale * 1000, totale })
+    }
   }
 
-  function rimuoviRiga(esercizioId: string, indice: number) {
-    setRighe((prec) => ({
-      ...prec,
-      [esercizioId]: prec[esercizioId].filter((_, i) => i !== indice),
+  function applicaSuggeriti(es: EsSessione) {
+    aggiorna(es.chiave, (corrente) => ({
+      ...corrente,
+      serie: corrente.serie.map((riga, i) => {
+        if (riga.confermata) return riga
+        const s = suggerimento(corrente, i)
+        return {
+          ...riga,
+          pesoKg: riga.pesoKg.trim() !== '' || s.pesoKg === null ? riga.pesoKg : String(s.pesoKg),
+          ripetizioni: riga.ripetizioni.trim() !== '' || s.ripetizioni === null ? riga.ripetizioni : String(s.ripetizioni),
+        }
+      }),
     }))
   }
 
-  function invia(evento: FormEvent<HTMLFormElement>) {
-    evento.preventDefault()
+  function togliSerie(es: EsSessione) {
+    // Toglie l'ultima serie non confermata; se sono tutte confermate non toglie nulla.
+    const indice = es.serie.map((s) => s.confermata).lastIndexOf(false)
+    if (indice === -1) return
+    aggiorna(es.chiave, (corrente) => ({ ...corrente, serie: corrente.serie.filter((_, i) => i !== indice) }))
+  }
+
+  function rimuoviEsercizio(es: EsSessione) {
+    if (es.serie.some((s) => s.confermata) && !window.confirm(`Rimuovere ${es.nome}? Le serie confermate andranno perse.`)) return
+    setEsercizi((prec) => prec.filter((corrente) => corrente.chiave !== es.chiave))
+  }
+
+  function aggiungiDalCatalogo() {
+    const scelto = catalogo.find((voce) => voce.id === aggiunta)
+    if (!scelto) return
+    setEsercizi((prec) => [
+      ...prec,
+      {
+        chiave: `catalogo-${scelto.id}`,
+        esercizioId: scelto.id,
+        nomeNuovo: '',
+        nome: scelto.nome,
+        serie: Array.from({ length: 3 }, rigaVuota),
+      },
+    ])
+    setAggiunta('')
+  }
+
+  function aggiungiLibero() {
+    const nome = nomeLibero.trim()
+    if (nome === '') return
+    const esistente = catalogo.find((voce) => voce.nome.toLowerCase() === nome.toLowerCase())
+    const giaPresente = esercizi.some((es) => es.nome.toLowerCase() === nome.toLowerCase())
+    if (giaPresente) {
+      setErrore(`${nome} è già in questa sessione`)
+      return
+    }
     setErrore(null)
+    contatore.current += 1
+    setEsercizi((prec) => [
+      ...prec,
+      {
+        chiave: `nuovo-${Date.now()}-${contatore.current}`,
+        esercizioId: esistente ? esistente.id : null,
+        nomeNuovo: esistente ? '' : nome,
+        nome: esistente ? esistente.nome : nome,
+        serie: Array.from({ length: 3 }, rigaVuota),
+      },
+    ])
+    setNomeLibero('')
+  }
 
-    if (durata.trim() !== '' && durataMinuti === null) {
-      setErrore('La durata deve essere un numero intero di minuti')
-      return
-    }
-    if (pesoCorporeo.trim() !== '' && pesoCorporeoKg === null) {
-      setErrore('Il peso corporeo non è valido')
-      return
-    }
+  function annulla() {
+    if (righeConfermate > 0 && !window.confirm('Annullare la sessione? Le serie confermate andranno perse.')) return
+    eliminaBozza(giorno.id)
+    router.push(`/scheda?r=${giorno.id}`)
+  }
 
-    const esercizi: { esercizioId: string; serie: { pesoKg: number | null; ripetizioni: number | null }[] }[] = []
-    for (const esercizio of tutti) {
-      const serie: { pesoKg: number | null; ripetizioni: number | null }[] = []
-      for (const [indice, riga] of righe[esercizio.id].entries()) {
-        // Le righe completamente vuote vengono ignorate: non sono state fatte.
-        if (riga.pesoKg.trim() === '' && riga.ripetizioni.trim() === '') continue
+  function salva() {
+    setErrore(null)
+    setErroreEsercizio(null)
 
-        const etichetta = `${esercizio.nome}, serie ${indice + 1}`
-        const pesoKg = parseNumero(riga.pesoKg)
-        const ripetizioni = parseIntero(riga.ripetizioni)
-        if (riga.pesoKg.trim() !== '' && pesoKg === null) {
-          setErrore(`Peso non valido: ${etichetta}`)
-          return
-        }
-        if (ripetizioni === null) {
-          setErrore(`Ripetizioni mancanti o non valide: ${etichetta}`)
-          return
-        }
-        serie.push({ pesoKg, ripetizioni })
-      }
-      esercizi.push({ esercizioId: esercizio.id, serie })
-    }
+    if (durata.trim() !== '' && durataMinuti === null) return setErrore('La durata deve essere un numero intero di minuti')
+    if (pesoCorporeo.trim() !== '' && pesoCorporeoKg === null) return setErrore('Il peso corporeo non è valido')
+
+    const invio = esercizi.map((es) => ({
+      esercizioId: es.esercizioId,
+      nomeNuovo: es.esercizioId === null ? es.nomeNuovo : null,
+      serie: es.serie
+        .filter((riga) => riga.confermata)
+        .map((riga) => ({ pesoKg: parseNumero(riga.pesoKg), ripetizioni: parseIntero(riga.ripetizioni) })),
+    }))
+
+    if (invio.every((es) => es.serie.length === 0)) return setErrore('Conferma almeno una serie con ✓')
 
     startTransition(async () => {
       const esito = await salvaSessione({
         giornoId: giorno.id,
+        data,
+        note: note.trim() === '' ? null : note,
         durataMinuti,
         pesoCorporeoKg,
-        esercizi,
+        esercizi: invio,
       })
-      if (esito.errore) setErrore(esito.errore)
+      if ('errore' in esito) return setErrore(esito.errore)
+      eliminaBozza(giorno.id)
+      router.push(`/storico/${esito.id}`)
     })
   }
 
-  return (
-    <form onSubmit={invia} className="space-y-6">
-      <ul className="space-y-3">
-        {tutti.map((esercizio) => (
-          <ExerciseCard key={esercizio.id} esercizio={esercizio}>
-            <div className="mt-4 space-y-2">
-              {suggerimenti[esercizio.id] && (
-                <p className="text-sm text-blue-300">{testoSuggerimento(suggerimenti[esercizio.id])}</p>
-              )}
+  const disponibili = catalogo.filter((voce) => !esercizi.some((es) => es.esercizioId === voce.id))
 
-              <div className="grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 text-xs tracking-wide text-slate-500 uppercase">
-                <span>Serie</span>
-                <span>Kg</span>
-                <span>Rip.</span>
-                <span />
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-extrabold tracking-tight">Sessione in corso</h1>
+        <button type="button" onClick={annulla} className={stileBottoneChiaro}>
+          Annulla
+        </button>
+      </div>
+
+      <section className={`${stileCarta} space-y-3 p-4`}>
+        <h2 className="text-lg font-extrabold">
+          Allenamento {giorno.id} · {giorno.titolo}
+        </h2>
+        <label className="block space-y-1 text-sm text-muto">
+          <span>Data</span>
+          <input
+            type="date"
+            value={data}
+            max={oggi}
+            onChange={(e) => setData(e.target.value)}
+            className={`${stileTesto} text-left`}
+          />
+        </label>
+        <label className="block space-y-1 text-sm text-muto">
+          <span>Note e riscaldamento</span>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+            maxLength={500}
+            placeholder="Es. Riscaldamento: plank e corde 3 × 1"
+            className={`${stileTesto} resize-none`}
+          />
+        </label>
+        <p className="text-sm text-muto">
+          Serie confermate: <span className="font-extrabold text-accento">{righeConfermate}</span> / {righeTotali}
+        </p>
+      </section>
+
+      <ul className="space-y-4">
+        {esercizi.map((es) => {
+          const ultima = ultimaDi(es)
+          const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
+          const carico = es.esercizioId ? suggerimentiCarico[es.esercizioId] : undefined
+          const errorePerQuesto = erroreEsercizio?.chiave === es.chiave ? erroreEsercizio.testo : null
+
+          return (
+            <li key={es.chiave} className={`${stileCarta} space-y-3 p-4`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-extrabold leading-tight">{es.nome}</h3>
+                  <p className="text-sm text-muto">
+                    {definizione ? `Target ${descrizione(definizione)}` : 'Esercizio aggiunto'}
+                    {ultima && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
+                  </p>
+                  {carico && <p className="mt-1 text-sm font-semibold text-accento">{testoSuggerimento(carico)}</p>}
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Rimuovi ${es.nome}`}
+                  onClick={() => rimuoviEsercizio(es)}
+                  className="grid size-10 shrink-0 place-items-center rounded-xl bg-errore/10 text-errore"
+                >
+                  <IconaCestino className="size-4" />
+                </button>
               </div>
 
-              {righe[esercizio.id].map((riga, indice) => (
-                <div key={indice} className="grid grid-cols-[2rem_1fr_1fr_2.5rem] items-center gap-2">
-                  <span className="text-sm text-slate-500">{indice + 1}</span>
-                  <input
-                    aria-label={`${esercizio.nome}, serie ${indice + 1}: peso in kg`}
-                    inputMode="decimal"
-                    placeholder="kg"
-                    value={riga.pesoKg}
-                    onChange={(e) => aggiornaRiga(esercizio.id, indice, 'pesoKg', e.target.value)}
-                    className={classeInput}
-                  />
-                  <input
-                    aria-label={`${esercizio.nome}, serie ${indice + 1}: ripetizioni`}
-                    inputMode="numeric"
-                    placeholder={placeholderRipetizioni(esercizio.obiettivo)}
-                    value={riga.ripetizioni}
-                    onChange={(e) => aggiornaRiga(esercizio.id, indice, 'ripetizioni', e.target.value)}
-                    className={classeInput}
-                  />
-                  <button
-                    type="button"
-                    aria-label={`Rimuovi serie ${indice + 1} di ${esercizio.nome}`}
-                    onClick={() => rimuoviRiga(esercizio.id, indice)}
-                    className="h-10 rounded-lg text-lg text-slate-500 hover:bg-slate-800 hover:text-slate-200"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+              <div className="grid grid-cols-[1.75rem_1fr_1fr_3rem] items-center gap-x-2 gap-y-2">
+                <span className="text-xs font-semibold text-muto">#</span>
+                <span className="text-center text-xs font-semibold text-muto">Kg</span>
+                <span className="text-center text-xs font-semibold text-muto">Ripetizioni</span>
+                <span className="text-center text-xs font-semibold text-muto">Conferma</span>
 
-              <button
-                type="button"
-                onClick={() => aggiungiRiga(esercizio.id)}
-                className="text-sm font-medium text-blue-400 hover:text-blue-300"
-              >
-                + Aggiungi serie
-              </button>
-            </div>
-          </ExerciseCard>
-        ))}
+                {es.serie.map((riga, indice) => {
+                  const proposto = suggerimento(es, indice)
+                  return (
+                    <RigaSerieCampi
+                      key={indice}
+                      nome={es.nome}
+                      indice={indice}
+                      riga={riga}
+                      pesoSuggerito={proposto.pesoKg === null ? '' : String(proposto.pesoKg)}
+                      ripSuggerite={proposto.ripetizioni === null ? '' : String(proposto.ripetizioni)}
+                      alCambio={(patch) => modificaRiga(es.chiave, indice, patch)}
+                      alConferma={() => conferma(es, indice)}
+                    />
+                  )
+                })}
+              </div>
+
+              {errorePerQuesto && (
+                <p role="alert" className="text-sm text-errore">
+                  {errorePerQuesto}
+                </p>
+              )}
+
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" onClick={() => applicaSuggeriti(es)} disabled={!ultima && !definizione} className={stileBottoneChiaro}>
+                  Suggeriti
+                </button>
+                <button
+                  type="button"
+                  onClick={() => aggiorna(es.chiave, (corrente) => ({ ...corrente, serie: [...corrente.serie, rigaVuota()] }))}
+                  className={stileBottoneChiaro}
+                >
+                  <IconaPiu className="size-4" />
+                  Serie
+                </button>
+                <button type="button" onClick={() => togliSerie(es)} className={stileBottoneChiaro}>
+                  <IconaMeno className="size-4" />
+                  Serie
+                </button>
+              </div>
+              <p className="text-xs text-muto">I valori grigi sono solo suggerimenti: la serie conta solo dopo ✓.</p>
+            </li>
+          )
+        })}
       </ul>
 
-      <section className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h2 className="font-semibold">Dati della sessione</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Campo etichetta="Durata (minuti)">
-            <input
-              inputMode="numeric"
-              placeholder="60"
-              value={durata}
-              onChange={(e) => setDurata(e.target.value)}
-              className={classeInput}
-            />
-          </Campo>
-          <Campo etichetta="Peso corporeo (kg)">
-            <input
-              inputMode="decimal"
-              placeholder="80"
-              value={pesoCorporeo}
-              onChange={(e) => setPesoCorporeo(e.target.value)}
-              className={classeInput}
-            />
-          </Campo>
+      <section className={`${stileCarta} space-y-3 p-4`}>
+        <h2 className="text-lg font-extrabold">Aggiungi esercizio</h2>
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <select value={aggiunta} onChange={(e) => setAggiunta(e.target.value)} className={`${stileTesto} text-left`}>
+            <option value="">Dalle routine…</option>
+            {disponibili.map((voce) => (
+              <option key={voce.id} value={voce.id}>
+                {voce.nome}
+              </option>
+            ))}
+          </select>
+          <button type="button" aria-label="Aggiungi l'esercizio scelto" disabled={aggiunta === ''} onClick={aggiungiDalCatalogo} className={`${stileBottoneChiaro} px-4`}>
+            <IconaPiu className="size-5" />
+          </button>
         </div>
-
-        {kcalStimate !== null && (
-          <p className="text-sm text-slate-400">Stima indicativa: circa {kcalStimate} kcal</p>
-        )}
-
-        {errore && (
-          <p role="alert" className="rounded-lg bg-red-950 p-3 text-sm text-red-300">
-            {errore}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={inCorso}
-          className="w-full rounded-lg bg-blue-600 py-3 font-semibold hover:bg-blue-500 disabled:opacity-50"
-        >
-          {inCorso ? 'Salvataggio…' : 'Salva allenamento'}
-        </button>
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <input
+            value={nomeLibero}
+            onChange={(e) => setNomeLibero(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                aggiungiLibero()
+              }
+            }}
+            maxLength={60}
+            placeholder="Altro esercizio"
+            className={`${stileTesto} text-left`}
+          />
+          <button type="button" aria-label="Aggiungi l'esercizio scritto" disabled={nomeLibero.trim() === ''} onClick={aggiungiLibero} className={`${stileBottoneChiaro} px-4`}>
+            <IconaPiu className="size-5" />
+          </button>
+        </div>
       </section>
-    </form>
+
+      <section className={`${stileCarta} space-y-3 p-4`}>
+        <h2 className="text-lg font-extrabold">Dati opzionali</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block space-y-1 text-sm text-muto">
+            <span>Durata (minuti)</span>
+            <input inputMode="numeric" placeholder="60" value={durata} onChange={(e) => setDurata(e.target.value)} className={stileInput} />
+          </label>
+          <label className="block space-y-1 text-sm text-muto">
+            <span>Peso corporeo (kg)</span>
+            <input inputMode="decimal" placeholder="80" value={pesoCorporeo} onChange={(e) => setPesoCorporeo(e.target.value)} className={stileInput} />
+          </label>
+        </div>
+        {kcalStimate !== null && <p className="text-sm text-muto">Stima indicativa: circa {kcalStimate} kcal</p>}
+      </section>
+
+      {errore && (
+        <p role="alert" className="rounded-xl bg-errore/10 p-3 text-sm text-errore">
+          {errore}
+        </p>
+      )}
+
+      <button type="button" onClick={salva} disabled={inCorso} className={stileBottonePrimario}>
+        {inCorso ? 'Salvataggio…' : 'Salva seduta'}
+      </button>
+
+      {timer && (
+        <div
+          role="timer"
+          aria-live="off"
+          className="fixed inset-x-4 z-10 mx-auto flex max-w-sm items-center justify-between rounded-full bg-inchiostro py-2 pr-2 pl-6 text-su-inchiostro shadow-lg"
+          style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
+          <div>
+            <p className="text-xs font-semibold text-su-inchiostro/70">{restano === 0 ? 'Recupero finito' : 'Recupero'}</p>
+            <p className="text-2xl leading-tight font-extrabold tabular-nums text-accento-chiaro">{formatTimer(restano)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTimer(null)}
+            className="rounded-full bg-su-inchiostro px-5 py-3 text-sm font-bold text-inchiostro active:opacity-80"
+          >
+            {restano === 0 ? 'Chiudi' : 'Salta'}
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 
-function Campo({ etichetta, children }: { etichetta: string; children: ReactNode }) {
+function descrizione(esercizio: Esercizio): string {
+  const o = esercizio.obiettivo
+  if (o.tipo === 'serie') return o.ripMin === o.ripMax ? `${o.serie} × ${o.ripMin}` : `${o.serie} × ${o.ripMin}-${o.ripMax}`
+  if (o.tipo === 'totale') return `${o.ripTotali} ripetizioni totali`
+  return o.serieMin === o.serieMax ? `${o.serieMin} serie` : `${o.serieMin}-${o.serieMax} serie`
+}
+
+function RigaSerieCampi(props: {
+  nome: string
+  indice: number
+  riga: RigaSerie
+  pesoSuggerito: string
+  ripSuggerite: string
+  alCambio: (patch: Partial<RigaSerie>) => void
+  alConferma: () => void
+}) {
+  const { nome, indice, riga, pesoSuggerito, ripSuggerite, alCambio, alConferma } = props
+  const colore = riga.confermata ? 'border-ok/60 bg-carta' : ''
   return (
-    <label className="block space-y-1 text-sm text-slate-400">
-      <span>{etichetta}</span>
-      {children}
-    </label>
+    <>
+      <span className="text-sm font-semibold text-muto">{indice + 1}</span>
+      <input
+        aria-label={`${nome}, serie ${indice + 1}: peso in kg`}
+        inputMode="decimal"
+        placeholder={pesoSuggerito}
+        value={riga.pesoKg}
+        onChange={(e) => alCambio({ pesoKg: e.target.value })}
+        className={`${stileInput} ${colore}`}
+      />
+      <input
+        aria-label={`${nome}, serie ${indice + 1}: ripetizioni`}
+        inputMode="numeric"
+        placeholder={ripSuggerite}
+        value={riga.ripetizioni}
+        onChange={(e) => alCambio({ ripetizioni: e.target.value })}
+        className={`${stileInput} ${colore}`}
+      />
+      <button
+        type="button"
+        aria-pressed={riga.confermata}
+        aria-label={`${riga.confermata ? 'Annulla conferma della' : 'Conferma la'} serie ${indice + 1} di ${nome}`}
+        onClick={alConferma}
+        className={`grid size-12 place-items-center justify-self-center rounded-full transition ${
+          riga.confermata ? 'bg-ok text-su-accento' : 'border border-bordo bg-carta-alta text-muto'
+        }`}
+      >
+        <IconaSpunta className="size-5" />
+      </button>
+    </>
   )
 }
