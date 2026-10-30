@@ -1,0 +1,18 @@
+# Database PostgreSQL per lo sviluppo in locale.
+# Avvio: docker compose up -d
+services:
+  db:
+    image: postgres:17
+    container_name: gympulse-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gympulse
+      POSTGRES_PASSWORD: gympulse
+      POSTGRES_DB: gympulse
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - gympulse-db:/var/lib/postgresql/data
+
+volumes:
+  gympulse-db:

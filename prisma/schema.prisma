@@ -1,0 +1,67 @@
+// Schema del database GymPulse.
+// PostgreSQL: in locale tramite Docker, online su Supabase.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Atleta. Quando arriverà il login (Better Auth) verrà collegato alla sua tabella utenti.
+model User {
+  id        String     @id
+  name      String
+  email     String?    @unique
+  createdAt DateTime   @default(now())
+  sessioni  Sessione[]
+}
+
+// Giorno della scheda (Giorno 1, 2, 3). L'id è lo stesso di src/data/scheda.ts.
+model GiornoScheda {
+  id       String     @id
+  numero   Int
+  titolo   String
+  focus    String
+  sessioni Sessione[]
+}
+
+// Catalogo degli esercizi. L'id è lo stesso di src/data/scheda.ts.
+model Esercizio {
+  id      String          @id
+  nome    String
+  muscoli String
+  serie   SerieEseguita[]
+}
+
+// Un allenamento svolto in palestra in una certa data.
+model Sessione {
+  id             String          @id @default(cuid())
+  userId         String
+  giornoId       String
+  data           DateTime        @default(now())
+  pesoCorporeoKg Float?
+  durataMinuti   Int?
+  kcalStimate    Int?
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  giorno         GiornoScheda    @relation(fields: [giornoId], references: [id])
+  serie          SerieEseguita[]
+
+  @@index([userId, data])
+}
+
+// Una serie registrata. Il peso è vuoto per gli esercizi a corpo libero.
+model SerieEseguita {
+  id          String    @id @default(cuid())
+  sessioneId  String
+  esercizioId String
+  ordine      Int
+  pesoKg      Float?
+  ripetizioni Int
+  sessione    Sessione  @relation(fields: [sessioneId], references: [id], onDelete: Cascade)
+  esercizio   Esercizio @relation(fields: [esercizioId], references: [id])
+
+  @@index([sessioneId])
+}
