@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest'
-import { schedaPredefinita } from '../data/scheda'
+import type { Esercizio } from './scheda-tipi'
 import { nuovaVoceForm, voceFormDaEsercizio, vocePerInvio } from './scheda-form'
 
-const panca = schedaPredefinita[0].esercizi[0]
-const addomeSbarra = schedaPredefinita[1].esercizi.find((e) => e.id === 'addome-giorno-2')!
-const addomeLibero = schedaPredefinita[0].esercizi.find((e) => e.id === 'addome-giorno-1')!
+const panca: Esercizio = {
+  id: 'panca-piana',
+  nome: 'Panca piana',
+  muscoli: 'Petto',
+  obiettivo: { tipo: 'serie', serie: 4, ripMin: 6, ripMax: 6, recuperoSec: 120 },
+  nota: 'Carico a salire (+5 kg)',
+  incrementoKg: 5,
+}
+const addomeSbarra: Esercizio = {
+  id: 'addome-sbarra',
+  nome: 'Addome alla sbarra',
+  muscoli: 'Addominali',
+  obiettivo: { tipo: 'totale', ripTotali: 50 },
+}
+const addomeLibero: Esercizio = {
+  id: 'addome-libero',
+  nome: 'Addome a piacere',
+  muscoli: 'Addominali',
+  obiettivo: { tipo: 'libero', serieMin: 3, serieMax: 4 },
+}
 
 describe('voceFormDaEsercizio e vocePerInvio', () => {
   it('andata e ritorno per un esercizio a serie', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { schedaPredefinita } from '../data/scheda'
+import type { Esercizio } from './scheda-tipi'
 import {
   calcolaRecord,
   massimoKg,
@@ -10,7 +10,20 @@ import {
 } from './progressi'
 import type { UltimeVolte } from './tipi'
 
-const giornoA = schedaPredefinita[0]
+const caricoASalire: Esercizio = {
+  id: 'panca-piana',
+  nome: 'Panca piana',
+  muscoli: 'Petto',
+  obiettivo: { tipo: 'serie', serie: 4, ripMin: 6, ripMax: 6, recuperoSec: 120 },
+  incrementoKg: 5,
+}
+const senzaCarico: Esercizio = {
+  id: 'curl-ez',
+  nome: 'Curl EZ',
+  muscoli: 'Bicipiti',
+  obiettivo: { tipo: 'serie', serie: 3, ripMin: 8, ripMax: 10, recuperoSec: 90 },
+}
+const giornoA = { esercizi: [caricoASalire, senzaCarico] }
 const panca = giornoA.esercizi[0]
 
 function volta(serie: { pesoKg: number | null; ripetizioni: number }[], datiIniziali = false): UltimeVolte[string] {

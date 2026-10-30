@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { schedaPredefinita } from '../data/scheda'
 import {
   descrizioneObiettivo,
   formatRecupero,
@@ -128,19 +127,3 @@ describe('serieIniziali e ripetizioniTarget', () => {
   })
 })
 
-describe('scheda predefinita', () => {
-  const esercizi = schedaPredefinita.flatMap((g) => g.esercizi)
-
-  it('ha le giornate A, B e C', () => {
-    expect(schedaPredefinita.map((g) => g.id)).toEqual(['A', 'B', 'C'])
-  })
-
-  it('contiene 22 esercizi: i 19 del PDF, il curl con manubri e i 3 addominali', () => {
-    expect(esercizi).toHaveLength(23)
-  })
-
-  it('usa un id unico per ogni esercizio', () => {
-    const ids = esercizi.map((e) => e.id)
-    expect(new Set(ids).size).toBe(ids.length)
-  })
-})

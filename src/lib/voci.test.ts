@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { schedaPredefinita, type Obiettivo } from '../data/scheda'
+import type { Obiettivo } from './scheda-tipi'
 import { campiObiettivo, esercizioDaVoce, type VoceDb } from './voci'
 
 const base: VoceDb = {
@@ -61,8 +61,8 @@ describe('campiObiettivo', () => {
     })
   })
 
-  it('andata e ritorno: ogni obiettivo della scheda predefinita resta uguale', () => {
-    const esercizi = schedaPredefinita.flatMap((g) => g.esercizi)
+  it('andata e ritorno: ogni esercizio con il suo obiettivo resta uguale', () => {
+    const esercizi = obiettivi.map((obiettivo, i) => ({ id: `e${i}`, nome: `Esercizio ${i}`, muscoli: '', obiettivo }))
     for (const esercizio of esercizi) {
       const campi = campiObiettivo(esercizio.obiettivo)
       const di = { ...base, ...campi, esercizio: { id: esercizio.id, nome: esercizio.nome, muscoli: esercizio.muscoli } }
