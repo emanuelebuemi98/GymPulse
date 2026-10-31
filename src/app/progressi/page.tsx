@@ -5,7 +5,7 @@ import { stileCarta } from '@/components/stili'
 import { formatData, formatDataBreve, formatDataNumerica, formatNumero } from '@/lib/formato'
 import { miglioreRM } from '@/lib/progressi'
 import { andamentoEsercizio, eserciziConDati, recordPerEsercizio } from '@/lib/storico'
-import { primoParametro } from '@/lib/url'
+import { idDaParametro } from '@/lib/url'
 import { richiediUtente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: i grafici si aggiornano dopo ogni seduta.
@@ -17,7 +17,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 
 export default async function ProgressiPage({ searchParams }: Props) {
   const userId = await richiediUtente()
-  const richiesto = primoParametro((await searchParams).e)
+  const richiesto = idDaParametro((await searchParams).e)
   const [esercizi, record] = await Promise.all([eserciziConDati(userId), recordPerEsercizio(userId)])
 
   if (esercizi.length === 0) {

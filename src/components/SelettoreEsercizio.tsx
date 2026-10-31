@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation'
 import { stileTesto } from './stili'
 
 type Props = {
-  esercizi: { id: string; nome: string }[]
-  scelto: string
+  esercizi: { id: number; nome: string }[]
+  scelto: number
 }
 
 export function SelettoreEsercizio({ esercizi, scelto }: Props) {
@@ -16,7 +16,7 @@ export function SelettoreEsercizio({ esercizi, scelto }: Props) {
       <span>Esercizio</span>
       <select
         value={scelto}
-        onChange={(e) => router.push(`/progressi?e=${encodeURIComponent(e.target.value)}`)}
+        onChange={(e) => router.push(`/progressi?e=${Number(e.target.value)}`)}
         className={`${stileTesto} text-left`}
       >
         {esercizi.map((esercizio) => (

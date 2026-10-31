@@ -7,7 +7,7 @@ export type TipoVoce = 'serie' | 'totale' | 'libero'
 // Una riga dell'editor della scheda: tutti i numeri sono testo, come nei campi del form.
 export type VoceForm = {
   chiave: string
-  esercizioId: string | null
+  esercizioId: number | null
   nomeNuovo: string
   nome: string
   tipo: TipoVoce
@@ -23,7 +23,7 @@ export type VoceForm = {
 }
 
 export type VocePerInvio = {
-  esercizioId: string | null
+  esercizioId: number | null
   nomeNuovo: string | null
   tipo: TipoVoce
   serie: number | null
@@ -53,7 +53,7 @@ export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
   const o = esercizio.obiettivo
   return {
     ...predefiniti,
-    chiave: esercizio.id,
+    chiave: `e${esercizio.id}`,
     esercizioId: esercizio.id,
     nomeNuovo: '',
     nome: esercizio.nome,
@@ -74,7 +74,7 @@ export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
 }
 
 // Nuova riga per un esercizio del catalogo (esercizioId) oppure con un nome tutto nuovo.
-export function nuovaVoceForm(chiave: string, scelta: { esercizioId: string; nome: string } | { nomeNuovo: string }): VoceForm {
+export function nuovaVoceForm(chiave: string, scelta: { esercizioId: number; nome: string } | { nomeNuovo: string }): VoceForm {
   return {
     ...predefiniti,
     chiave,

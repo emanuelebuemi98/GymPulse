@@ -74,12 +74,12 @@ export function suggerimentoSerie(
   }
 }
 
-export type RigaRecord = { esercizioId: string; nome: string; pesoKg: number | null; data: Date }
-export type RecordEsercizio = { esercizioId: string; nome: string; pesoKg: number; data: Date }
+export type RigaRecord = { esercizioId: number; nome: string; pesoKg: number | null; data: Date }
+export type RecordEsercizio = { esercizioId: number; nome: string; pesoKg: number; data: Date }
 
 // Il peso più alto per ogni esercizio, con la data in cui è stato raggiunto per la prima volta.
 export function calcolaRecord(righe: RigaRecord[]): RecordEsercizio[] {
-  const migliori = new Map<string, RecordEsercizio>()
+  const migliori = new Map<number, RecordEsercizio>()
   for (const riga of righe) {
     if (riga.pesoKg === null) continue
     const attuale = migliori.get(riga.esercizioId)

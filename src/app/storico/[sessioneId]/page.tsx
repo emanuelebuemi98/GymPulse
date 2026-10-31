@@ -5,6 +5,7 @@ import { EliminaSessione } from '@/components/EliminaSessione'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
 import { formatData, formatDataLunga, formatNumero } from '@/lib/formato'
 import { dettaglioSessione } from '@/lib/storico'
+import { idDaParametro } from '@/lib/url'
 import { richiediUtente, utenteCorrente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: il dettaglio viene dal database.
@@ -15,15 +16,15 @@ type Props = { params: Promise<{ sessioneId: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const userId = await utenteCorrente()
   if (!userId) return { title: 'Seduta' }
-  const { sessioneId } = await params
-  const sessione = await dettaglioSessione(userId, sessioneId)
+  const sessioneId = idDaParametro((await params).sessioneId)
+  const sessione = sessioneId === null ? null : await dettaglioSessione(userId, sessioneId)
   return { title: sessione ? `Seduta del ${formatData(sessione.data)}` : 'Seduta non trovata' }
 }
 
 export default async function DettaglioSessionePage({ params }: Props) {
   const userId = await richiediUtente()
-  const { sessioneId } = await params
-  const sessione = await dettaglioSessione(userId, sessioneId)
+  const sessioneId = idDaParametro((await params).sessioneId)
+  const sessione = sessioneId === null ? null : await dettaglioSessione(userId, sessioneId)
   if (!sessione) notFound()
 
   return (

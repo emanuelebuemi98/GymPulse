@@ -19,7 +19,7 @@ const serieSchema = z.object({
 // Un esercizio della scheda o del catalogo (esercizioId) oppure uno nuovo (nomeNuovo): mai entrambi.
 const esercizioSchema = z
   .object({
-    esercizioId: z.string().min(1).nullable(),
+    esercizioId: z.number().int().positive().max(2_147_483_647).nullable(),
     nomeNuovo: z.string().trim().min(1, 'Nome esercizio mancante').max(60, 'Nome esercizio troppo lungo').nullable(),
     serie: z.array(serieSchema).max(50, 'Troppe serie per un esercizio'),
   })
@@ -58,7 +58,7 @@ export function validaSessione(input: unknown, ora = new Date()): EsitoValidazio
   const istante = istanteDaData(dati.data, ora)
   if (!istante) return { ok: false, errore: 'La data non è valida o è nel futuro' }
 
-  const ids = new Set<string>()
+  const ids = new Set<number>()
   const nomi = new Set<string>()
   for (const esercizio of dati.esercizi) {
     if (esercizio.esercizioId !== null) {

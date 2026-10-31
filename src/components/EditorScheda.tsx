@@ -26,9 +26,8 @@ const etichetteTipo: Record<TipoVoce, string> = {
 export function EditorScheda({ giorno, catalogo }: Props) {
   const router = useRouter()
   const [titolo, setTitolo] = useState(giorno.titolo)
-  const [focus, setFocus] = useState(giorno.focus)
   const [voci, setVoci] = useState<VoceForm[]>(() => giorno.esercizi.map(voceFormDaEsercizio))
-  const [aggiunta, setAggiunta] = useState('')
+  const [aggiunta, setAggiunta] = useState<number | null>(null)
   const [nomeLibero, setNomeLibero] = useState('')
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
@@ -51,10 +50,10 @@ export function EditorScheda({ giorno, catalogo }: Props) {
   }
 
   function aggiungiDalCatalogo() {
-    const scelto = catalogo.find((voce) => voce.id === aggiunta)
+    const scelto = aggiunta === null ? undefined : catalogo.find((voce) => voce.id === aggiunta)
     if (!scelto) return
     setVoci((prec) => [...prec, nuovaVoceForm(`catalogo-${scelto.id}`, { esercizioId: scelto.id, nome: scelto.nome })])
-    setAggiunta('')
+    setAggiunta(null)
   }
 
   function aggiungiLibero() {
@@ -84,7 +83,7 @@ export function EditorScheda({ giorno, catalogo }: Props) {
     if (sbagliata) return setErrore(sbagliata.errore)
 
     startTransition(async () => {
-      const esito = await salvaScheda({ giornoId: giorno.id, titolo, focus, voci: convertite })
+      const esito = await salvaScheda({ giornoId: giorno.id, titolo, voci: convertite })
       if ('errore' in esito) return setErrore(esito.errore)
       router.push(`/scheda?r=${giorno.id}`)
       router.refresh()
@@ -104,10 +103,6 @@ export function EditorScheda({ giorno, catalogo }: Props) {
         <label className="block space-y-1 text-sm text-muto">
           <span>Titolo</span>
           <input value={titolo} maxLength={60} onChange={(e) => setTitolo(e.target.value)} className={`${stileTesto} text-left`} />
-        </label>
-        <label className="block space-y-1 text-sm text-muto">
-          <span>Focus (facoltativo)</span>
-          <input value={focus} maxLength={80} onChange={(e) => setFocus(e.target.value)} className={`${stileTesto} text-left`} />
         </label>
       </section>
 
@@ -183,7 +178,7 @@ export function EditorScheda({ giorno, catalogo }: Props) {
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Aggiungi esercizio</h2>
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <select value={aggiunta} onChange={(e) => setAggiunta(e.target.value)} className={`${stileTesto} text-left`}>
+          <select value={aggiunta ?? ''} onChange={(e) => setAggiunta(e.target.value === '' ? null : Number(e.target.value))} className={`${stileTesto} text-left`}>
             <option value="">Dalle routine…</option>
             {disponibili.map((voce) => (
               <option key={voce.id} value={voce.id}>
@@ -191,7 +186,7 @@ export function EditorScheda({ giorno, catalogo }: Props) {
               </option>
             ))}
           </select>
-          <button type="button" aria-label="Aggiungi l'esercizio scelto" disabled={aggiunta === ''} onClick={aggiungiDalCatalogo} className={`${stileBottoneChiaro} px-4`}>
+          <button type="button" aria-label="Aggiungi l'esercizio scelto" disabled={aggiunta === null} onClick={aggiungiDalCatalogo} className={`${stileBottoneChiaro} px-4`}>
             <IconaPiu className="size-5" />
           </button>
         </div>

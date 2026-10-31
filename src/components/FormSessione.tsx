@@ -17,7 +17,7 @@ type RigaSerie = { pesoKg: string; ripetizioni: string; confermata: boolean }
 
 type EsSessione = {
   chiave: string
-  esercizioId: string | null // null = esercizio nuovo, creato al salvataggio
+  esercizioId: number | null // null = esercizio nuovo, creato al salvataggio
   nomeNuovo: string
   nome: string
   serie: RigaSerie[]
@@ -43,7 +43,7 @@ const rigaVuota = (): RigaSerie => ({ pesoKg: '', ripetizioni: '', confermata: f
 
 function esercizioIniziale(esercizio: Esercizio): EsSessione {
   return {
-    chiave: esercizio.id,
+    chiave: `e${esercizio.id}`,
     esercizioId: esercizio.id,
     nomeNuovo: '',
     nome: esercizio.nome,
@@ -70,7 +70,7 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
   const [pesoCorporeo, setPesoCorporeo] = useState(pesoCorporeoIniziale === null ? '' : String(pesoCorporeoIniziale))
   const [errore, setErrore] = useState<string | null>(null)
   const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
-  const [aggiunta, setAggiunta] = useState('')
+  const [aggiunta, setAggiunta] = useState<number | null>(null)
   const [nomeLibero, setNomeLibero] = useState('')
   const [timer, setTimer] = useState<{ fine: number; totale: number } | null>(null)
   const [restano, setRestano] = useState(0)
@@ -208,7 +208,7 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
   }
 
   function aggiungiDalCatalogo() {
-    const scelto = catalogo.find((voce) => voce.id === aggiunta)
+    const scelto = aggiunta === null ? undefined : catalogo.find((voce) => voce.id === aggiunta)
     if (!scelto) return
     setEsercizi((prec) => [
       ...prec,
@@ -220,7 +220,7 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
         serie: Array.from({ length: 3 }, rigaVuota),
       },
     ])
-    setAggiunta('')
+    setAggiunta(null)
   }
 
   function aggiungiLibero() {
@@ -409,7 +409,11 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Aggiungi esercizio</h2>
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <select value={aggiunta} onChange={(e) => setAggiunta(e.target.value)} className={`${stileTesto} text-left`}>
+          <select
+            value={aggiunta ?? ''}
+            onChange={(e) => setAggiunta(e.target.value === '' ? null : Number(e.target.value))}
+            className={`${stileTesto} text-left`}
+          >
             <option value="">Dalle routine…</option>
             {disponibili.map((voce) => (
               <option key={voce.id} value={voce.id}>
@@ -417,7 +421,7 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
               </option>
             ))}
           </select>
-          <button type="button" aria-label="Aggiungi l'esercizio scelto" disabled={aggiunta === ''} onClick={aggiungiDalCatalogo} className={`${stileBottoneChiaro} px-4`}>
+          <button type="button" aria-label="Aggiungi l'esercizio scelto" disabled={aggiunta === null} onClick={aggiungiDalCatalogo} className={`${stileBottoneChiaro} px-4`}>
             <IconaPiu className="size-5" />
           </button>
         </div>

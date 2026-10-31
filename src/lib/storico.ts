@@ -1,9 +1,15 @@
 import { db } from './db'
+import { stimaKcal } from './allenamento'
 import { calcolaRecord, massimoKg, volumeSerie, type RecordEsercizio } from './progressi'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
 
+// Le kcal non si salvano: si ricavano da peso corporeo e durata, che servono entrambi.
+function kcalDa(pesoCorporeoKg: number | null, durataMinuti: number | null): number | null {
+  return pesoCorporeoKg !== null && durataMinuti !== null ? stimaKcal(pesoCorporeoKg, durataMinuti) : null
+}
+
 // Conteggi e ultima seduta per la home.
-export async function riepilogoHome(userId: string) {
+export async function riepilogoHome(userId: number) {
   const [totale, ultima] = await Promise.all([
     db.sessione.count({ where: { userId } }),
     db.sessione.findFirst({
@@ -27,7 +33,7 @@ export async function riepilogoHome(userId: string) {
 }
 
 // Riepilogo di ogni allenamento, dal più recente.
-export async function elencoSessioni(userId: string) {
+export async function elencoSessioni(userId: number) {
   const sessioni = await db.sessione.findMany({
     where: { userId },
     orderBy: { data: 'desc' },
@@ -43,15 +49,15 @@ export async function elencoSessioni(userId: string) {
     numeroSerie: sessione.serie.length,
     volumeKg: volumeSerie(sessione.serie),
     durataMinuti: sessione.durataMinuti,
-    kcalStimate: sessione.kcalStimate,
+    kcalStimate: kcalDa(sessione.pesoCorporeoKg, sessione.durataMinuti),
     datiIniziali: sessione.datiIniziali,
   }))
 }
 
-type GruppoEsercizio = { id: string; nome: string; muscoli: string; serie: SerieRegistrata[] }
+type GruppoEsercizio = { id: number; nome: string; muscoli: string; serie: SerieRegistrata[] }
 
 // Dettaglio di un allenamento, con gli esercizi nell'ordine in cui sono stati fatti.
-export async function dettaglioSessione(userId: string, sessioneId: string) {
+export async function dettaglioSessione(userId: number, sessioneId: number) {
   const sessione = await db.sessione.findFirst({
     where: { id: sessioneId, userId },
     include: {
@@ -61,7 +67,7 @@ export async function dettaglioSessione(userId: string, sessioneId: string) {
   })
   if (!sessione) return null
 
-  const gruppi = new Map<string, GruppoEsercizio>()
+  const gruppi = new Map<number, GruppoEsercizio>()
   for (const riga of sessione.serie) {
     const gruppo = gruppi.get(riga.esercizioId) ?? {
       id: riga.esercizioId,
@@ -80,7 +86,7 @@ export async function dettaglioSessione(userId: string, sessioneId: string) {
     giornoTitolo: sessione.giorno.titolo,
     durataMinuti: sessione.durataMinuti,
     pesoCorporeoKg: sessione.pesoCorporeoKg,
-    kcalStimate: sessione.kcalStimate,
+    kcalStimate: kcalDa(sessione.pesoCorporeoKg, sessione.durataMinuti),
     note: sessione.note,
     datiIniziali: sessione.datiIniziali,
     esercizi: [...gruppi.values()],
@@ -88,7 +94,7 @@ export async function dettaglioSessione(userId: string, sessioneId: string) {
 }
 
 // Per ogni esercizio richiesto, le serie dell'ultima seduta in cui è comparso.
-export async function ultimeVolte(userId: string, esercizioIds: string[]): Promise<UltimeVolte> {
+export async function ultimeVolte(userId: number, esercizioIds: number[]): Promise<UltimeVolte> {
   if (esercizioIds.length === 0) return {}
 
   const righe = await db.serieEseguita.findMany({
@@ -98,7 +104,7 @@ export async function ultimeVolte(userId: string, esercizioIds: string[]): Promi
   })
 
   const risultato: UltimeVolte = {}
-  const sessioneScelta = new Map<string, string>()
+  const sessioneScelta = new Map<number, number>()
   for (const riga of righe) {
     const scelta = sessioneScelta.get(riga.esercizioId)
     if (scelta === undefined) sessioneScelta.set(riga.esercizioId, riga.sessioneId)
@@ -115,7 +121,7 @@ export async function ultimeVolte(userId: string, esercizioIds: string[]): Promi
 }
 
 // Peso corporeo dell'ultima seduta che lo riporta: precompila il campo del form.
-export async function ultimoPesoCorporeo(userId: string): Promise<number | null> {
+export async function ultimoPesoCorporeo(userId: number): Promise<number | null> {
   const sessione = await db.sessione.findFirst({
     where: { userId, pesoCorporeoKg: { not: null } },
     orderBy: { data: 'desc' },
@@ -125,7 +131,7 @@ export async function ultimoPesoCorporeo(userId: string): Promise<number | null>
 }
 
 export type SedutaEsercizio = {
-  sessioneId: string
+  sessioneId: number
   data: Date
   datiIniziali: boolean
   serie: SerieRegistrata[]
@@ -134,7 +140,7 @@ export type SedutaEsercizio = {
 }
 
 // Esercizi con almeno una serie registrata: sono quelli che hanno un andamento da mostrare.
-export async function eserciziConDati(userId: string) {
+export async function eserciziConDati(userId: number) {
   const righe = await db.esercizio.findMany({
     where: { userId, serie: { some: {} } },
     select: { id: true, nome: true },
@@ -143,14 +149,14 @@ export async function eserciziConDati(userId: string) {
 }
 
 // Tutte le sedute in cui compare un esercizio, dalla più vecchia.
-export async function andamentoEsercizio(userId: string, esercizioId: string): Promise<SedutaEsercizio[]> {
+export async function andamentoEsercizio(userId: number, esercizioId: number): Promise<SedutaEsercizio[]> {
   const righe = await db.serieEseguita.findMany({
     where: { userId, esercizioId },
     include: { sessione: { select: { data: true, datiIniziali: true } } },
     orderBy: [{ sessione: { data: 'asc' } }, { ordine: 'asc' }],
   })
 
-  const perSessione = new Map<string, { data: Date; datiIniziali: boolean; serie: SerieRegistrata[] }>()
+  const perSessione = new Map<number, { data: Date; datiIniziali: boolean; serie: SerieRegistrata[] }>()
   for (const riga of righe) {
     const gruppo = perSessione.get(riga.sessioneId) ?? {
       data: riga.sessione.data,
@@ -170,7 +176,7 @@ export async function andamentoEsercizio(userId: string, esercizioId: string): P
 }
 
 // Il peso più alto mai sollevato per ogni esercizio.
-export async function recordPerEsercizio(userId: string): Promise<RecordEsercizio[]> {
+export async function recordPerEsercizio(userId: number): Promise<RecordEsercizio[]> {
   const righe = await db.serieEseguita.findMany({
     where: { userId, pesoKg: { not: null } },
     include: { esercizio: { select: { nome: true } }, sessione: { select: { data: true } } },
@@ -186,11 +192,11 @@ export async function recordPerEsercizio(userId: string): Promise<RecordEsercizi
 }
 
 // Tutto quello che serve per un backup completo.
-export async function datiPerBackup(userId: string) {
+export async function datiPerBackup(userId: number) {
   const [giorni, esercizi, sessioni] = await Promise.all([
     db.giornoScheda.findMany({
       where: { userId },
-      orderBy: { numero: 'asc' },
+      orderBy: { id: 'asc' },
       include: { voci: { orderBy: { ordine: 'asc' } } },
     }),
     db.esercizio.findMany({ where: { userId }, orderBy: { id: 'asc' } }),

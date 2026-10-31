@@ -8,7 +8,7 @@ export type Obiettivo =
   | { tipo: 'libero'; serieMin: number; serieMax: number }
 
 export type Esercizio = {
-  id: string
+  id: number
   nome: string
   muscoli: string
   obiettivo: Obiettivo
@@ -19,8 +19,6 @@ export type Esercizio = {
 
 export type Giorno = {
   id: string // sigla: A, B, C
-  numero: number
   titolo: string
-  focus: string
   esercizi: Esercizio[]
 }

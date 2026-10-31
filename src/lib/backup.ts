@@ -6,14 +6,13 @@ import { z } from 'zod'
 const intero = z.number().int().nullable()
 
 const esercizioSchema = z.object({
-  id: z.string().min(1).max(100),
+  id: z.number().int().positive().max(2_147_483_647),
   nome: z.string().min(1).max(100),
   muscoli: z.string().max(200),
-  personalizzato: z.boolean(),
 })
 
 const voceSchema = z.object({
-  esercizioId: z.string().min(1),
+  esercizioId: z.number().int().positive().max(2_147_483_647),
   ordine: z.number().int().min(1),
   tipo: z.enum(['serie', 'totale', 'libero']),
   serie: intero,
@@ -29,34 +28,31 @@ const voceSchema = z.object({
 
 const giornoSchema = z.object({
   id: z.string().min(1).max(20),
-  numero: z.number().int(),
   titolo: z.string().min(1).max(100),
-  focus: z.string().max(200),
   voci: z.array(voceSchema).max(60),
 })
 
 const serieSchema = z.object({
-  esercizioId: z.string().min(1),
+  esercizioId: z.number().int().positive().max(2_147_483_647),
   ordine: z.number().int().min(1),
   pesoKg: z.number().min(0).max(1000).nullable(),
   ripetizioni: z.number().int().min(1).max(10000),
 })
 
 const sessioneSchema = z.object({
-  id: z.string().min(1).max(100),
+  id: z.number().int().positive().max(2_147_483_647),
   giornoId: z.string().min(1),
   data: z.iso.datetime(),
   note: z.string().max(1000).nullable(),
   pesoCorporeoKg: z.number().min(0).max(1000).nullable(),
   durataMinuti: intero,
-  kcalStimate: intero,
   datiIniziali: z.boolean(),
   serie: z.array(serieSchema).max(1000),
 })
 
 const backupSchema = z.object({
   formato: z.literal('gympulse-backup'),
-  versione: z.literal(1),
+  versione: z.literal(3),
   esportatoIl: z.iso.datetime(),
   esercizi: z.array(esercizioSchema).max(2000),
   scheda: z.array(giornoSchema).min(1).max(20),
@@ -66,7 +62,7 @@ const backupSchema = z.object({
 export type Backup = z.infer<typeof backupSchema>
 
 type VoceDb = {
-  esercizioId: string
+  esercizioId: number
   ordine: number
   tipo: string
   serie: number | null
@@ -81,37 +77,29 @@ type VoceDb = {
 }
 
 export type DatiBackup = {
-  esercizi: { id: string; nome: string; muscoli: string; personalizzato: boolean }[]
-  giorni: { id: string; numero: number; titolo: string; focus: string; voci: VoceDb[] }[]
+  esercizi: { id: number; nome: string; muscoli: string }[]
+  giorni: { id: string; titolo: string; voci: VoceDb[] }[]
   sessioni: {
-    id: string
+    id: number
     giornoId: string
     data: Date
     note: string | null
     pesoCorporeoKg: number | null
     durataMinuti: number | null
-    kcalStimate: number | null
     datiIniziali: boolean
-    serie: { esercizioId: string; ordine: number; pesoKg: number | null; ripetizioni: number }[]
+    serie: { esercizioId: number; ordine: number; pesoKg: number | null; ripetizioni: number }[]
   }[]
 }
 
 export function creaBackup(dati: DatiBackup, ora = new Date()): Backup {
   return {
     formato: 'gympulse-backup',
-    versione: 1,
+    versione: 3,
     esportatoIl: ora.toISOString(),
-    esercizi: dati.esercizi.map((e) => ({
-      id: e.id,
-      nome: e.nome,
-      muscoli: e.muscoli,
-      personalizzato: e.personalizzato,
-    })),
+    esercizi: dati.esercizi.map((e) => ({ id: e.id, nome: e.nome, muscoli: e.muscoli })),
     scheda: dati.giorni.map((giorno) => ({
       id: giorno.id,
-      numero: giorno.numero,
       titolo: giorno.titolo,
-      focus: giorno.focus,
       voci: giorno.voci.map((voce) => ({
         esercizioId: voce.esercizioId,
         ordine: voce.ordine,
@@ -134,7 +122,6 @@ export function creaBackup(dati: DatiBackup, ora = new Date()): Backup {
       note: sessione.note,
       pesoCorporeoKg: sessione.pesoCorporeoKg,
       durataMinuti: sessione.durataMinuti,
-      kcalStimate: sessione.kcalStimate,
       datiIniziali: sessione.datiIniziali,
       serie: sessione.serie.map((serie) => ({
         esercizioId: serie.esercizioId,

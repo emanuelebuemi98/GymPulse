@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { eliminaSessione } from '@/app/actions'
 import { IconaCestino } from './icone'
 
-export function EliminaSessione({ id }: { id: string }) {
+export function EliminaSessione({ id }: { id: number }) {
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
 

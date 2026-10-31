@@ -12,7 +12,7 @@ export type VoceDb = {
   serieMax: number | null
   nota: string | null
   incrementoKg: number | null
-  esercizio: { id: string; nome: string; muscoli: string }
+  esercizio: { id: number; nome: string; muscoli: string }
 }
 
 export type CampiObiettivo = Pick<

@@ -9,6 +9,7 @@ export type UltimaVolta = {
   serie: SerieRegistrata[]
 }
 
-export type UltimeVolte = Record<string, UltimaVolta>
+// Chiave: l'id numerico dell'esercizio.
+export type UltimeVolte = Record<number, UltimaVolta>
 
-export type VoceCatalogo = { id: string; nome: string; muscoli: string }
+export type VoceCatalogo = { id: number; nome: string; muscoli: string }

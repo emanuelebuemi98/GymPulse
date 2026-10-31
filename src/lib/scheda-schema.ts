@@ -9,7 +9,7 @@ const intero = (min: number, max: number, messaggio: string) =>
 
 const voceSchema = z
   .object({
-    esercizioId: z.string().min(1).nullable(),
+    esercizioId: z.number().int().positive().max(2_147_483_647).nullable(),
     nomeNuovo: z.string().trim().min(1, 'Nome esercizio mancante').max(60, 'Nome esercizio troppo lungo').nullable(),
     tipo: z.enum(['serie', 'totale', 'libero']),
     serie: intero(1, 20, 'Le serie devono essere da 1 a 20'),
@@ -31,12 +31,11 @@ const voceSchema = z
 const schedaSchema = z.object({
   giornoId: z.string().min(1, 'Giorno mancante'),
   titolo: z.string().trim().min(1, 'Scrivi un titolo').max(60, 'Il titolo è troppo lungo'),
-  focus: z.string().trim().max(80, 'Il focus è troppo lungo'),
   voci: z.array(voceSchema).min(1, 'Aggiungi almeno un esercizio').max(30, 'Troppi esercizi'),
 })
 
 export type VoceNormalizzata = {
-  esercizioId: string | null
+  esercizioId: number | null
   nomeNuovo: string | null
   obiettivo: Obiettivo
   nota: string | null
@@ -46,7 +45,6 @@ export type VoceNormalizzata = {
 export type SchedaNormalizzata = {
   giornoId: string
   titolo: string
-  focus: string
   voci: VoceNormalizzata[]
 }
 
@@ -56,13 +54,13 @@ export function validaScheda(input: unknown): EsitoScheda {
   const parsed = schedaSchema.safeParse(input)
   if (!parsed.success) return { ok: false, errore: parsed.error.issues[0]?.message ?? 'Dati non validi' }
 
-  const { giornoId, titolo, focus, voci } = parsed.data
-  const ids = new Set<string>()
+  const { giornoId, titolo, voci } = parsed.data
+  const ids = new Set<number>()
   const nomi = new Set<string>()
   const normalizzate: VoceNormalizzata[] = []
 
   for (const voce of voci) {
-    const nome = voce.esercizioId ?? voce.nomeNuovo!
+    const nome = voce.nomeNuovo ?? ''
     if (voce.esercizioId !== null) {
       if (ids.has(voce.esercizioId)) return { ok: false, errore: 'Esercizio ripetuto' }
       ids.add(voce.esercizioId)
@@ -104,5 +102,5 @@ export function validaScheda(input: unknown): EsitoScheda {
     })
   }
 
-  return { ok: true, dati: { giornoId, titolo, focus, voci: normalizzate } }
+  return { ok: true, dati: { giornoId, titolo, voci: normalizzate } }
 }
