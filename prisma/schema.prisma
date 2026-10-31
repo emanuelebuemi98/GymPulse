@@ -96,6 +96,10 @@ model Sessione {
   note         String?
   durataMinuti Int?
   datiIniziali Boolean         @default(false)
+  // Dati dell'orologio, scritti a mano o letti da un file TCX. Vuoti se per la seduta non ci sono.
+  fcMediaBpm   Int?
+  fcMassimaBpm Int?
+  kcalOrologio Int?
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   giorno       GiornoScheda    @relation(fields: [userId, giornoId], references: [userId, id], onDelete: NoAction)
   serie        SerieEseguita[]
