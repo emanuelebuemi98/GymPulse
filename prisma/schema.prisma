@@ -2,9 +2,15 @@
 // PostgreSQL: in locale tramite Docker, online su Supabase.
 //
 // Ogni persona ha il proprio account e i propri dati: giornate, esercizi, sedute e serie portano
-// sempre lo userId. Le chiavi composite (userId, id) fanno sì che due persone possano avere entrambe
-// una giornata "A" o un esercizio con lo stesso id senza toccarsi, e le chiavi esterne composite
-// impediscono a un dato di puntare a quello di un'altra persona.
+// sempre lo userId. Le chiavi esterne composte (userId, ...) impediscono a un dato di puntare a quello
+// di un'altra persona, anche conoscendone l'id.
+//
+// Id: in ogni tabella è il primo campo. User, Esercizio e Sessione hanno un numero progressivo. La giornata
+// ha la sigla (A, B, C) e vale per persona, quindi la chiave è (userId, id). Voci della scheda e serie hanno
+// un id testuale casuale.
+//
+// L'ordine dei campi qui è anche l'ordine delle colonne nel database: se lo cambi, la migrazione deve
+// ricostruire la tabella (Postgres non sposta le colonne).
 
 generator client {
   provider = "prisma-client"
@@ -15,26 +21,23 @@ datasource db {
   provider = "postgresql"
 }
 
-// Account. username e passwordHash servono al login: passwordHash è un hash scrypt, mai la password.
+// Account. Si crea dalla registrazione nell'app. fullName è il nome completo; username e passwordHash servono
+// al login (passwordHash è un hash scrypt, mai la password).
 model User {
-  id           String         @id
-  name         String
-  email        String?        @unique
-  username     String?        @unique
-  passwordHash String?
-  createdAt    DateTime       @default(now())
+  id           Int            @id @default(autoincrement())
+  fullName     String
+  username     String         @unique
+  passwordHash String
   giorni       GiornoScheda[]
   esercizi     Esercizio[]
   sessioni     Sessione[]
 }
 
-// Giornata della scheda di una persona. L'id è la sigla: A, B, C.
+// Giornata della scheda di una persona. L'id è la sigla: A, B, C. L'ordine delle giornate è quello delle sigle.
 model GiornoScheda {
-  userId   String
   id       String
-  numero   Int
+  userId   Int
   titolo   String
-  focus    String
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   voci     VoceScheda[]
   sessioni Sessione[]
@@ -43,17 +46,17 @@ model GiornoScheda {
 }
 
 // Esercizi noti a una persona: quelli della sua scheda e quelli che ha aggiunto.
+// L'unicità (userId, id) serve alle chiavi esterne composte di voci e serie.
 model Esercizio {
-  userId         String
-  id             String
-  nome           String
-  muscoli        String
-  personalizzato Boolean         @default(false)
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  voci           VoceScheda[]
-  serie          SerieEseguita[]
+  id      Int             @id @default(autoincrement())
+  userId  Int
+  nome    String
+  muscoli String
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voci    VoceScheda[]
+  serie   SerieEseguita[]
 
-  @@id([userId, id])
+  @@unique([userId, id])
 }
 
 // Un esercizio dentro una giornata, con il suo obiettivo. È la parte modificabile dall'app.
@@ -62,9 +65,9 @@ model Esercizio {
 // tipo = "libero": da serieMin a serieMax serie a scelta
 model VoceScheda {
   id           String       @id @default(cuid())
-  userId       String
+  userId       Int
   giornoId     String
-  esercizioId  String
+  esercizioId  Int
   ordine       Int
   tipo         String       @default("serie")
   serie        Int?
@@ -83,17 +86,16 @@ model VoceScheda {
   @@index([userId, giornoId, ordine])
 }
 
-// Un allenamento svolto in palestra in una certa data.
+// Un allenamento svolto in palestra in una certa data. Le kcal non si salvano: si calcolano da peso e durata.
 // datiIniziali = true: serie importate a mano, con ripetizioni pari all'obiettivo e non registrate.
 model Sessione {
-  id             String          @id @default(cuid())
-  userId         String
+  id             Int             @id @default(autoincrement())
+  userId         Int
   giornoId       String
   data           DateTime        @default(now())
   note           String?
   pesoCorporeoKg Float?
   durataMinuti   Int?
-  kcalStimate    Int?
   datiIniziali   Boolean         @default(false)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   giorno         GiornoScheda    @relation(fields: [userId, giornoId], references: [userId, id], onDelete: NoAction)
@@ -108,9 +110,9 @@ model Sessione {
 // userId deve essere lo stesso della sessione e dell'esercizio: lo garantiscono le due chiavi esterne.
 model SerieEseguita {
   id          String    @id @default(cuid())
-  userId      String
-  sessioneId  String
-  esercizioId String
+  userId      Int
+  sessioneId  Int
+  esercizioId Int
   ordine      Int
   pesoKg      Float?
   ripetizioni Int
