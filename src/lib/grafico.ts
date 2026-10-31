@@ -1,4 +1,4 @@
-// Calcoli per i grafici SVG: assi, tick e posizioni. Funzioni pure, senza DOM.
+// Calcoli per gli assi dei grafici: valori minimo e massimo e tick a numeri tondi. Funzioni pure, senza DOM.
 
 export type Asse = { min: number; max: number; tick: number[] }
 
@@ -11,7 +11,12 @@ export function passoTondo(grezzo: number): number {
   return tondo * potenza
 }
 
-// Asse Y con un margine sopra e sotto i valori e tick a numeri tondi. Il minimo non scende sotto zero.
+function tickDa(min: number, max: number, passo: number): number[] {
+  const intervalli = Math.round((max - min) / passo)
+  return Array.from({ length: intervalli + 1 }, (_, i) => Number((min + i * passo).toFixed(6)))
+}
+
+// Asse Y per le linee, con un margine sopra e sotto i valori. Il minimo non scende sotto zero.
 export function asseY(valori: number[], tickDesiderati = 4): Asse {
   if (valori.length === 0) throw new Error("Serve almeno un valore per l'asse")
   const minimo = Math.min(...valori)
@@ -22,59 +27,32 @@ export function asseY(valori: number[], tickDesiderati = 4): Asse {
   const passo = passoTondo((alto - basso) / tickDesiderati)
   const min = Math.floor(basso / passo) * passo
   const max = Math.ceil(alto / passo) * passo
-  const intervalli = Math.round((max - min) / passo)
-  const tick = Array.from({ length: intervalli + 1 }, (_, i) => Number((min + i * passo).toFixed(6)))
-  return { min, max, tick }
+  return { min, max, tick: tickDa(min, max, passo) }
 }
 
-// Proietta un valore dal dominio [dMin, dMax] sull'intervallo [pMin, pMax]. Può essere invertito, come per l'asse Y.
-export function posizione(valore: number, dMin: number, dMax: number, pMin: number, pMax: number): number {
-  if (dMax === dMin) return (pMin + pMax) / 2
-  return pMin + ((valore - dMin) / (dMax - dMin)) * (pMax - pMin)
+const GIORNO_MS = 86_400_000
+
+// Asse del tempo per le linee: i punti stanno dove cadono le date, quindi una pausa si vede come un vuoto.
+// I tick sono al massimo 5, equidistanti nel tempo; con meno di un giorno di distanza ce n'è uno solo, perché
+// due etichette gg/mm cadrebbero nello stesso giorno. Con un punto solo il dominio si allarga di qualche giorno.
+export function asseTempo(istanti: number[]): { dominio: [number, number]; tick: number[] } {
+  if (istanti.length === 0) throw new Error("Serve almeno un istante per l'asse")
+  const minimo = Math.min(...istanti)
+  const massimo = Math.max(...istanti)
+  if (minimo === massimo) return { dominio: [minimo - 3 * GIORNO_MS, massimo + 3 * GIORNO_MS], tick: [minimo] }
+
+  const giorni = Math.floor((massimo - minimo) / GIORNO_MS)
+  const quanti = Math.min(5, giorni + 1)
+  if (quanti < 2) return { dominio: [minimo, massimo], tick: [minimo] }
+  const tick = Array.from({ length: quanti }, (_, i) => minimo + ((massimo - minimo) * i) / (quanti - 1))
+  return { dominio: [minimo, massimo], tick }
 }
 
-// Indice del punto più vicino alla coordinata x: serve al mirino che segue il puntatore.
-export function indiceVicino(x: number, xs: number[]): number {
-  let migliore = 0
-  for (let i = 1; i < xs.length; i++) {
-    if (Math.abs(xs[i] - x) < Math.abs(xs[migliore] - x)) migliore = i
-  }
-  return migliore
-}
-
-// Indici dei punti da etichettare sull'asse X, senza che due etichette si tocchino.
-// Le posizioni (in pixel, crescenti) seguono il tempo, quindi non sono equidistanti.
-// Ancoraggio: il primo punto a sinistra, l'ultimo a destra, gli altri al centro.
-export function indiciEtichette(posizioni: number[], larghezze: number[], spazio = 8): number[] {
-  const n = posizioni.length
-  if (n === 0) return []
-
-  const scatola = (i: number): [number, number] => {
-    const l = larghezze[i]
-    if (n === 1) return [posizioni[i] - l / 2, posizioni[i] + l / 2]
-    if (i === 0) return [posizioni[i], posizioni[i] + l]
-    if (i === n - 1) return [posizioni[i] - l, posizioni[i]]
-    return [posizioni[i] - l / 2, posizioni[i] + l / 2]
-  }
-
-  // Primo passaggio: da sinistra, tiene ogni etichetta che lascia lo spazio minimo.
-  const scelti: number[] = []
-  let fineUltima = -Infinity
-  for (let i = 0; i < n; i++) {
-    const [sinistra, destra] = scatola(i)
-    if (sinistra >= fineUltima + spazio) {
-      scelti.push(i)
-      fineUltima = destra
-    }
-  }
-
-  // L'ultima data è la più recente: se è rimasta fuori, toglie le etichette che la toccano.
-  if (n > 1 && scelti[scelti.length - 1] !== n - 1) {
-    const [sinistraUltima] = scatola(n - 1)
-    while (scelti.length > 0 && scatola(scelti[scelti.length - 1])[1] + spazio > sinistraUltima) {
-      scelti.pop()
-    }
-    scelti.push(n - 1)
-  }
-  return scelti
+// Asse Y per le barre: parte sempre da zero, perché la lunghezza della barra è il dato.
+// `passoMinimo` = 1 per i conteggi, così non compaiono tick come 0,5 sedute.
+export function asseBarre(valori: number[], tickDesiderati = 4, passoMinimo = 0): Asse {
+  const massimo = Math.max(0, ...valori)
+  const passo = Math.max(passoMinimo, passoTondo(massimo / tickDesiderati))
+  const max = Math.max(passo, Math.ceil(massimo / passo) * passo)
+  return { min: 0, max, tick: tickDa(0, max, passo) }
 }
