@@ -26,14 +26,14 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Progressi: panoramica** | Sedute per settimana e volume per settimana (le settimane senza sedute ci sono, a zero), sedute per giornata A/B/C e gli ultimi record. |
 | **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, massimale stimato e volume per seduta. Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri. |
 | **Volume e massimale stimato** | Volume = kg × ripetizioni. Il massimale (1RM) è stimato con la formula di Epley, `peso × (1 + ripetizioni / 30)`, sulla serie migliore di ogni seduta. Le sedute con ripetizioni non registrate (dati iniziali) non entrano nel massimale e nel volume sono barre più chiare. |
-| **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola) e lo reimporti. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
+| **Dati dell'orologio** | Per ogni seduta, in modo facoltativo: durata, calorie, battiti medi e massimi. Si scrivono a mano oppure si legge un file **TCX** esportato dall'app dell'orologio: i campi si compilano da soli e restano modificabili. Compaiono nel dettaglio e nell'elenco dello storico. Vedi "Smartwatch" più sotto per cosa funziona e cosa no. |
+| **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola, con anche i dati dell'orologio) e lo reimporti. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
 
 ### In programma
 
 | Cosa | Situazione |
 |---|---|
 | **Recupero della password** | Non c'è una procedura dall'app. Per ora si reimposta da terminale con `npm run db:utente`. |
-| **Smartwatch** | Da studiare: dipende dal marchio dell'orologio. |
 | **Pubblicazione online** | Ultimo passo: Supabase per il database e Vercel per l'app. |
 
 ---
@@ -179,6 +179,7 @@ GymPulse/
 │   │   ├── 20261030170000_utente_con_id_numerico/    # id numerici e nome completo
 │   │   ├── 20261031100000_tabelle_riordinate/        # id come prima colonna, colonne superflue tolte
 │   │   ├── 20261031110000_senza_peso_corporeo/       # via la colonna del peso corporeo
+│   │   ├── 20261031120000_dati_orologio/             # battiti medi e massimi e calorie dell'orologio
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account o cambia la password
@@ -234,13 +235,13 @@ GymPulse/
 └── .gitignore                                        # elenco di file da ignorare durante il push su git
 ```
 
-Dentro `src/lib/` (24 file):
+Dentro `src/lib/` (26 file):
 
 | Gruppo | File |
 |---|---|
 | Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi) |
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
-| Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `numeri.ts`, `url.ts` |
+| Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `orologio.ts` (limiti di battiti e calorie), `tcx.ts` (legge i file TCX, nel browser), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, massimale, carico, record), `panoramica.ts` (sedute e volume per settimana, sedute per giornata), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
 | Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `bozza.ts` (la sessione in corso nel browser) |
 
@@ -256,10 +257,10 @@ In ogni tabella l'`id` è la prima colonna.
 | `GiornoScheda` | `id`, `userId`, `titolo` | sigla (testo), unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `muscoli` | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
-| `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali` | numero progressivo |
+| `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali`, `fcMediaBpm`, `fcMassimaBpm`, `kcalOrologio` | numero progressivo |
 | `SerieEseguita` | `id`, `userId`, `sessioneId`, `esercizioId`, `ordine`, `pesoKg`, `ripetizioni` | testo casuale |
 
-L'ordine delle giornate è quello delle sigle (A, B, C). L'app non registra peso corporeo né calorie.
+L'ordine delle giornate è quello delle sigle (A, B, C). L'app non registra il peso corporeo e non calcola le calorie: quelle di `kcalOrologio` le porti tu, a mano o da un file dell'orologio.
 
 Giornate, esercizi, voci, sedute e serie portano sempre lo `userId`. Le chiavi esterne sono composte: il database stesso rifiuta di collegare un dato a quello di un'altra persona, anche conoscendone l'id.
 
@@ -272,8 +273,24 @@ Modificare la scheda non tocca le sedute già salvate: le serie puntano agli ese
 - **L'utente si ricava sempre dal cookie**, mai da un id mandato dal browser. Il proxy chiude le pagine, e ogni pagina e ogni azione ricontrolla da sola.
 - **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
 - **CSV**: ognuno scarica solo le proprie sedute. L'importazione controlla ogni riga (data, peso, ripetizioni, durata, note), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file esportato i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
+- **File TCX**: si leggono nel browser e al server arrivano solo quattro numeri, che il server ricontrolla (battiti tra 30 e 250, calorie fino a 10.000, massima non sotto la media). I file con definizioni di entità (`<!DOCTYPE`, `<!ENTITY`) si rifiutano, e oltre 25 milioni di caratteri non si leggono.
 - **Registrazione aperta a chiunque** conosca l'indirizzo. C'è un limite di 3 account all'ora per indirizzo e di 10 accessi ogni 15 minuti, ma il conteggio è in memoria: su Vercel vale per ogni istanza e rallenta senza bloccare del tutto. Per un blocco rigido servirebbe un archivio condiviso.
 - **`.env`** escluso da Git; in Git va solo `.env.example`.
+
+## Smartwatch: cosa funziona e cosa no
+
+Un'app web non può leggere i dati dell'orologio da sola: Apple Salute, Google Health Connect e simili sono accessibili solo da app installate sul telefono. Quindi **l'orologio non si collega all'app: i dati si portano dentro con un file o a mano**.
+
+| Strada | Stato |
+|---|---|
+| **Scrivere a mano** durata, calorie e battiti letti dall'orologio | Funziona con qualunque orologio |
+| **File TCX** esportato dall'app dell'orologio | Fatto. Il TCX è un formato pubblico di Garmin (Garmin Connect lo esporta); altre app potrebbero offrirlo, ma **non ho verificato quali**. Si legge la durata, le calorie, i battiti medi e massimi |
+| **Apple Watch** | Apple Salute esporta un `export.xml` completo, ma non un TCX del singolo allenamento: per averlo serve un'app di terze parti che converta gli allenamenti. In alternativa, si scrivono i numeri a mano. **Non ho scritto il lettore di `export.xml`**: non ho potuto controllarne il formato su un file reale, e un lettore fatto a memoria rischia di sbagliare in silenzio |
+| **Collegamento diretto** (Apple Salute, Health Connect) | Non si può fare da una web app: servirebbe un'app nativa. Non è in programma |
+
+Come si legge un TCX: la durata è la somma dei giri; le calorie la somma delle calorie dei giri; i battiti medi la media dei giri pesata sulla durata (se manca, la media dei punti con battito); i battiti massimi il valore più alto. Un file con più attività si rifiuta, perché non si saprebbe quale scegliere. Se l'allenamento nel file è di un giorno diverso dalla sessione, l'app lo segnala senza cambiare la data.
+
+**Non ancora provato con file veri.** Il lettore è stato provato con file TCX scritti da me seguendo lo schema pubblicato da Garmin, non con file esportati da un orologio reale: è il primo controllo da fare con il tuo.
 
 ## Pubblicazione online (ultimo passo)
 
@@ -288,5 +305,5 @@ Modificare la scheda non tocca le sedute già salvate: le serie puntano agli ese
 3. ~~Grafici con una libreria e panoramica generale dei progressi~~ (fatto)
 4. ~~Export e import CSV delle sedute, al posto del backup JSON~~ (fatto)
 5. Recupero della password dall'app
-6. Studio dell'integrazione con lo smartwatch
+6. ~~Smartwatch: dati a mano e da file TCX~~ (fatto; da provare con un file vero)
 7. Collegamento a Supabase e pubblicazione su Vercel
