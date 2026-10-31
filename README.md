@@ -28,16 +28,15 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Calorie stimate** | `MET × peso (kg) × durata (ore)`, con MET 5 per il sollevamento pesi. È una stima indicativa, non una misura. |
 | **Backup** | Esporti tutti i tuoi dati in un file JSON e li reimporti (anche su un altro dispositivo). L'importazione sostituisce solo i *tuoi* dati. |
 
-### Non ancora disponibile
+### In programma
 
 | Cosa | Situazione |
 |---|---|
-| **Peso corporeo e misure nel tempo** | Il peso si registra a ogni seduta e serve per le calorie, ma non c'è ancora un grafico dell'andamento né le misure del corpo. |
-| **Export CSV** | C'è solo il backup JSON. |
-| **Funzionamento offline** | Esiste il manifest per aggiungere l'app alla schermata Home, ma non c'è un service worker: senza connessione l'app non si apre. |
-| **Recupero della password** | Non c'è una procedura dall'app. Si reimposta da terminale con `npm run db:utente` (vedi sotto). |
-| **Smartwatch** | Possibile in futuro. |
-| **Pubblicazione online** | Da fare: Supabase per il database e Vercel per l'app. |
+| **Grafici migliori e panoramica dei progressi** | Oggi i grafici sono disegnati a mano in SVG. Si passa a una libreria (proposta: Recharts) e si aggiunge una panoramica generale dei progressi, non solo per esercizio. |
+| **Export CSV** | Al posto del backup JSON: le sedute si esportano e si reimportano in CSV. Da definire cosa fare della scheda, che in un CSV non ci sta. |
+| **Recupero della password** | Non c'è una procedura dall'app. Per ora si reimposta da terminale con `npm run db:utente`. |
+| **Smartwatch** | Da studiare: dipende dal marchio dell'orologio. |
+| **Pubblicazione online** | Ultimo passo: Supabase per il database e Vercel per l'app. |
 
 ---
 
@@ -53,7 +52,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | ORM | Prisma | 7.10.1 | Con driver `pg` 8.23.1 e `@prisma/adapter-pg` 7.10.1 |
 | Validazione | Zod | 4.6.7 | I dati arrivati dal browser si ricontrollano sempre sul server |
 | Accesso | Scritto nel progetto | — | Cookie firmato (HMAC-SHA256) e password con scrypt, entrambi di Node.js: nessuna libreria in più |
-| Grafici | SVG scritto a mano | — | Nessuna libreria: mirino, tooltip e accessibilità da tastiera inclusi |
+| Grafici | SVG scritto a mano | — | Provvisorio, senza librerie: da sostituire (vedi Roadmap) |
 | Strumenti | `tsx` 4.23.15, `dotenv` 18.0.9 | | Per lo script `db:utente` |
 
 ---
@@ -64,9 +63,28 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 - **npm** (incluso con Node).
 - **Docker Desktop** avviato, per il database in locale.
 
-## Installazione e avvio in locale
+## Ambienti: sviluppo e produzione
 
-1. **Dipendenze**: `npm install` (esegue anche `prisma generate`).
+| | Sviluppo | Produzione |
+|---|---|---|
+| Ramo Git | `dev` | `main` |
+| Database | PostgreSQL in Docker sul tuo PC | Supabase (cloud) *— da collegare* |
+| App | `npm run dev` su http://localhost:3000 | Vercel *— da collegare*; sul PC `npm run build` e `npm start` |
+| Variabili d'ambiente | file `.env` | variabili di Vercel, oppure della shell se provi la build sul PC |
+| `AUTH_SECRET` | uno locale | **un altro**, diverso, solo in produzione |
+| Migrazioni | `npm run db:migrate` (crea) e `npm run db:deploy` (applica) | solo `npm run db:deploy` |
+
+Si lavora su `dev`; quando una modifica è pronta si porta in `main`.
+
+**Come Next.js legge le variabili:** prima quelle della shell, poi `.env.production.local` (solo in produzione), `.env.local`, `.env.production` e infine `.env`. Quelle della shell vincono sempre, ed è su questo che si basano i comandi di produzione qui sotto. Gli strumenti di Prisma (`db:deploy`, `db:studio`, `db:utente`) leggono solo la shell e il file `.env`.
+
+## Sviluppo (ramo `dev`)
+
+```bash
+git checkout dev
+```
+
+1. **Dipendenze**: `npm install` (esegue anche `prisma generate`). Se installi con `--ignore-scripts`, lancia poi `npx prisma generate`.
 
 2. **File `.env`** nella radice del progetto. Non va mai committato, è escluso da Git.
 
@@ -101,18 +119,52 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 
 > **Windows PowerShell:** se `npm` dà l'errore "esecuzione di script disabilitata", usa `npm.cmd` (per esempio `npm.cmd run dev`) oppure il Prompt dei comandi.
 
+## Produzione (ramo `main`)
+
+In produzione l'app gira su Vercel, collegato al ramo `main`: a ogni push Vercel compila e pubblica da solo. Le istruzioni qui sotto servono per **provare la build di produzione sul tuo PC** prima di pubblicare, e per sapere cosa configurare online.
+
+**Portare una modifica da `dev` a `main`:**
+
+```bash
+git checkout main
+git merge dev
+git push origin main
+git checkout dev
+```
+
+**Provare la build di produzione sul PC** (PowerShell; con Prompt dei comandi o Git Bash cambia la sintassi delle variabili):
+
+```powershell
+git checkout main
+npm install
+$env:DATABASE_URL = "<stringa di connessione del database di produzione>"
+$env:AUTH_SECRET  = "<il segreto di produzione, diverso da quello locale>"
+npm.cmd run db:deploy     # applica le migrazioni al database di produzione
+npm.cmd run build         # compila
+npm.cmd start             # avvia su http://localhost:3000
+```
+
+Le variabili della shell valgono solo per quella finestra e vincono sul file `.env`, quindi la build di produzione non usa per sbaglio il database locale. Chiusa la finestra, spariscono. **Non scrivere le credenziali di produzione nel `.env`.**
+
+**Su Vercel** (quando sarà collegato) si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Supabase, *transaction pooler*) e `AUTH_SECRET`. Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` che punta alla connessione diretta di Supabase, prima di pubblicare una modifica che cambia lo schema.
+
 ## Script disponibili
 
-| Comando | Cosa fa |
-|---|---|
-| `npm run dev` | Avvia il server di sviluppo |
-| `npm run build` | Compila l'app per la produzione |
-| `npm start` | Avvia la build di produzione |
-| `npm run typecheck` | Controlla i tipi TypeScript |
-| `npm run db:deploy` | Applica le migrazioni esistenti al database |
-| `npm run db:migrate` | Crea e applica una nuova migrazione (sviluppo) |
-| `npm run db:utente` | Crea un account o ne cambia la password |
-| `npm run db:studio` | Apre Prisma Studio per vedere e modificare i dati |
+Tutti i comandi si lanciano dalla cartella del progetto. Su PowerShell, se `npm` è bloccato, usa `npm.cmd`.
+
+| Comando | Cosa fa | Ramo `dev` (sviluppo) | Ramo `main` (produzione) |
+|---|---|---|---|
+| `npm install` | Installa le dipendenze e genera il client Prisma | sì | sì, dopo ogni cambio di ramo |
+| `npm run dev` | Server di sviluppo con ricarica automatica, su http://localhost:3000 | **è il comando di lavoro** | non si usa |
+| `npm run build` | Compila l'app ottimizzata | per controllare che compili | **serve prima di `npm start`**; su Vercel lo fa da solo |
+| `npm start` | Avvia l'app compilata | non serve | avvia la produzione; richiede `npm run build` prima |
+| `npm run typecheck` | Controlla i tipi TypeScript, senza compilare | **da lanciare prima di ogni commit** | già fatto dalla build |
+| `npm run db:deploy` | Applica al database le migrazioni già scritte | applica al database locale | **l'unico per la produzione**: non crea nulla, applica solo |
+| `npm run db:migrate` | Crea una nuova migrazione dallo schema e la applica | **solo qui**, quando modifichi `schema.prisma` | **mai** in produzione |
+| `npm run db:utente` | Crea un account o ne cambia la password | per l'account di prova | per recuperare una password in produzione, con le variabili di produzione |
+| `npm run db:studio` | Apre Prisma Studio per vedere e modificare le righe | database locale | **con cautela**: modifica dati veri |
+
+Sono tutti i comandi esistenti: gli script in `package.json` sono 9 (`dev`, `build`, `start`, `typecheck`, `postinstall`, `db:migrate`, `db:deploy`, `db:studio`, `db:utente`). `postinstall` parte da solo dopo `npm install` e non va lanciato a mano.
 
 ## Struttura delle cartelle
 
@@ -132,7 +184,7 @@ GymPulse/
 │   └── utente.ts                                     # script: crea un account o cambia la password
 ├── public/
 │   ├── icon.svg                                      # icona dell'app
-│   └── manifest.webmanifest                          # per aggiungere l'app alla schermata Home
+│   └── manifest.webmanifest                          # nome e colori dell'app, se la aggiungi alla schermata Home
 ├── src/
 │   ├── proxy.ts                                      # prima porta: senza accesso si vede solo il login
 │   ├── app/                                          # pagine e route (Next.js App Router)
@@ -221,18 +273,18 @@ Modificare la scheda non tocca le sedute già salvate: le serie puntano agli ese
 - **Registrazione aperta a chiunque** conosca l'indirizzo. C'è un limite di 3 account all'ora per indirizzo e di 10 accessi ogni 15 minuti, ma il conteggio è in memoria: su Vercel vale per ogni istanza e rallenta senza bloccare del tutto. Per un blocco rigido servirebbe un archivio condiviso.
 - **`.env`** escluso da Git; in Git va solo `.env.example`.
 
-## Pubblicazione (da fare)
+## Pubblicazione online (ultimo passo)
 
 1. **Supabase** per il database. Servono due connessioni: quella *transaction pooler* (porta 6543) per l'app e quella diretta o *session pooler* (porta 5432) per le migrazioni. Disattivare l'API REST automatica o attivare la Row Level Security, perché l'accesso passa solo dal backend.
-2. **Vercel** per l'app. Variabili d'ambiente: `DATABASE_URL` e un `AUTH_SECRET` **nuovo**, diverso da quello locale.
-3. Le credenziali di Supabase vanno solo nelle variabili di Vercel e nel `.env` locale, mai nel codice.
+2. **Vercel** per l'app, collegato al ramo `main`. Variabili d'ambiente: `DATABASE_URL` e un `AUTH_SECRET` **nuovo**, diverso da quello locale.
+3. Le credenziali di Supabase vanno solo nelle variabili di Vercel, mai nel codice e mai nel `.env`.
 
 ## Roadmap
 
 1. ~~Scheda A/B/C, sessione, storico, progressi, personalizzazione e backup~~ (fatto)
 2. ~~Account personali con registrazione dall'app e dati separati per persona~~ (fatto)
-3. Collegamento a Supabase e pubblicazione su Vercel
-4. Peso corporeo e misure nel tempo
-5. Export CSV
-6. PWA completa con service worker e funzionamento offline
-7. Recupero della password dall'app
+3. Grafici con una libreria e panoramica generale dei progressi
+4. Export e import CSV delle sedute, al posto del backup JSON
+5. Recupero della password dall'app
+6. Studio dell'integrazione con lo smartwatch
+7. Collegamento a Supabase e pubblicazione su Vercel
