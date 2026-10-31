@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { dataIso } from './formato'
-import { durataSchema, noteSchema, serieSchema } from './sessione-schema'
+import { controllaBattiti } from './orologio'
+import { durataSchema, fcMassimaSchema, fcMediaSchema, kcalSchema, noteSchema, serieSchema } from './sessione-schema'
 
 // Esportazione e importazione delle sedute in CSV: una riga per ogni serie. Il file si apre in Excel (separatore
 // punto e virgola, decimali con la virgola, UTF-8 con BOM) e si legge anche con la virgola o il punto, se è stato
@@ -20,6 +21,9 @@ const COLONNE = [
   'peso_kg',
   'ripetizioni',
   'durata_min',
+  'fc_media',
+  'fc_max',
+  'kcal_orologio',
   'note',
   'dati_iniziali',
 ] as const
@@ -30,6 +34,9 @@ export type SedutaEsportata = {
   data: Date
   giornoId: string
   durataMinuti: number | null
+  fcMediaBpm: number | null
+  fcMassimaBpm: number | null
+  kcalOrologio: number | null
   note: string | null
   datiIniziali: boolean
   serie: { esercizio: string; pesoKg: number | null; ripetizioni: number }[]
@@ -71,6 +78,9 @@ export function creaCsv(sedute: SedutaEsportata[]): string {
         serie.pesoKg === null ? '' : String(serie.pesoKg).replace('.', ','),
         String(serie.ripetizioni),
         seduta.durataMinuti === null ? '' : String(seduta.durataMinuti),
+        seduta.fcMediaBpm === null ? '' : String(seduta.fcMediaBpm),
+        seduta.fcMassimaBpm === null ? '' : String(seduta.fcMassimaBpm),
+        seduta.kcalOrologio === null ? '' : String(seduta.kcalOrologio),
         seduta.note === null ? '' : proteggi(seduta.note),
         seduta.datiIniziali ? 'si' : 'no',
       ])
@@ -155,6 +165,16 @@ export function leggiData(testo: string, ora = new Date()): Date | null {
 
 const nomeEsercizioSchema = z.string().min(1, 'manca il nome dell\'esercizio').max(60, 'il nome dell\'esercizio è troppo lungo')
 
+type EsitoIntero = { ok: true; valore: number | null } | { ok: false; errore: string }
+
+// Una cella con un intero facoltativo: vuota = nessun dato. Le regole sui limiti sono quelle del form.
+function interoFacoltativo(testo: string, nome: string, schema: z.ZodType<number | null>): EsitoIntero {
+  if (testo === '') return { ok: true, valore: null }
+  if (!/^\d+$/.test(testo)) return { ok: false, errore: `${nome} "${testo}" non è un numero intero` }
+  const letto = schema.safeParse(Number(testo))
+  return letto.success ? { ok: true, valore: letto.data } : { ok: false, errore: letto.error.issues[0].message.toLowerCase() }
+}
+
 export function leggiCsv(testo: string, ora = new Date()): EsitoCsv {
   const pulito = testo.replace(/^﻿/, '')
   const celle = dividi(pulito, separatoreDi(pulito))
@@ -199,10 +219,16 @@ export function leggiCsv(testo: string, ora = new Date()): EsitoCsv {
     })
     if (!serie.success) return errore(serie.error.issues[0].message.toLowerCase())
 
-    const durataTesto = cella('durata_min')
-    if (durataTesto !== '' && !/^\d+$/.test(durataTesto)) return errore(`la durata "${durataTesto}" non è in minuti interi`)
-    const durata = durataSchema.safeParse(durataTesto === '' ? null : Number(durataTesto))
-    if (!durata.success) return errore(durata.error.issues[0].message.toLowerCase())
+    const durata = interoFacoltativo(cella('durata_min'), 'la durata', durataSchema)
+    if (!durata.ok) return errore(durata.errore)
+    const fcMedia = interoFacoltativo(cella('fc_media'), 'la frequenza media', fcMediaSchema)
+    if (!fcMedia.ok) return errore(fcMedia.errore)
+    const fcMassima = interoFacoltativo(cella('fc_max'), 'la frequenza massima', fcMassimaSchema)
+    if (!fcMassima.ok) return errore(fcMassima.errore)
+    const kcal = interoFacoltativo(cella('kcal_orologio'), 'le calorie', kcalSchema)
+    if (!kcal.ok) return errore(kcal.errore)
+    const incoerenza = controllaBattiti(fcMedia.valore, fcMassima.valore)
+    if (incoerenza) return errore(incoerenza.toLowerCase())
 
     const nota = noteSchema.safeParse(cella('note') === '' ? null : scopri(cella('note')))
     if (!nota.success) return errore(nota.error.issues[0].message.toLowerCase())
@@ -218,7 +244,10 @@ export function leggiCsv(testo: string, ora = new Date()): EsitoCsv {
     const seduta = sedute.get(chiave) ?? {
       data,
       giornoId,
-      durataMinuti: durata.data,
+      durataMinuti: durata.valore,
+      fcMediaBpm: fcMedia.valore,
+      fcMassimaBpm: fcMassima.valore,
+      kcalOrologio: kcal.valore,
       note: nota.data,
       datiIniziali: ['si', 'sì', '1', 'true'].includes(iniziali),
       serie: [],

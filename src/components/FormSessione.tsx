@@ -6,11 +6,12 @@ import { salvaSessione } from '@/app/actions'
 import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
 import { formatTimer, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
 import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
-import { formatDataNumerica, formatNumero } from '@/lib/formato'
+import { dataIso, formatDataNumerica, formatNumero } from '@/lib/formato'
 import { parseIntero, parseNumero } from '@/lib/numeri'
 import { suggerimentoSerie, suggerisciCarichi, type SuggerimentoCarico } from '@/lib/progressi'
+import { leggiTcx } from '@/lib/tcx'
 import type { UltimeVolte, VoceCatalogo } from '@/lib/tipi'
-import { IconaCestino, IconaMeno, IconaPiu, IconaSpunta } from './icone'
+import { IconaCarica, IconaCestino, IconaMeno, IconaPiu, IconaSpunta } from './icone'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
 type RigaSerie = { pesoKg: string; ripetizioni: string; confermata: boolean }
@@ -23,11 +24,15 @@ type EsSessione = {
   serie: RigaSerie[]
 }
 
+// I campi dell'orologio possono mancare in una bozza salvata prima che esistessero.
 type Bozza = {
   esercizi: EsSessione[]
   data: string
   note: string
   durata: string
+  fcMedia?: string
+  fcMax?: string
+  kcal?: string
 }
 
 type Props = {
@@ -65,6 +70,11 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
   const [data, setData] = useState(oggi)
   const [note, setNote] = useState('')
   const [durata, setDurata] = useState('')
+  const [fcMedia, setFcMedia] = useState('')
+  const [fcMax, setFcMax] = useState('')
+  const [kcal, setKcal] = useState('')
+  const [esitoFile, setEsitoFile] = useState<{ testo: string; errore: boolean } | null>(null)
+  const fileOrologio = useRef<HTMLInputElement>(null)
   const [errore, setErrore] = useState<string | null>(null)
   const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
   const [aggiunta, setAggiunta] = useState<number | null>(null)
@@ -84,14 +94,17 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
       setData(bozza.data)
       setNote(bozza.note)
       setDurata(bozza.durata)
+      setFcMedia(bozza.fcMedia ?? '')
+      setFcMax(bozza.fcMax ?? '')
+      setKcal(bozza.kcal ?? '')
     }
     setBozzaPronta(true)
   }, [giorno.id])
 
   useEffect(() => {
     if (!bozzaPronta) return
-    salvaBozza(giorno.id, { esercizi, data, note, durata } satisfies Bozza)
-  }, [bozzaPronta, giorno.id, esercizi, data, note, durata])
+    salvaBozza(giorno.id, { esercizi, data, note, durata, fcMedia, fcMax, kcal } satisfies Bozza)
+  }, [bozzaPronta, giorno.id, esercizi, data, note, durata, fcMedia, fcMax, kcal])
 
   useEffect(() => {
     if (!timer) return
@@ -114,6 +127,36 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
   const righeTotali = esercizi.reduce((totale, e) => totale + e.serie.length, 0)
   const righeConfermate = esercizi.reduce((totale, e) => totale + e.serie.filter((s) => s.confermata).length, 0)
   const durataMinuti = parseIntero(durata)
+
+  // Legge un file TCX esportato dall'app dell'orologio e compila i campi. Il file resta nel browser: al server
+  // arrivano solo i numeri, quando salvi. I campi restano modificabili a mano.
+  async function alFileOrologio(evento: React.ChangeEvent<HTMLInputElement>) {
+    const scelto = evento.target.files?.[0]
+    evento.target.value = ''
+    if (!scelto) return
+    setEsitoFile(null)
+
+    const letto = leggiTcx(await scelto.text())
+    if (!letto.ok) {
+      setEsitoFile({ testo: letto.errore, errore: true })
+      return
+    }
+    const { dati } = letto
+    if (dati.durataMinuti !== null) setDurata(String(dati.durataMinuti))
+    setFcMedia(dati.fcMediaBpm === null ? '' : String(dati.fcMediaBpm))
+    setFcMax(dati.fcMassimaBpm === null ? '' : String(dati.fcMassimaBpm))
+    setKcal(dati.kcalOrologio === null ? '' : String(dati.kcalOrologio))
+
+    // Il file di un altro giorno è quasi sempre un errore di scelta: lo si dice, senza cambiare la data.
+    const giornoFile = dati.inizio ? dataIso(dati.inizio) : null
+    const altroGiorno = giornoFile !== null && giornoFile !== data
+    setEsitoFile({
+      testo: altroGiorno
+        ? `Letto, ma l'allenamento nel file è del ${formatDataNumerica(dati.inizio!)} e la sessione è del ${formatDataNumerica(new Date(`${data}T12:00:00Z`))}: controlla di aver scelto il file giusto.`
+        : 'Dati letti dal file: controllali e correggili se serve.',
+      errore: altroGiorno,
+    })
+  }
 
   function ultimaDi(es: EsSessione) {
     return es.esercizioId ? ultime[es.esercizioId] : undefined
@@ -251,6 +294,12 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
     setErroreEsercizio(null)
 
     if (durata.trim() !== '' && durataMinuti === null) return setErrore('La durata deve essere un numero intero di minuti')
+    const fcMediaBpm = parseIntero(fcMedia)
+    const fcMassimaBpm = parseIntero(fcMax)
+    const kcalOrologio = parseIntero(kcal)
+    if (fcMedia.trim() !== '' && fcMediaBpm === null) return setErrore('La frequenza media deve essere un numero intero')
+    if (fcMax.trim() !== '' && fcMassimaBpm === null) return setErrore('La frequenza massima deve essere un numero intero')
+    if (kcal.trim() !== '' && kcalOrologio === null) return setErrore('Le calorie devono essere un numero intero')
 
     const invio = esercizi.map((es) => ({
       esercizioId: es.esercizioId,
@@ -268,6 +317,9 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
         data,
         note: note.trim() === '' ? null : note,
         durataMinuti,
+        fcMediaBpm,
+        fcMassimaBpm,
+        kcalOrologio,
         esercizi: invio,
       })
       if ('errore' in esito) return setErrore(esito.errore)
@@ -437,11 +489,27 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
       </section>
 
       <section className={`${stileCarta} space-y-3 p-4`}>
-        <h2 className="text-lg font-extrabold">Durata</h2>
-        <label className="block space-y-1 text-sm text-muto">
-          <span>Minuti (facoltativo)</span>
-          <input inputMode="numeric" placeholder="60" value={durata} onChange={(e) => setDurata(e.target.value)} className={stileInput} />
-        </label>
+        <h2 className="text-lg font-extrabold">Durata e orologio</h2>
+        <p className="text-sm text-muto">
+          Tutto facoltativo. Se hai un orologio, esporta l&apos;allenamento in TCX dalla sua app e scegli il file: i
+          numeri si compilano da soli.
+        </p>
+        <button type="button" onClick={() => fileOrologio.current?.click()} className={stileBottoneChiaro}>
+          <IconaCarica className="size-4" />
+          Leggi da file TCX
+        </button>
+        <input ref={fileOrologio} type="file" accept=".tcx,application/xml,text/xml" onChange={alFileOrologio} className="hidden" />
+        {esitoFile && (
+          <p role={esitoFile.errore ? 'alert' : 'status'} className={`text-sm ${esitoFile.errore ? 'text-errore' : 'text-ok'}`}>
+            {esitoFile.testo}
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-3">
+          <CampoOrologio etichetta="Minuti" segnaposto="60" valore={durata} alCambio={setDurata} />
+          <CampoOrologio etichetta="Calorie (kcal)" segnaposto="320" valore={kcal} alCambio={setKcal} />
+          <CampoOrologio etichetta="Battiti medi" segnaposto="115" valore={fcMedia} alCambio={setFcMedia} />
+          <CampoOrologio etichetta="Battiti massimi" segnaposto="160" valore={fcMax} alCambio={setFcMax} />
+        </div>
       </section>
 
       {errore && (
@@ -475,6 +543,21 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
         </div>
       )}
     </div>
+  )
+}
+
+function CampoOrologio(props: { etichetta: string; segnaposto: string; valore: string; alCambio: (valore: string) => void }) {
+  return (
+    <label className="block space-y-1 text-sm text-muto">
+      <span>{props.etichetta}</span>
+      <input
+        inputMode="numeric"
+        placeholder={props.segnaposto}
+        value={props.valore}
+        onChange={(e) => props.alCambio(e.target.value)}
+        className={stileInput}
+      />
+    </label>
   )
 }
 

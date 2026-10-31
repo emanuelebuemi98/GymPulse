@@ -28,7 +28,7 @@ export async function salvaSessione(input: unknown): Promise<{ id: number } | { 
   const esito = validaSessione(input)
   if (!esito.ok) return { errore: esito.errore }
 
-  const { giornoId, note, durataMinuti } = esito.dati
+  const { giornoId, note, durataMinuti, fcMediaBpm, fcMassimaBpm, kcalOrologio } = esito.dati
   // Gli esercizi senza serie confermate non vengono salvati (e non ne nasce uno nuovo nel catalogo).
   const esercizi = esito.dati.esercizi.filter((esercizio) => esercizio.serie.length > 0)
 
@@ -59,6 +59,9 @@ export async function salvaSessione(input: unknown): Promise<{ id: number } | { 
         data: esito.istante,
         note: note ? note : null,
         durataMinuti,
+        fcMediaBpm,
+        fcMassimaBpm,
+        kcalOrologio,
         // Dentro una creazione annidata lo userId delle serie viene dalla seduta: indicarlo di nuovo è un errore.
         serie: { create: serie },
       },
@@ -168,12 +171,15 @@ export async function importaCsv(testo: unknown): Promise<{ aggiunte: number; gi
       }
 
       const create = await tx.sessione.createManyAndReturn({
-        data: nuove.map(({ data, giornoId, note, durataMinuti, datiIniziali }) => ({
+        data: nuove.map(({ data, giornoId, note, durataMinuti, fcMediaBpm, fcMassimaBpm, kcalOrologio, datiIniziali }) => ({
           userId,
           giornoId,
           data,
           note,
           durataMinuti,
+          fcMediaBpm,
+          fcMassimaBpm,
+          kcalOrologio,
           datiIniziali,
         })),
         select: { id: true, data: true, giornoId: true },

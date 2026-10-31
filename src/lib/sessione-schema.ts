@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { istanteDaData } from './formato'
+import { BATTITO_MAX, BATTITO_MIN, KCAL_MAX, controllaBattiti } from './orologio'
 
 // Regole per una sessione registrata. Il browser non è fidato: il server ricontrolla tutto.
 
@@ -34,11 +35,31 @@ export const durataSchema = z
   .max(600, 'Durata troppo lunga')
   .nullable()
 
+// Dati dell'orologio: facoltativi, con le stesse regole per il form, il file TCX letto nel browser e il CSV.
+const battitoSchema = (nome: string) =>
+  z
+    .number({ error: `${nome} non valida` })
+    .int(`${nome}: serve un numero intero`)
+    .min(BATTITO_MIN, `${nome} troppo bassa (almeno ${BATTITO_MIN})`)
+    .max(BATTITO_MAX, `${nome} troppo alta (al massimo ${BATTITO_MAX})`)
+    .nullable()
+export const fcMediaSchema = battitoSchema('Frequenza media')
+export const fcMassimaSchema = battitoSchema('Frequenza massima')
+export const kcalSchema = z
+  .number({ error: 'Calorie non valide' })
+  .int('Le calorie devono essere un numero intero')
+  .min(0, 'Le calorie non possono essere negative')
+  .max(KCAL_MAX, `Calorie troppo alte (al massimo ${KCAL_MAX})`)
+  .nullable()
+
 const sessioneSchema = z.object({
   giornoId: z.string().min(1, 'Giorno mancante'),
   data: z.string(),
   note: noteSchema,
   durataMinuti: durataSchema,
+  fcMediaBpm: fcMediaSchema,
+  fcMassimaBpm: fcMassimaSchema,
+  kcalOrologio: kcalSchema,
   esercizi: z.array(esercizioSchema).max(50),
 })
 
@@ -54,6 +75,9 @@ export function validaSessione(input: unknown, ora = new Date()): EsitoValidazio
   }
 
   const dati = parsed.data
+  const incoerenza = controllaBattiti(dati.fcMediaBpm, dati.fcMassimaBpm)
+  if (incoerenza) return { ok: false, errore: incoerenza }
+
   const istante = istanteDaData(dati.data, ora)
   if (!istante) return { ok: false, errore: 'La data non è valida o è nel futuro' }
 
