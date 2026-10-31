@@ -37,7 +37,6 @@ export default async function DettaglioSessionePage({ params }: Props) {
         <p className="text-muto">
           Allenamento {sessione.giornoId} · {sessione.giornoTitolo}
           {sessione.durataMinuti !== null && ` · ${sessione.durataMinuti} min`}
-          {sessione.kcalStimate !== null && ` · ~${sessione.kcalStimate} kcal (stima)`}
         </p>
         {sessione.datiIniziali && (
           <div className="flex flex-wrap gap-2 pt-2">

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaSessione } from '@/app/actions'
 import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
-import { formatTimer, ripetizioniTarget, serieIniziali, stimaKcal } from '@/lib/allenamento'
+import { formatTimer, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
 import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
 import { formatDataNumerica, formatNumero } from '@/lib/formato'
 import { parseIntero, parseNumero } from '@/lib/numeri'
@@ -28,14 +28,12 @@ type Bozza = {
   data: string
   note: string
   durata: string
-  pesoCorporeo: string
 }
 
 type Props = {
   giorno: Giorno
   ultime: UltimeVolte
   catalogo: VoceCatalogo[]
-  pesoCorporeoIniziale: number | null
   oggi: string
 }
 
@@ -58,7 +56,7 @@ function testoSuggerimento(s: SuggerimentoCarico): string {
     : `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripMax} rip in ogni serie per salire`
 }
 
-export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, oggi }: Props) {
+export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
   const router = useRouter()
   const definizioni = new Map(giorno.esercizi.map((e) => [e.id, e]))
   const suggerimentiCarico = suggerisciCarichi(giorno.esercizi, ultime)
@@ -67,7 +65,6 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
   const [data, setData] = useState(oggi)
   const [note, setNote] = useState('')
   const [durata, setDurata] = useState('')
-  const [pesoCorporeo, setPesoCorporeo] = useState(pesoCorporeoIniziale === null ? '' : String(pesoCorporeoIniziale))
   const [errore, setErrore] = useState<string | null>(null)
   const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
   const [aggiunta, setAggiunta] = useState<number | null>(null)
@@ -87,15 +84,14 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
       setData(bozza.data)
       setNote(bozza.note)
       setDurata(bozza.durata)
-      setPesoCorporeo(bozza.pesoCorporeo)
     }
     setBozzaPronta(true)
   }, [giorno.id])
 
   useEffect(() => {
     if (!bozzaPronta) return
-    salvaBozza(giorno.id, { esercizi, data, note, durata, pesoCorporeo } satisfies Bozza)
-  }, [bozzaPronta, giorno.id, esercizi, data, note, durata, pesoCorporeo])
+    salvaBozza(giorno.id, { esercizi, data, note, durata } satisfies Bozza)
+  }, [bozzaPronta, giorno.id, esercizi, data, note, durata])
 
   useEffect(() => {
     if (!timer) return
@@ -118,9 +114,6 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
   const righeTotali = esercizi.reduce((totale, e) => totale + e.serie.length, 0)
   const righeConfermate = esercizi.reduce((totale, e) => totale + e.serie.filter((s) => s.confermata).length, 0)
   const durataMinuti = parseIntero(durata)
-  const pesoCorporeoKg = parseNumero(pesoCorporeo)
-  const kcalStimate =
-    durataMinuti !== null && pesoCorporeoKg !== null ? stimaKcal(pesoCorporeoKg, durataMinuti) : null
 
   function ultimaDi(es: EsSessione) {
     return es.esercizioId ? ultime[es.esercizioId] : undefined
@@ -258,7 +251,6 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
     setErroreEsercizio(null)
 
     if (durata.trim() !== '' && durataMinuti === null) return setErrore('La durata deve essere un numero intero di minuti')
-    if (pesoCorporeo.trim() !== '' && pesoCorporeoKg === null) return setErrore('Il peso corporeo non è valido')
 
     const invio = esercizi.map((es) => ({
       esercizioId: es.esercizioId,
@@ -276,7 +268,6 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
         data,
         note: note.trim() === '' ? null : note,
         durataMinuti,
-        pesoCorporeoKg,
         esercizi: invio,
       })
       if ('errore' in esito) return setErrore(esito.errore)
@@ -446,18 +437,11 @@ export function FormSessione({ giorno, ultime, catalogo, pesoCorporeoIniziale, o
       </section>
 
       <section className={`${stileCarta} space-y-3 p-4`}>
-        <h2 className="text-lg font-extrabold">Dati opzionali</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1 text-sm text-muto">
-            <span>Durata (minuti)</span>
-            <input inputMode="numeric" placeholder="60" value={durata} onChange={(e) => setDurata(e.target.value)} className={stileInput} />
-          </label>
-          <label className="block space-y-1 text-sm text-muto">
-            <span>Peso corporeo (kg)</span>
-            <input inputMode="decimal" placeholder="80" value={pesoCorporeo} onChange={(e) => setPesoCorporeo(e.target.value)} className={stileInput} />
-          </label>
-        </div>
-        {kcalStimate !== null && <p className="text-sm text-muto">Stima indicativa: circa {kcalStimate} kcal</p>}
+        <h2 className="text-lg font-extrabold">Durata</h2>
+        <label className="block space-y-1 text-sm text-muto">
+          <span>Minuti (facoltativo)</span>
+          <input inputMode="numeric" placeholder="60" value={durata} onChange={(e) => setDurata(e.target.value)} className={stileInput} />
+        </label>
       </section>
 
       {errore && (

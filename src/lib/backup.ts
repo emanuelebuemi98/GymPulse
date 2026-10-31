@@ -44,7 +44,6 @@ const sessioneSchema = z.object({
   giornoId: z.string().min(1),
   data: z.iso.datetime(),
   note: z.string().max(1000).nullable(),
-  pesoCorporeoKg: z.number().min(0).max(1000).nullable(),
   durataMinuti: intero,
   datiIniziali: z.boolean(),
   serie: z.array(serieSchema).max(1000),
@@ -52,7 +51,7 @@ const sessioneSchema = z.object({
 
 const backupSchema = z.object({
   formato: z.literal('gympulse-backup'),
-  versione: z.literal(3),
+  versione: z.literal(4),
   esportatoIl: z.iso.datetime(),
   esercizi: z.array(esercizioSchema).max(2000),
   scheda: z.array(giornoSchema).min(1).max(20),
@@ -84,7 +83,6 @@ export type DatiBackup = {
     giornoId: string
     data: Date
     note: string | null
-    pesoCorporeoKg: number | null
     durataMinuti: number | null
     datiIniziali: boolean
     serie: { esercizioId: number; ordine: number; pesoKg: number | null; ripetizioni: number }[]
@@ -94,7 +92,7 @@ export type DatiBackup = {
 export function creaBackup(dati: DatiBackup, ora = new Date()): Backup {
   return {
     formato: 'gympulse-backup',
-    versione: 3,
+    versione: 4,
     esportatoIl: ora.toISOString(),
     esercizi: dati.esercizi.map((e) => ({ id: e.id, nome: e.nome, muscoli: e.muscoli })),
     scheda: dati.giorni.map((giorno) => ({
@@ -120,7 +118,6 @@ export function creaBackup(dati: DatiBackup, ora = new Date()): Backup {
       giornoId: sessione.giornoId,
       data: sessione.data.toISOString(),
       note: sessione.note,
-      pesoCorporeoKg: sessione.pesoCorporeoKg,
       durataMinuti: sessione.durataMinuti,
       datiIniziali: sessione.datiIniziali,
       serie: sessione.serie.map((serie) => ({

@@ -1,12 +1,6 @@
 import { db } from './db'
-import { stimaKcal } from './allenamento'
 import { calcolaRecord, massimoKg, volumeSerie, type RecordEsercizio } from './progressi'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
-
-// Le kcal non si salvano: si ricavano da peso corporeo e durata, che servono entrambi.
-function kcalDa(pesoCorporeoKg: number | null, durataMinuti: number | null): number | null {
-  return pesoCorporeoKg !== null && durataMinuti !== null ? stimaKcal(pesoCorporeoKg, durataMinuti) : null
-}
 
 // Conteggi e ultima seduta per la home.
 export async function riepilogoHome(userId: number) {
@@ -49,7 +43,6 @@ export async function elencoSessioni(userId: number) {
     numeroSerie: sessione.serie.length,
     volumeKg: volumeSerie(sessione.serie),
     durataMinuti: sessione.durataMinuti,
-    kcalStimate: kcalDa(sessione.pesoCorporeoKg, sessione.durataMinuti),
     datiIniziali: sessione.datiIniziali,
   }))
 }
@@ -85,8 +78,6 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
     giornoId: sessione.giornoId,
     giornoTitolo: sessione.giorno.titolo,
     durataMinuti: sessione.durataMinuti,
-    pesoCorporeoKg: sessione.pesoCorporeoKg,
-    kcalStimate: kcalDa(sessione.pesoCorporeoKg, sessione.durataMinuti),
     note: sessione.note,
     datiIniziali: sessione.datiIniziali,
     esercizi: [...gruppi.values()],
@@ -118,16 +109,6 @@ export async function ultimeVolte(userId: number, esercizioIds: number[]): Promi
     risultato[riga.esercizioId].serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni })
   }
   return risultato
-}
-
-// Peso corporeo dell'ultima seduta che lo riporta: precompila il campo del form.
-export async function ultimoPesoCorporeo(userId: number): Promise<number | null> {
-  const sessione = await db.sessione.findFirst({
-    where: { userId, pesoCorporeoKg: { not: null } },
-    orderBy: { data: 'desc' },
-    select: { pesoCorporeoKg: true },
-  })
-  return sessione?.pesoCorporeoKg ?? null
 }
 
 export type SedutaEsercizio = {

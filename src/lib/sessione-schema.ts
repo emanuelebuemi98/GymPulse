@@ -35,11 +35,6 @@ const sessioneSchema = z.object({
     .min(1, 'La durata deve essere di almeno 1 minuto')
     .max(600, 'Durata troppo lunga')
     .nullable(),
-  pesoCorporeoKg: z
-    .number({ error: 'Peso corporeo non valido' })
-    .min(20, 'Peso corporeo troppo basso')
-    .max(400, 'Peso corporeo troppo alto')
-    .nullable(),
   esercizi: z.array(esercizioSchema).max(50),
 })
 

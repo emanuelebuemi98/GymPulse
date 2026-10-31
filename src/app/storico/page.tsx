@@ -55,7 +55,6 @@ export default async function StoricoPage() {
                     {sessione.numeroEsercizi} esercizi · {sessione.numeroSerie} serie
                     {sessione.volumeKg > 0 && ` · ${formatNumero(sessione.volumeKg, 0)} kg`}
                     {sessione.durataMinuti !== null && ` · ${sessione.durataMinuti} min`}
-                    {sessione.kcalStimate !== null && ` · ~${sessione.kcalStimate} kcal`}
                   </span>
                   {sessione.datiIniziali && (
                     <span className="flex flex-wrap gap-2 pt-1">

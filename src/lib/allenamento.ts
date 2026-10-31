@@ -1,8 +1,5 @@
 import type { Obiettivo } from './scheda-tipi'
 
-// Valore intermedio dell'intervallo 3,5–6 per il sollevamento pesi.
-export const MET_PESI = 5
-
 export type SerieEseguita = { peso: number; ripetizioni: number }
 
 // Indice del giorno da proporre dopo l'ultimo allenamento (null = nessuno storico).
@@ -35,11 +32,6 @@ export function prossimoCarico(
 export function stimaRM(peso: number, ripetizioni: number): number {
   if (ripetizioni < 1) throw new Error('Le ripetizioni devono essere almeno 1')
   return peso * (1 + ripetizioni / 30)
-}
-
-// Calorie stimate: MET × peso corporeo (kg) × durata (ore). È una stima, non una misura.
-export function stimaKcal(pesoCorporeoKg: number, durataMinuti: number, met = MET_PESI): number {
-  return Math.round(met * pesoCorporeoKg * (durataMinuti / 60))
 }
 
 export function descrizioneObiettivo(obiettivo: Obiettivo): string {
