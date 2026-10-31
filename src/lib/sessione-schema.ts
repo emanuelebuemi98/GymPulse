@@ -3,7 +3,7 @@ import { istanteDaData } from './formato'
 
 // Regole per una sessione registrata. Il browser non è fidato: il server ricontrolla tutto.
 
-const serieSchema = z.object({
+export const serieSchema = z.object({
   pesoKg: z
     .number({ error: 'Peso non valido' })
     .min(0, 'Il peso non può essere negativo')
@@ -25,16 +25,20 @@ const esercizioSchema = z
   })
   .refine((e) => (e.esercizioId === null) !== (e.nomeNuovo === null), { message: 'Esercizio non valido' })
 
+// Note e durata hanno le stesse regole quando la seduta arriva dal form e quando arriva da un file CSV.
+export const noteSchema = z.string().trim().max(500, 'Le note sono troppo lunghe').nullable()
+export const durataSchema = z
+  .number({ error: 'Durata non valida' })
+  .int('La durata deve essere in minuti interi')
+  .min(1, 'La durata deve essere di almeno 1 minuto')
+  .max(600, 'Durata troppo lunga')
+  .nullable()
+
 const sessioneSchema = z.object({
   giornoId: z.string().min(1, 'Giorno mancante'),
   data: z.string(),
-  note: z.string().trim().max(500, 'Le note sono troppo lunghe').nullable(),
-  durataMinuti: z
-    .number({ error: 'Durata non valida' })
-    .int('La durata deve essere in minuti interi')
-    .min(1, 'La durata deve essere di almeno 1 minuto')
-    .max(600, 'Durata troppo lunga')
-    .nullable(),
+  note: noteSchema,
+  durataMinuti: durataSchema,
   esercizi: z.array(esercizioSchema).max(50),
 })
 

@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { utenteCorrente } from '@/lib/accesso'
-import { leggiBackup } from '@/lib/backup'
 import { trovaOCreaEsercizio } from '@/lib/catalogo'
+import { LIMITE_CSV, leggiCsv } from '@/lib/csv'
 import { db } from '@/lib/db'
 import { campiObiettivo } from '@/lib/voci'
 import { validaScheda } from '@/lib/scheda-schema'
@@ -14,7 +14,6 @@ import { validaSessione } from '@/lib/sessione-schema'
 // firmato (utenteCorrente) e finisce in ogni query: nessun id di persona arriva mai dal form, e i dati
 // di un'altra persona non sono raggiungibili nemmeno conoscendone gli id.
 
-const LIMITE_BACKUP = 900_000 // caratteri: i server action accettano al massimo 1 MB
 const ID_MASSIMO = 2_147_483_647
 const NON_AUTORIZZATO = 'Sessione scaduta: accedi di nuovo e riprova (la sessione in corso è salvata nel browser).'
 
@@ -128,76 +127,77 @@ export async function eliminaSessione(id: unknown): Promise<{ errore: string } |
   redirect('/storico')
 }
 
-// Sostituisce scheda, esercizi e sedute DI CHI LA ESEGUE con il contenuto del backup: i dati delle altre
-// persone non si toccano. Il chiamante chiede conferma.
-//
-// Gli id di esercizi e sedute sono numeri unici in tutto il database, quindi quelli scritti nel file non si
-// possono riusare: potrebbero già appartenere a un'altra persona (o a questa stessa, prima della sostituzione).
-// Il database ne assegna di nuovi e qui si ricollegano voci e serie. Date, pesi e ripetizioni restano identici.
-export async function importaBackup(testo: unknown): Promise<{ sedute: number } | { errore: string }> {
+// Aggiunge alle sedute DI CHI LA ESEGUE quelle scritte nel file CSV. Non cancella nulla: una seduta con la
+// stessa data e la stessa giornata di una già presente viene saltata, così importare due volte lo stesso file
+// non duplica niente. Gli esercizi si ritrovano per nome (senza badare alle maiuscole) e se non ci sono si creano.
+// Le giornate invece devono esistere già nella scheda: l'importazione non ne inventa.
+export async function importaCsv(testo: unknown): Promise<{ aggiunte: number; giaPresenti: number } | { errore: string }> {
   const userId = await utenteCorrente()
   if (!userId) return { errore: NON_AUTORIZZATO }
   if (typeof testo !== 'string') return { errore: 'File non valido' }
-  if (testo.length > LIMITE_BACKUP) return { errore: 'Il file è troppo grande per essere importato' }
+  if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
 
-  const esito = leggiBackup(testo)
+  const esito = leggiCsv(testo)
   if (!esito.ok) return { errore: esito.errore }
-  const { esercizi, scheda, sessioni } = esito.backup
+  const { sedute } = esito
+
+  const giornate = new Set((await db.giornoScheda.findMany({ where: { userId }, select: { id: true } })).map((g) => g.id))
+  const senzaGiornata = sedute.find((seduta) => !giornate.has(seduta.giornoId))
+  if (senzaGiornata) {
+    return { errore: `Riga ${senzaGiornata.riga}: la giornata "${senzaGiornata.giornoId}" non esiste nella tua scheda` }
+  }
+
+  const chiave = (data: Date, giornoId: string) => `${data.getTime()}|${giornoId}`
+  const esistenti = await db.sessione.findMany({
+    where: { userId, data: { in: sedute.map((seduta) => seduta.data) } },
+    select: { data: true, giornoId: true },
+  })
+  const presenti = new Set(esistenti.map((seduta) => chiave(seduta.data, seduta.giornoId)))
+  const nuove = sedute.filter((seduta) => !presenti.has(chiave(seduta.data, seduta.giornoId)))
+  if (nuove.length === 0) return { aggiunte: 0, giaPresenti: sedute.length }
 
   await db.$transaction(
     async (tx) => {
-      // Cancellare le sedute porta via le loro serie; poi la scheda e il catalogo, solo di questa persona.
-      await tx.sessione.deleteMany({ where: { userId } })
-      await tx.voceScheda.deleteMany({ where: { userId } })
-      await tx.giornoScheda.deleteMany({ where: { userId } })
-      await tx.esercizio.deleteMany({ where: { userId } })
-
-      // Esercizi: il database assegna i nuovi id, in ordine, e qui si costruisce la corrispondenza vecchio → nuovo.
-      const creati = await tx.esercizio.createManyAndReturn({
-        data: esercizi.map(({ nome, muscoli }) => ({ userId, nome, muscoli })),
-        select: { id: true, nome: true },
-      })
-      if (creati.length !== esercizi.length || creati.some((c, i) => c.nome !== esercizi[i].nome)) {
-        throw new Error('Importazione interrotta: gli esercizi creati non corrispondono al file')
+      // Un esercizio si cerca (o si crea) una volta sola, anche se compare in cento sedute.
+      const esercizi = new Map<string, number>()
+      for (const seduta of nuove) {
+        for (const serie of seduta.serie) {
+          const nome = serie.esercizio.toLowerCase()
+          if (!esercizi.has(nome)) esercizi.set(nome, await trovaOCreaEsercizio(tx, userId, serie.esercizio))
+        }
       }
-      const nuoviEsercizi = new Map(esercizi.map((e, i) => [e.id, creati[i].id]))
 
-      await tx.giornoScheda.createMany({
-        data: scheda.map(({ id, titolo }) => ({ userId, id, titolo })),
+      const create = await tx.sessione.createManyAndReturn({
+        data: nuove.map(({ data, giornoId, note, durataMinuti, datiIniziali }) => ({
+          userId,
+          giornoId,
+          data,
+          note,
+          durataMinuti,
+          datiIniziali,
+        })),
+        select: { id: true, data: true, giornoId: true },
       })
-      await tx.voceScheda.createMany({
-        data: scheda.flatMap((giorno) =>
-          giorno.voci.map((voce) => ({
-            ...voce,
-            userId,
-            giornoId: giorno.id,
-            esercizioId: nuoviEsercizi.get(voce.esercizioId)!,
-          })),
-        ),
-      })
+      if (create.length !== nuove.length) throw new Error('Importazione interrotta: le sedute create non corrispondono al file')
+      const idSedute = new Map(create.map((seduta) => [chiave(seduta.data, seduta.giornoId), seduta.id]))
 
-      // Sedute: stesso procedimento. L'ordine con cui si inseriscono è quello del file.
-      const sedute = await tx.sessione.createManyAndReturn({
-        data: sessioni.map(({ serie: _serie, id: _id, data, ...resto }) => ({ ...resto, userId, data: new Date(data) })),
-        select: { id: true, data: true },
-      })
-      if (sedute.length !== sessioni.length || sedute.some((s, i) => s.data.toISOString() !== new Date(sessioni[i].data).toISOString())) {
-        throw new Error('Importazione interrotta: le sedute create non corrispondono al file')
-      }
       await tx.serieEseguita.createMany({
-        data: sessioni.flatMap((sessione, i) =>
-          sessione.serie.map((serie) => ({
-            ...serie,
+        data: nuove.flatMap((seduta) => {
+          const sessioneId = idSedute.get(chiave(seduta.data, seduta.giornoId))!
+          return seduta.serie.map((serie, indice) => ({
             userId,
-            sessioneId: sedute[i].id,
-            esercizioId: nuoviEsercizi.get(serie.esercizioId)!,
-          })),
-        ),
+            sessioneId,
+            esercizioId: esercizi.get(serie.esercizio.toLowerCase())!,
+            ordine: indice + 1,
+            pesoKg: serie.pesoKg,
+            ripetizioni: serie.ripetizioni,
+          }))
+        }),
       })
     },
     { timeout: 30_000 },
   )
 
   aggiornaPagine()
-  return { sedute: sessioni.length }
+  return { aggiunte: nuove.length, giaPresenti: sedute.length - nuove.length }
 }

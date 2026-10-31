@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BackupDati } from '@/components/BackupDati'
+import { CsvSedute } from '@/components/CsvSedute'
 import { IconaPlay } from '@/components/icone'
 import { stileCarta, stileEtichetta } from '@/components/stili'
 import { giornoConsigliato } from '@/lib/allenamento'
@@ -112,7 +112,7 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <BackupDati />
+      <CsvSedute />
     </div>
   )
 }

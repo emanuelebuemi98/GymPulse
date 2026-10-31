@@ -2,11 +2,16 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { importaBackup } from '@/app/actions'
+import { importaCsv } from '@/app/actions'
 import { IconaCarica, IconaScarica, IconaScudo } from './icone'
 import { stileBottoneChiaro, stileCarta } from './stili'
 
-export function BackupDati() {
+// Stesso limite di LIMITE_CSV in lib/csv.ts: il file si scarta prima di inviarlo.
+const LIMITE_CSV = 900_000
+
+const sedute = (n: number) => (n === 1 ? '1 seduta' : `${n} sedute`)
+
+export function CsvSedute() {
   const router = useRouter()
   const file = useRef<HTMLInputElement>(null)
   const [messaggio, setMessaggio] = useState<{ testo: string; errore: boolean } | null>(null)
@@ -18,36 +23,40 @@ export function BackupDati() {
     if (!scelto) return
     setMessaggio(null)
 
-    if (scelto.size > 900_000) {
+    if (scelto.size > LIMITE_CSV) {
       setMessaggio({ testo: 'Il file è troppo grande per essere importato', errore: true })
       return
     }
-    const confermato = window.confirm(
-      'Importare il backup sostituisce scheda, esercizi e tutte le sedute di questo dispositivo. Continuare?',
-    )
-    if (!confermato) return
 
     const testo = await scelto.text()
     startTransition(async () => {
-      const esito = await importaBackup(testo)
+      const esito = await importaCsv(testo)
       if ('errore' in esito) {
         setMessaggio({ testo: esito.errore, errore: true })
         return
       }
-      setMessaggio({ testo: `Backup importato: ${esito.sedute} sedute`, errore: false })
+      const presenti = esito.giaPresenti > 0 ? ` (${esito.giaPresenti} erano già presenti)` : ''
+      setMessaggio({
+        testo:
+          esito.aggiunte === 0
+            ? `Nessuna seduta nuova: erano già tutte presenti`
+            : `Importate ${sedute(esito.aggiunte)}${presenti}`,
+        errore: false,
+      })
       router.refresh()
     })
   }
 
   return (
     <section className={`${stileCarta} space-y-3 p-4`}>
-      <h2 className="text-lg font-extrabold">Backup</h2>
+      <h2 className="text-lg font-extrabold">Sedute in CSV</h2>
       <p className="flex gap-2 text-sm text-muto">
         <IconaScudo className="mt-0.5 size-4 shrink-0 text-attenzione" />
-        Esporta un backup JSON ogni tanto: contiene scheda, esercizi e tutte le sedute.
+        Esporta le tue sedute in un file che si apre anche in Excel. Importando un file, le sedute nuove si
+        aggiungono e quelle già presenti non si duplicano. La scheda non è inclusa.
       </p>
       <div className="grid grid-cols-2 gap-2">
-        <a href="/api/backup" download className={stileBottoneChiaro}>
+        <a href="/api/export" download className={stileBottoneChiaro}>
           <IconaScarica className="size-4" />
           Esporta
         </a>
@@ -56,7 +65,7 @@ export function BackupDati() {
           {inCorso ? 'Importo…' : 'Importa'}
         </button>
       </div>
-      <input ref={file} type="file" accept="application/json,.json" onChange={alScelto} className="hidden" />
+      <input ref={file} type="file" accept=".csv,text/csv" onChange={alScelto} className="hidden" />
       {messaggio && (
         <p role={messaggio.errore ? 'alert' : 'status'} className={`text-sm ${messaggio.errore ? 'text-errore' : 'text-ok'}`}>
           {messaggio.testo}

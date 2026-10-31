@@ -1,3 +1,4 @@
+import type { SedutaEsportata } from './csv'
 import { db } from './db'
 import { calcolaRecord, massimoKg, volumeSerie, type RecordEsercizio } from './progressi'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
@@ -172,20 +173,19 @@ export async function recordPerEsercizio(userId: number): Promise<RecordEsercizi
   )
 }
 
-// Tutto quello che serve per un backup completo.
-export async function datiPerBackup(userId: number) {
-  const [giorni, esercizi, sessioni] = await Promise.all([
-    db.giornoScheda.findMany({
-      where: { userId },
-      orderBy: { id: 'asc' },
-      include: { voci: { orderBy: { ordine: 'asc' } } },
-    }),
-    db.esercizio.findMany({ where: { userId }, orderBy: { id: 'asc' } }),
-    db.sessione.findMany({
-      where: { userId },
-      orderBy: { data: 'asc' },
-      include: { serie: { orderBy: { ordine: 'asc' } } },
-    }),
-  ])
-  return { giorni, esercizi, sessioni }
+// Tutte le sedute, dalla più vecchia, con il nome dell'esercizio al posto del suo id: il file CSV non porta id.
+export async function sedutePerCsv(userId: number): Promise<SedutaEsportata[]> {
+  const sessioni = await db.sessione.findMany({
+    where: { userId },
+    orderBy: { data: 'asc' },
+    include: { serie: { orderBy: { ordine: 'asc' }, include: { esercizio: { select: { nome: true } } } } },
+  })
+  return sessioni.map((sessione) => ({
+    data: sessione.data,
+    giornoId: sessione.giornoId,
+    durataMinuti: sessione.durataMinuti,
+    note: sessione.note,
+    datiIniziali: sessione.datiIniziali,
+    serie: sessione.serie.map((s) => ({ esercizio: s.esercizio.nome, pesoKg: s.pesoKg, ripetizioni: s.ripetizioni })),
+  }))
 }
