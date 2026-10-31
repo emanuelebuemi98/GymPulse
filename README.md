@@ -23,16 +23,15 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Giornata consigliata** | La home ti dice cosa tocca oggi, nell'ordine A → B → C → A. |
 | **Bozza che non si perde** | Se chiudi la pagina o il telefono si spegne a metà allenamento, le serie già confermate restano nel browser per 12 ore. |
 | **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
-| **Progressi** | Per ogni esercizio: grafico del carico massimo seduta per seduta (con tooltip e tabella alternativa), volume indicativo e record. |
-| **Volume e massimale stimato** | Volume = kg × ripetizioni. Il massimale (1RM) è stimato con la formula di Epley, `peso × (1 + ripetizioni / 30)`, ed è mostrato come nota nella pagina Progressi. |
-| **Backup** | Esporti tutti i tuoi dati in un file JSON e li reimporti (anche su un altro dispositivo). L'importazione sostituisce solo i *tuoi* dati. |
+| **Progressi: panoramica** | Sedute per settimana e volume per settimana (le settimane senza sedute ci sono, a zero), sedute per giornata A/B/C e gli ultimi record. |
+| **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, massimale stimato e volume per seduta. Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri. |
+| **Volume e massimale stimato** | Volume = kg × ripetizioni. Il massimale (1RM) è stimato con la formula di Epley, `peso × (1 + ripetizioni / 30)`, sulla serie migliore di ogni seduta. Le sedute con ripetizioni non registrate (dati iniziali) non entrano nel massimale e nel volume sono barre più chiare. |
+| **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola) e lo reimporti. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
 
 ### In programma
 
 | Cosa | Situazione |
 |---|---|
-| **Grafici migliori e panoramica dei progressi** | Oggi i grafici sono disegnati a mano in SVG. Si passa a una libreria (proposta: Recharts) e si aggiunge una panoramica generale dei progressi, non solo per esercizio. |
-| **Export CSV** | Al posto del backup JSON: le sedute si esportano e si reimportano in CSV. Da definire cosa fare della scheda, che in un CSV non ci sta. |
 | **Recupero della password** | Non c'è una procedura dall'app. Per ora si reimposta da terminale con `npm run db:utente`. |
 | **Smartwatch** | Da studiare: dipende dal marchio dell'orologio. |
 | **Pubblicazione online** | Ultimo passo: Supabase per il database e Vercel per l'app. |
@@ -51,7 +50,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | ORM | Prisma | 7.10.1 | Con driver `pg` 8.23.1 e `@prisma/adapter-pg` 7.10.1 |
 | Validazione | Zod | 4.6.7 | I dati arrivati dal browser si ricontrollano sempre sul server |
 | Accesso | Scritto nel progetto | — | Cookie firmato (HMAC-SHA256) e password con scrypt, entrambi di Node.js: nessuna libreria in più |
-| Grafici | SVG scritto a mano | — | Provvisorio, senza librerie: da sostituire (vedi Roadmap) |
+| Grafici | Recharts | 3.10.1 | Linee e barre di una sola serie, in un solo colore (blu `#2a78d6`, controllato sul colore della carta) |
 | Strumenti | `tsx` 4.23.15, `dotenv` 18.0.9 | | Per lo script `db:utente` |
 
 ---
@@ -178,6 +177,8 @@ GymPulse/
 │   │   ├── 20261030150000_login_utente/              # nome utente e password
 │   │   ├── 20261030160000_dati_per_utente/           # dati separati per persona
 │   │   ├── 20261030170000_utente_con_id_numerico/    # id numerici e nome completo
+│   │   ├── 20261031100000_tabelle_riordinate/        # id come prima colonna, colonne superflue tolte
+│   │   ├── 20261031110000_senza_peso_corporeo/       # via la colonna del peso corporeo
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account o cambia la password
@@ -190,9 +191,9 @@ GymPulse/
 │   │   ├── layout.tsx                                # intestazione, menu in alto, font
 │   │   ├── globals.css                               # colori del tema
 │   │   ├── page.tsx                                  # home
-│   │   ├── actions.ts                                # azioni sul server: salva sessione e scheda, elimina, importa backup
+│   │   ├── actions.ts                                # azioni sul server: salva sessione e scheda, elimina, importa CSV
 │   │   ├── api/
-│   │   │   └── backup/route.ts                       # esportazione del backup JSON
+│   │   │   └── export/route.ts                       # esportazione delle sedute in CSV
 │   │   ├── login/
 │   │   │   ├── page.tsx                              # accesso
 │   │   │   ├── actions.ts                            # accedi, registrati, esci
@@ -204,16 +205,18 @@ GymPulse/
 │   │   ├── storico/
 │   │   │   ├── page.tsx                              # elenco delle sedute
 │   │   │   └── [sessioneId]/page.tsx                 # dettaglio di una seduta
-│   │   └── progressi/page.tsx                        # grafico, volume e record per esercizio
+│   │   └── progressi/page.tsx                        # panoramica e grafici per esercizio
 │   ├── components/
 │   │   ├── FormSessione.tsx                          # la sessione: serie, ✓, timer, bozza
 │   │   ├── EditorScheda.tsx                          # modifica di una giornata
-│   │   ├── GraficoAndamento.tsx                      # grafico SVG con mirino e tooltip
+│   │   ├── GraficoSerie.tsx                          # grafico a linee o a barre (Recharts) con suggerimento e tabella
+│   │   ├── DistribuzioneGiornate.tsx                 # barre delle sedute per giornata A/B/C
+│   │   ├── SchedeProgressi.tsx                       # scelta tra panoramica e per esercizio
 │   │   ├── SelettoreEsercizio.tsx                    # menu per scegliere l'esercizio nei progressi
 │   │   ├── TabGiorni.tsx                             # scelta A / B / C
 │   │   ├── NavSuperiore.tsx                          # menu in alto
 │   │   ├── FormLogin.tsx, FormRegistrazione.tsx      # moduli di accesso e registrazione
-│   │   ├── BackupDati.tsx                            # esporta e importa il backup
+│   │   ├── CsvSedute.tsx                             # esporta e importa le sedute in CSV
 │   │   ├── EliminaSessione.tsx                       # pulsante per eliminare una seduta
 │   │   ├── icone.tsx                                 # icone SVG
 │   │   └── stili.ts                                  # classi condivise (carte, campi, pulsanti)
@@ -231,14 +234,14 @@ GymPulse/
 └── .gitignore                                        # elenco di file da ignorare durante il push su git
 ```
 
-Dentro `src/lib/` (23 file):
+Dentro `src/lib/` (24 file):
 
 | Gruppo | File |
 |---|---|
 | Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi) |
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
-| Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `backup.ts`, `numeri.ts`, `url.ts` |
-| Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, massimale, carico, record), `grafico.ts` (assi e posizioni), `formato.ts` (date e numeri in italiano) |
+| Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `numeri.ts`, `url.ts` |
+| Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, massimale, carico, record), `panoramica.ts` (sedute e volume per settimana, sedute per giornata), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
 | Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `bozza.ts` (la sessione in corso nel browser) |
 
 ## Modello dei dati
@@ -267,8 +270,8 @@ Modificare la scheda non tocca le sedute già salvate: le serie puntano agli ese
 - **Cookie di accesso** `httpOnly`, `SameSite=Lax`, con `Secure` su https. Contiene solo l'id dell'utente e la scadenza, firmati: non può essere modificato per diventare un altro.
 - **Password** salvate come hash scrypt. Lo stesso messaggio d'errore per utente inesistente e password sbagliata, con una breve pausa, così non si scoprono i nomi esistenti.
 - **L'utente si ricava sempre dal cookie**, mai da un id mandato dal browser. Il proxy chiude le pagine, e ogni pagina e ogni azione ricontrolla da sola.
-- **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, backup).
-- **Backup**: ognuno scarica solo i propri dati; l'importazione controlla formato, riferimenti e dimensione (massimo 900.000 caratteri) e dà id nuovi alle sedute.
+- **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
+- **CSV**: ognuno scarica solo le proprie sedute. L'importazione controlla ogni riga (data, peso, ripetizioni, durata, note), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file esportato i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
 - **Registrazione aperta a chiunque** conosca l'indirizzo. C'è un limite di 3 account all'ora per indirizzo e di 10 accessi ogni 15 minuti, ma il conteggio è in memoria: su Vercel vale per ogni istanza e rallenta senza bloccare del tutto. Per un blocco rigido servirebbe un archivio condiviso.
 - **`.env`** escluso da Git; in Git va solo `.env.example`.
 
@@ -280,10 +283,10 @@ Modificare la scheda non tocca le sedute già salvate: le serie puntano agli ese
 
 ## Roadmap
 
-1. ~~Scheda A/B/C, sessione, storico, progressi, personalizzazione e backup~~ (fatto)
+1. ~~Scheda A/B/C, sessione, storico, progressi e personalizzazione~~ (fatto)
 2. ~~Account personali con registrazione dall'app e dati separati per persona~~ (fatto)
-3. Grafici con una libreria e panoramica generale dei progressi
-4. Export e import CSV delle sedute, al posto del backup JSON
+3. ~~Grafici con una libreria e panoramica generale dei progressi~~ (fatto)
+4. ~~Export e import CSV delle sedute, al posto del backup JSON~~ (fatto)
 5. Recupero della password dall'app
 6. Studio dell'integrazione con lo smartwatch
 7. Collegamento a Supabase e pubblicazione su Vercel
