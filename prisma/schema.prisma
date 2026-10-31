@@ -86,20 +86,19 @@ model VoceScheda {
   @@index([userId, giornoId, ordine])
 }
 
-// Un allenamento svolto in palestra in una certa data. Le kcal non si salvano: si calcolano da peso e durata.
+// Un allenamento svolto in palestra in una certa data.
 // datiIniziali = true: serie importate a mano, con ripetizioni pari all'obiettivo e non registrate.
 model Sessione {
-  id             Int             @id @default(autoincrement())
-  userId         Int
-  giornoId       String
-  data           DateTime        @default(now())
-  note           String?
-  pesoCorporeoKg Float?
-  durataMinuti   Int?
-  datiIniziali   Boolean         @default(false)
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  giorno         GiornoScheda    @relation(fields: [userId, giornoId], references: [userId, id], onDelete: NoAction)
-  serie          SerieEseguita[]
+  id           Int             @id @default(autoincrement())
+  userId       Int
+  giornoId     String
+  data         DateTime        @default(now())
+  note         String?
+  durataMinuti Int?
+  datiIniziali Boolean         @default(false)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  giorno       GiornoScheda    @relation(fields: [userId, giornoId], references: [userId, id], onDelete: NoAction)
+  serie        SerieEseguita[]
 
   @@unique([id, userId])
   @@index([userId, data])
