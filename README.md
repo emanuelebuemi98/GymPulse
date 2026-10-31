@@ -22,10 +22,9 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Suggerimento del carico** | Per gli esercizi con "carico a salire" (es. panca, squat, stacco) l'app propone il peso successivo quando hai completato tutte le ripetizioni previste. |
 | **Giornata consigliata** | La home ti dice cosa tocca oggi, nell'ordine A → B → C → A. |
 | **Bozza che non si perde** | Se chiudi la pagina o il telefono si spegne a metà allenamento, le serie già confermate restano nel browser per 12 ore. |
-| **Storico** | Elenco delle sedute con volume, durata e calorie; dettaglio di ogni seduta; puoi eliminarne una. |
+| **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
 | **Progressi** | Per ogni esercizio: grafico del carico massimo seduta per seduta (con tooltip e tabella alternativa), volume indicativo e record. |
 | **Volume e massimale stimato** | Volume = kg × ripetizioni. Il massimale (1RM) è stimato con la formula di Epley, `peso × (1 + ripetizioni / 30)`, ed è mostrato come nota nella pagina Progressi. |
-| **Calorie stimate** | `MET × peso (kg) × durata (ore)`, con MET 5 per il sollevamento pesi. È una stima indicativa, non una misura. |
 | **Backup** | Esporti tutti i tuoi dati in un file JSON e li reimporti (anche su un altro dispositivo). L'importazione sostituisce solo i *tuoi* dati. |
 
 ### In programma
@@ -239,7 +238,7 @@ Dentro `src/lib/` (23 file):
 | Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi) |
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `backup.ts`, `numeri.ts`, `url.ts` |
-| Calcoli | `allenamento.ts` (kcal, timer, giornata consigliata), `progressi.ts` (volume, massimale, carico, record), `grafico.ts` (assi e posizioni), `formato.ts` (date e numeri in italiano) |
+| Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, massimale, carico, record), `grafico.ts` (assi e posizioni), `formato.ts` (date e numeri in italiano) |
 | Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `bozza.ts` (la sessione in corso nel browser) |
 
 ## Modello dei dati
@@ -254,10 +253,10 @@ In ogni tabella l'`id` è la prima colonna.
 | `GiornoScheda` | `id`, `userId`, `titolo` | sigla (testo), unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `muscoli` | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
-| `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `pesoCorporeoKg`, `durataMinuti`, `datiIniziali` | numero progressivo |
+| `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali` | numero progressivo |
 | `SerieEseguita` | `id`, `userId`, `sessioneId`, `esercizioId`, `ordine`, `pesoKg`, `ripetizioni` | testo casuale |
 
-Le **kcal non si salvano**: si calcolano ogni volta da peso corporeo e durata. L'ordine delle giornate è quello delle sigle (A, B, C).
+L'ordine delle giornate è quello delle sigle (A, B, C). L'app non registra peso corporeo né calorie.
 
 Giornate, esercizi, voci, sedute e serie portano sempre lo `userId`. Le chiavi esterne sono composte: il database stesso rifiuta di collegare un dato a quello di un'altra persona, anche conoscendone l'id.
 
