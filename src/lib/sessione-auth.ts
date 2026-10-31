@@ -10,7 +10,7 @@ export const LUNGHEZZA_MIN_SEGRETO = 32
 export const LUNGHEZZA_MIN_PASSWORD = 10
 export const LUNGHEZZA_MAX_PASSWORD = 200
 
-const VERSIONE = 'v2'
+const VERSIONE = 'v3'
 
 export type EsitoSegreto = { ok: true; segreto: string } | { ok: false; problema: string }
 
@@ -50,17 +50,16 @@ function firma(contenuto: string, segreto: string): string {
   return createHmac('sha256', segreto).update(contenuto).digest('base64url')
 }
 
-const LUNGHEZZA_MAX_ID = 100
-
-// Token del cookie: "v2.<id utente>.<scadenza in ms>.<firma>". L'id è in base64url, così non contiene
-// punti. Non c'è altro: né nome né password. Cambiare la versione fa scadere i token vecchi.
+// Token del cookie: "v3.<id utente>.<scadenza in ms>.<firma>". L'id è un numero intero positivo. Non c'è altro:
+// né nome né password. Cambiare la versione fa scadere i token vecchi.
 export function creaToken(
   segreto: string,
-  userId: string,
+  userId: number,
   adesso = Date.now(),
   durataSec = DURATA_SESSIONE_SEC,
 ): string {
-  const contenuto = `${VERSIONE}.${Buffer.from(userId).toString('base64url')}.${adesso + durataSec * 1000}`
+  if (!Number.isSafeInteger(userId) || userId < 1) throw new Error('Id utente non valido')
+  const contenuto = `${VERSIONE}.${userId}.${adesso + durataSec * 1000}`
   return `${contenuto}.${firma(contenuto, segreto)}`
 }
 
@@ -70,23 +69,21 @@ export function idUtenteDaToken(
   token: string | undefined,
   segreto: string | undefined,
   adesso = Date.now(),
-): string | null {
+): number | null {
   if (!token || !segreto || segreto.length < LUNGHEZZA_MIN_SEGRETO) return null
 
   const parti = token.split('.')
   if (parti.length !== 4) return null
-  const [versione, idCodificato, scadenza, firmaRicevuta] = parti
-  if (versione !== VERSIONE || !/^\d{1,15}$/.test(scadenza) || !/^[A-Za-z0-9_-]{1,200}$/.test(idCodificato)) {
-    return null
-  }
+  const [versione, idTesto, scadenza, firmaRicevuta] = parti
+  if (versione !== VERSIONE || !/^\d{1,15}$/.test(scadenza) || !/^[1-9]\d{0,9}$/.test(idTesto)) return null
 
-  const attesa = Buffer.from(firma(`${versione}.${idCodificato}.${scadenza}`, segreto))
+  const attesa = Buffer.from(firma(`${versione}.${idTesto}.${scadenza}`, segreto))
   const ricevuta = Buffer.from(firmaRicevuta)
   if (attesa.length !== ricevuta.length || !timingSafeEqual(attesa, ricevuta)) return null
   if (Number(scadenza) <= adesso) return null
 
-  const id = Buffer.from(idCodificato, 'base64url').toString()
-  return id.length > 0 && id.length <= LUNGHEZZA_MAX_ID ? id : null
+  const id = Number(idTesto)
+  return Number.isSafeInteger(id) ? id : null
 }
 
 export function tokenValido(token: string | undefined, segreto: string | undefined, adesso = Date.now()): boolean {

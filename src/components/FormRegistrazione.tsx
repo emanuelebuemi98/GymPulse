@@ -12,15 +12,14 @@ export function FormRegistrazione() {
   return (
     <form action={azione} className="space-y-4">
       <label className="block space-y-1 text-sm font-semibold text-muto">
-        <span>Codice di invito</span>
+        <span>Nome e cognome</span>
         <input
-          name="codice"
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
+          name="nome"
+          autoComplete="name"
+          autoCapitalize="words"
           required
-          maxLength={100}
+          minLength={2}
+          maxLength={80}
           className={`${stileTesto} text-left`}
         />
       </label>

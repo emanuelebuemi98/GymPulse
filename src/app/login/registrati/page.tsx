@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 import { FormRegistrazione } from '@/components/FormRegistrazione'
 import { stileCarta } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
-import { valutaCodiceInvito } from '@/lib/registrazione'
 
 // Legge il cookie a ogni richiesta.
 export const dynamic = 'force-dynamic'
@@ -13,8 +12,6 @@ export const metadata: Metadata = { title: 'Crea account' }
 
 export default async function RegistratiPage() {
   if (await haAccesso()) redirect('/')
-
-  const aperte = valutaCodiceInvito(process.env.CODICE_INVITO).ok
 
   return (
     <div className="mx-auto max-w-sm space-y-6 pt-10">
@@ -28,11 +25,7 @@ export default async function RegistratiPage() {
       </header>
 
       <section className={`${stileCarta} p-5`}>
-        {aperte ? (
-          <FormRegistrazione />
-        ) : (
-          <p className="text-muto">Le registrazioni al momento non sono aperte.</p>
-        )}
+        <FormRegistrazione />
       </section>
 
       <p className="text-center text-sm text-muto">

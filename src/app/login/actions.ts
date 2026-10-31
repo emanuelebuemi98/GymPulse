@@ -3,11 +3,11 @@
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { hashFittizio, creaHashPassword, verificaPassword } from '@/lib/password'
+import { creaLimite, indirizzoClient } from '@/lib/limite'
+import { creaHashPassword, hashFittizio, verificaPassword } from '@/lib/password'
 import {
-  codiceInvitoCorretto,
   giornateVuote,
-  valutaCodiceInvito,
+  normalizzaNomeCompleto,
   validaRegistrazione,
   èViolazioneUnicita,
 } from '@/lib/registrazione'
@@ -20,17 +20,23 @@ import {
   percorsoSicuro,
   valutaSegreto,
 } from '@/lib/sessione-auth'
-import { creaIdUtente } from '@/lib/utente'
 
 export type StatoLogin = { errore: string | null }
 
 const PAUSA_DOPO_ERRORE_MS = 800
 const LUNGHEZZA_MAX_USERNAME = 100
+const LUNGHEZZA_MAX_CAMPO = 200
 const pausa = (ms: number) => new Promise((risolvi) => setTimeout(risolvi, ms))
 
-// Apre la sessione: cookie firmato con l'id dell'utente. "secure" solo su https (Vercel manda
+// Limiti per indirizzo. Per le registrazioni si contano solo gli account CREATI (3 all'ora bastano a una persona vera e
+// fermano chi li crea a raffica): un modulo respinto per un campo sbagliato non consuma nulla, altrimenti chi sbaglia
+// la password verrebbe bloccato. Per gli accessi si contano i tentativi, perché è lì che si indovinano le password.
+const limiteRegistrazioni = creaLimite(3, 60 * 60 * 1000)
+const limiteAccessi = creaLimite(10, 15 * 60 * 1000)
+
+// Apre la sessione: cookie firmato con l'id numerico dell'utente. "secure" solo su https (Vercel manda
 // x-forwarded-proto): su http locale il browser scarterebbe il cookie.
-async function apriSessione(segreto: string, userId: string) {
+async function apriSessione(segreto: string, userId: number) {
   const archivio = await cookies()
   const èHttps = (await headers()).get('x-forwarded-proto') === 'https'
   archivio.set(COOKIE_SESSIONE, creaToken(segreto, userId), {
@@ -42,6 +48,9 @@ async function apriSessione(segreto: string, userId: string) {
   })
 }
 
+const testoLimite = (secondi: number) =>
+  `Troppi tentativi. Riprova tra ${secondi >= 120 ? `${Math.ceil(secondi / 60)} minuti` : `${secondi} secondi`}.`
+
 export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<StatoLogin> {
   const segreto = valutaSegreto(process.env.AUTH_SECRET)
   if (!segreto.ok) {
@@ -49,6 +58,10 @@ export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<S
     console.error(`[accesso] configurazione incompleta: ${segreto.problema}`)
     return { errore: 'Accesso non configurato' }
   }
+
+  const indirizzo = indirizzoClient(await headers())
+  const limite = limiteAccessi.prova(indirizzo)
+  if (!limite.consentito) return { errore: testoLimite(limite.riprovaTraSec) }
 
   const utente = dati.get('utente')
   const password = dati.get('password')
@@ -69,64 +82,79 @@ export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<S
 
   // Se l'utente non esiste si verifica comunque contro un hash finto: la risposta impiega lo stesso
   // tempo e non rivela quali nomi utente esistono.
-  const hash = riga?.passwordHash ?? (await hashFittizio())
-  const passwordGiusta = await verificaPassword(password, hash)
+  const passwordGiusta = await verificaPassword(password, riga?.passwordHash ?? (await hashFittizio()))
 
-  if (!riga?.passwordHash || !passwordGiusta) {
+  if (!riga || !passwordGiusta) {
     // Una breve pausa rende lenti i tentativi a ripetizione.
     await pausa(PAUSA_DOPO_ERRORE_MS)
     return { errore: 'Nome utente o password non corretti' }
   }
 
+  limiteAccessi.azzera(indirizzo)
   await apriSessione(segreto.segreto, riga.id)
   redirect(percorsoSicuro(dati.get('da')))
 }
 
-// Crea un nuovo account con le sue tre giornate vuote (A, B, C) e lo fa entrare. Serve il codice di invito.
+// Crea un nuovo account con le sue tre giornate vuote (A, B, C) e lo fa entrare. La registrazione è aperta a tutti.
 export async function registrati(_precedente: StatoLogin, dati: FormData): Promise<StatoLogin> {
   const segreto = valutaSegreto(process.env.AUTH_SECRET)
-  const invito = valutaCodiceInvito(process.env.CODICE_INVITO)
-  if (!segreto.ok || !invito.ok) {
-    console.error(`[registrazione] chiusa: ${!segreto.ok ? segreto.problema : 'CODICE_INVITO non impostato o troppo corto'}`)
-    return { errore: 'Le registrazioni non sono aperte' }
+  if (!segreto.ok) {
+    console.error(`[registrazione] configurazione incompleta: ${segreto.problema}`)
+    return { errore: 'Registrazione non disponibile' }
   }
 
+  const indirizzo = indirizzoClient(await headers())
+  const limite = limiteRegistrazioni.controlla(indirizzo)
+  if (!limite.consentito) return { errore: testoLimite(limite.riprovaTraSec) }
+
+  const nome = dati.get('nome')
   const utente = dati.get('utente')
   const password = dati.get('password')
   const conferma = dati.get('conferma')
-  const codice = dati.get('codice')
-  if (typeof utente !== 'string' || typeof password !== 'string' || typeof conferma !== 'string') {
+  if (
+    typeof nome !== 'string' ||
+    typeof utente !== 'string' ||
+    typeof password !== 'string' ||
+    typeof conferma !== 'string' ||
+    nome.length > LUNGHEZZA_MAX_CAMPO ||
+    utente.length > LUNGHEZZA_MAX_CAMPO ||
+    password.length > LUNGHEZZA_MAX_PASSWORD ||
+    conferma.length > LUNGHEZZA_MAX_PASSWORD
+  ) {
+    await pausa(PAUSA_DOPO_ERRORE_MS)
     return { errore: 'Compila tutti i campi' }
   }
 
-  // Il codice si controlla per primo e con un messaggio generico: chi non lo ha non deve ricevere
-  // altre informazioni (per esempio se un nome utente è già preso).
-  if (!codiceInvitoCorretto(codice, invito.codice)) {
+  const fullName = normalizzaNomeCompleto(nome)
+  const username = normalizzaUsername(utente)
+  const problema = validaRegistrazione(fullName, username, password, conferma)
+  if (problema) {
     await pausa(PAUSA_DOPO_ERRORE_MS)
-    return { errore: 'Codice di invito non valido' }
+    return { errore: problema }
   }
 
-  const username = normalizzaUsername(utente)
-  const problema = validaRegistrazione(username, password, conferma)
-  if (problema) return { errore: problema }
-
-  const userId = creaIdUtente()
+  let userId: number
   try {
-    await db.user.create({
+    const creato = await db.user.create({
       data: {
-        id: userId,
-        name: username,
+        fullName,
         username,
         passwordHash: await creaHashPassword(password),
         giorni: { create: giornateVuote() },
       },
+      select: { id: true },
     })
+    userId = creato.id
   } catch (errore) {
-    if (èViolazioneUnicita(errore)) return { errore: 'Questo nome utente è già in uso' }
+    if (èViolazioneUnicita(errore)) {
+      await pausa(PAUSA_DOPO_ERRORE_MS)
+      return { errore: 'Questo nome utente è già in uso' }
+    }
     console.error('[registrazione] errore imprevisto', errore)
-    return { errore: 'Non è stato possibile creare l\'account. Riprova.' }
+    return { errore: 'Non è stato possibile creare l’account. Riprova.' }
   }
 
+  limiteRegistrazioni.conta(indirizzo)
   await apriSessione(segreto.segreto, userId)
   redirect('/scheda/modifica?r=A')
 }

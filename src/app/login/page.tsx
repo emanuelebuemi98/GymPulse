@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 import { FormLogin } from '@/components/FormLogin'
 import { stileCarta } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
-import { valutaCodiceInvito } from '@/lib/registrazione'
 import { percorsoSicuro, valutaSegreto } from '@/lib/sessione-auth'
 import { primoParametro } from '@/lib/url'
 
@@ -38,19 +37,17 @@ export default async function LoginPage({ searchParams }: Props) {
         <FormLogin da={da} />
       </section>
 
-      {valutaCodiceInvito(process.env.CODICE_INVITO).ok && (
-        <p className="text-center text-sm text-muto">
-          Non hai un account?{' '}
-          <Link href="/login/registrati" className="font-semibold text-accento underline">
-            Creane uno
-          </Link>
-        </p>
-      )}
+      <p className="text-center text-sm text-muto">
+        Non hai un account?{' '}
+        <Link href="/login/registrati" className="font-semibold text-accento underline">
+          Creane uno
+        </Link>
+      </p>
 
       {suggerimento && (
         <p role="status" className="rounded-2xl bg-attenzione/15 p-3 text-sm text-attenzione">
           Accesso non configurato: {suggerimento}. Imposta AUTH_SECRET (almeno 32 caratteri) nel file .env e
-          riavvia il server; poi crea l&apos;utente con <code>npm run db:utente</code>.
+          riavvia il server.
         </p>
       )}
     </div>

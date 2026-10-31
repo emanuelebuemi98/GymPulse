@@ -1,41 +1,43 @@
-import { createHash, timingSafeEqual } from 'node:crypto'
 import { validaNuoveCredenziali } from './sessione-auth'
 
-// Registrazione di una nuova persona. Per non lasciare l'app aperta a chiunque conosca l'indirizzo,
-// serve un codice di invito (CODICE_INVITO nelle variabili d'ambiente) che dai tu a chi vuoi.
-// Senza il codice impostato le registrazioni sono chiuse.
+// Registrazione aperta: chiunque può creare un account dall'app. Non c'è un codice di invito, quindi le difese sono:
+// campi controllati con rigore, una pausa dopo ogni errore e, in produzione, il limite di tentativi per indirizzo
+// (vedi lib/limite.ts).
 
-export const LUNGHEZZA_MIN_CODICE = 8
-export const LUNGHEZZA_MAX_CODICE = 100
+export const LUNGHEZZA_MIN_NOME = 2
+export const LUNGHEZZA_MAX_NOME = 80
 
-export type EsitoCodice = { ok: true; codice: string } | { ok: false }
-
-export function valutaCodiceInvito(env: string | undefined): EsitoCodice {
-  const codice = env?.trim()
-  return codice && codice.length >= LUNGHEZZA_MIN_CODICE ? { ok: true, codice } : { ok: false }
+// Nome completo, normalizzato: spazi ai lati tolti, spazi interni ridotti a uno, forma Unicode composta (NFC).
+export function normalizzaNomeCompleto(testo: string): string {
+  return testo.normalize('NFC').trim().replace(/\s+/g, ' ')
 }
 
-const impronta = (testo: string) => createHash('sha256').update(testo).digest()
+// Lettere (anche accentate) e, dentro il nome, apostrofo, trattino, punto e spazio. Niente numeri né simboli:
+// il nome viene mostrato in pagina, quindi si evita qualunque carattere che non sia parte di un nome.
+const FORMATO_NOME = /^\p{L}[\p{L}\p{M}' .-]*$/u
 
-// Confronto a tempo costante: non rivela quanti caratteri iniziali erano giusti.
-export function codiceInvitoCorretto(inserito: unknown, atteso: string): boolean {
-  if (typeof inserito !== 'string' || inserito.length > LUNGHEZZA_MAX_CODICE) return false
-  return timingSafeEqual(impronta(inserito.trim()), impronta(atteso))
+export function validaNomeCompleto(nome: string): string | null {
+  if (nome.length < LUNGHEZZA_MIN_NOME) return 'Scrivi il tuo nome completo'
+  if (nome.length > LUNGHEZZA_MAX_NOME) return `Il nome è troppo lungo (massimo ${LUNGHEZZA_MAX_NOME} caratteri)`
+  if (!FORMATO_NOME.test(nome)) return 'Il nome può contenere solo lettere, spazi, apostrofi e trattini'
+  return null
 }
 
-// Controlli sul modulo di registrazione. Il nome utente va già normalizzato. Restituisce il problema, o null.
-export function validaRegistrazione(username: string, password: string, conferma: string): string | null {
-  const problema = validaNuoveCredenziali(username, password)
-  if (problema) return problema
+// Controlli sul modulo di registrazione. Nome e username vanno già normalizzati. Restituisce il problema, o null.
+export function validaRegistrazione(nome: string, username: string, password: string, conferma: string): string | null {
+  const problemaNome = validaNomeCompleto(nome)
+  if (problemaNome) return problemaNome
+  const problemaCredenziali = validaNuoveCredenziali(username, password)
+  if (problemaCredenziali) return problemaCredenziali
   if (password !== conferma) return 'Le due password non coincidono'
   return null
 }
 
-export type GiornataVuota = { id: string; numero: number; titolo: string; focus: string }
+export type GiornataVuota = { id: string; titolo: string }
 
 // Ogni persona parte con tre giornate vuote (A, B, C) da riempire con la propria scheda.
 export function giornateVuote(): GiornataVuota[] {
-  return ['A', 'B', 'C'].map((id, indice) => ({ id, numero: indice + 1, titolo: `Giornata ${id}`, focus: '' }))
+  return ['A', 'B', 'C'].map((id) => ({ id, titolo: `Giornata ${id}` }))
 }
 
 // Errore di Prisma per un valore che deve essere unico (es. nome utente già preso).
