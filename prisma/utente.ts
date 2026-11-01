@@ -48,7 +48,7 @@ async function main() {
     data: { fullName: nome, username, passwordHash, giorni: { create: giornateVuote() } },
     select: { id: true },
   })
-  console.log(`Account "${username}" creato (id ${creato.id}) con le giornate A, B e C vuote. Salvato solo l'hash.`)
+  console.log(`Account "${username}" creato (id ${creato.id}) con la giornata A vuota. Salvato solo l'hash.`)
 }
 
 main()

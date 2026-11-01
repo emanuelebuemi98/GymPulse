@@ -36,10 +36,11 @@ export function validaRegistrazione(nome: string, username: string, password: st
 
 export type GiornataVuota = { id: string; titolo: string }
 
-// Ogni persona parte con tre giornate vuote (A, B, C) da riempire con la propria scheda. Sono solo il punto di partenza:
-// dalla pagina Scheda se ne aggiungono (fino a 7) e se ne tolgono (fino a una sola).
+// Ogni persona parte con una sola giornata vuota (A) da riempire con la propria scheda. Le altre si aggiungono dalla
+// pagina Scheda col "+", fino a 7: chi si allena tre volte a settimana ne aggiunge due, chi si allena una volta sola non
+// deve togliere niente. Una scheda ha sempre almeno una giornata.
 export function giornateVuote(): GiornataVuota[] {
-  return ['A', 'B', 'C'].map((id) => ({ id, titolo: titoloGiornata(id) }))
+  return ['A'].map((id) => ({ id, titolo: titoloGiornata(id) }))
 }
 
 // Errore di Prisma per un valore che deve essere unico (es. nome utente già preso).
