@@ -1,3 +1,5 @@
+import { dataIso } from './formato'
+import { lunediDi } from './panoramica'
 import type { Obiettivo } from './scheda-tipi'
 
 export type SerieEseguita = { peso: number; ripetizioni: number }
@@ -9,9 +11,17 @@ export function indiceGiornoSuccessivo(ultimoIndice: number | null, totaleGiorni
   return (ultimoIndice + 1) % totaleGiorni
 }
 
-// Giornata da proporre dopo l'ultima registrata. Se l'ultima non è più nella scheda, si riparte dalla prima.
-export function giornoConsigliato<T extends { id: string }>(giorni: T[], ultimoId: string | null): T {
-  const indice = ultimoId === null ? -1 : giorni.findIndex((giorno) => giorno.id === ultimoId)
+// Giornata da proporre. Ogni settimana (da lunedì, ora di Roma) riparte dalla prima: se l'ultima seduta è di una
+// settimana precedente, o non ce ne sono, si propone la prima. Dentro la settimana si segue l'ordine, cioè la
+// giornata dopo l'ultima registrata. Se l'ultima non è più nella scheda, si riparte dalla prima.
+export function giornoConsigliato<T extends { id: string }>(
+  giorni: T[],
+  ultima: { giornoId: string; data: Date } | null,
+  oggi = new Date(),
+): T {
+  if (ultima === null || dataIso(ultima.data) < lunediDi(dataIso(oggi))) return giorni[0]
+
+  const indice = giorni.findIndex((giorno) => giorno.id === ultima.giornoId)
   return giorni[indiceGiornoSuccessivo(indice === -1 ? null : indice, giorni.length)]
 }
 

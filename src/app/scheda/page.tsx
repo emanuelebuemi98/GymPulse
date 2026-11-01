@@ -27,7 +27,7 @@ export default async function SchedaPage({ searchParams }: Props) {
     return <p className={`${stileCarta} p-5 text-muto`}>La scheda è vuota. Esegui <code className="text-testo">npm run db:seed</code>.</p>
   }
 
-  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima?.giornoId ?? null)
+  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)
   const ultime = await ultimeVolte(userId, giorno.esercizi.map((e) => e.id))
 
   return (

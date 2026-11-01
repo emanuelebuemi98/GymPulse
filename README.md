@@ -21,7 +21,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Valori dell'ultima volta** | Nei campi vedi in grigio i kg e le ripetizioni dell'ultima seduta. Contano solo dopo la conferma: se confermi una serie vuota vale il suggerimento. |
 | **Timer di recupero** | Dopo ogni serie parte il conto alla rovescia del recupero previsto dalla scheda (con vibrazione sui telefoni che la supportano). |
 | **Suggerimento del carico** | Per gli esercizi con "carico a salire" (es. panca, squat, stacco) l'app propone il peso successivo quando hai completato tutte le ripetizioni previste. |
-| **Giornata consigliata** | La home ti dice cosa tocca oggi, nell'ordine A → B → C → A. |
+| **Giornata consigliata** | La home ti dice cosa tocca oggi. Dentro la settimana segue l'ordine A → B → C: propone la giornata dopo l'ultima registrata. **Ogni lunedì riparte da A**, anche se la settimana prima non hai finito il giro (le settimane vanno da lunedì a domenica, all'ora di Roma). Le altre giornate restano sempre a un tocco, nell'elenco sotto. |
 | **Bozza che non si perde** | Se chiudi la pagina o il telefono si spegne a metà allenamento, le serie già confermate restano nel browser per 12 ore. |
 | **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
 | **Progressi: panoramica** | Sedute per settimana e volume per settimana (le settimane senza sedute ci sono, a zero), sedute per giornata A/B/C e gli ultimi record. |

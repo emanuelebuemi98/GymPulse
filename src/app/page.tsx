@@ -27,7 +27,7 @@ export default async function HomePage() {
     )
   }
 
-  const consigliato = giornoConsigliato(giorni, ultima?.giornoId ?? null)
+  const consigliato = giornoConsigliato(giorni, ultima)
 
   return (
     <div className="space-y-7">

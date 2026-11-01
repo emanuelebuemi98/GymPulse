@@ -24,7 +24,7 @@ export default async function SessionePage({ searchParams }: Props) {
     return <p className={`${stileCarta} p-5 text-muto`}>La scheda è vuota: non c'è nessuna sessione da avviare.</p>
   }
 
-  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima?.giornoId ?? null)
+  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)
   const ultime = await ultimeVolte(userId, catalogo.map((voce) => voce.id))
 
   // `key` fa ripartire il form (e la sua bozza) quando si cambia giornata.
