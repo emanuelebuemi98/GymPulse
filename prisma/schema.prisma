@@ -22,15 +22,61 @@ datasource db {
 }
 
 // Account. Si crea dalla registrazione nell'app. fullName è il nome completo; username e passwordHash servono
-// al login (passwordHash è un hash scrypt, mai la password).
+// al login (passwordHash è un hash scrypt, mai la password). email è l'indirizzo confermato con un codice: è dove
+// arrivano i codici per reimpostare la password. Vuota finché la persona non la aggiunge (gli account nuovi la hanno
+// sempre, perché la registrazione la richiede).
 model User {
   id           Int            @id @default(autoincrement())
   fullName     String
   username     String         @unique
   passwordHash String
+  email        String?
   giorni       GiornoScheda[]
   esercizi     Esercizio[]
   sessioni     Sessione[]
+  codiciEmail  CodiceEmail[]
+}
+
+// Codice monouso mandato per email: serve a confermare un indirizzo (scopo "email") e a reimpostare la password
+// (scopo "recupero"). Di ogni codice si salva solo un HMAC, mai il numero a sei cifre. email è l'indirizzo a cui è
+// stato mandato; chiave è lo stesso indirizzo in forma canonica (senza "+qualcosa" e, per Gmail, senza punti) e serve
+// ai limiti: name+1@gmail.com e name+2@gmail.com arrivano nella stessa casella e contano come uno. Le righe vecchie
+// si cancellano da sole.
+model CodiceEmail {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  scopo      String
+  email      String
+  chiave     String
+  codiceHash String
+  tentativi  Int      @default(0)
+  creatoIl   DateTime @default(now())
+  scadeIl    DateTime
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, creatoIl])
+  @@index([chiave, creatoIl])
+  @@index([creatoIl])
+}
+
+// Registrazione in attesa del codice per email. L'account non esiste ancora: si crea solo quando l'indirizzo è
+// confermato, così nessuno si registra con un indirizzo sbagliato (e quindi senza poter recuperare la password) o
+// altrui. L'id è casuale (uuid) perché è l'unica cosa che lega il browser alla registrazione. La password è già un
+// hash scrypt. Una registrazione usata o scaduta resta qui due giorni, perché conta nei limiti degli invii.
+model RegistrazioneSospesa {
+  id           String   @id @default(uuid())
+  fullName     String
+  username     String
+  passwordHash String
+  email        String
+  chiave       String
+  codiceHash   String
+  tentativi    Int      @default(0)
+  creatoIl     DateTime @default(now())
+  scadeIl      DateTime
+
+  @@index([chiave, creatoIl])
+  @@index([creatoIl])
 }
 
 // Giornata della scheda di una persona. L'id è la sigla: A, B, C. L'ordine delle giornate è quello delle sigle.
