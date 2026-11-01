@@ -1,6 +1,20 @@
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { COOKIE_SESSIONE, idUtenteDaToken } from './sessione-auth'
+import { COOKIE_SESSIONE, DURATA_SESSIONE_SEC, creaToken, idUtenteDaToken } from './sessione-auth'
+
+// Apre la sessione: cookie firmato con l'id numerico dell'utente. "secure" solo su https (Vercel manda
+// x-forwarded-proto): su http locale il browser scarterebbe il cookie.
+export async function apriSessione(segreto: string, userId: number): Promise<void> {
+  const archivio = await cookies()
+  const èHttps = (await headers()).get('x-forwarded-proto') === 'https'
+  archivio.set(COOKIE_SESSIONE, creaToken(segreto, userId), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: èHttps,
+    path: '/',
+    maxAge: DURATA_SESSIONE_SEC,
+  })
+}
 
 // Chi sta facendo la richiesta, ricavato dal cookie firmato. È l'unica fonte dell'id dell'utente:
 // pagine e azioni non si fidano mai di un id mandato dal browser.

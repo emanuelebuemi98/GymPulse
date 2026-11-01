@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Bricolage_Grotesque } from 'next/font/google'
+import Link from 'next/link'
 import { esci } from '@/app/login/actions'
 import { NavSuperiore } from '@/components/NavSuperiore'
 import { haAccesso } from '@/lib/accesso'
@@ -36,11 +37,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                   <span aria-hidden="true" className="size-2.5 rounded-full bg-accento" />
                   GymPulse
                 </p>
-                <form action={esci}>
-                  <button type="submit" className="rounded-full px-3 py-1.5 text-sm font-semibold text-muto active:bg-carta-alta">
-                    Esci
-                  </button>
-                </form>
+                <div className="flex items-center">
+                  <Link href="/account" className="rounded-full px-3 py-1.5 text-sm font-semibold text-muto active:bg-carta-alta">
+                    Account
+                  </Link>
+                  <form action={esci}>
+                    <button type="submit" className="rounded-full px-3 py-1.5 text-sm font-semibold text-muto active:bg-carta-alta">
+                      Esci
+                    </button>
+                  </form>
+                </div>
               </div>
               <NavSuperiore />
             </div>

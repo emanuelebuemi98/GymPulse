@@ -1,8 +1,8 @@
 import { validaNuoveCredenziali } from './sessione-auth'
 
 // Registrazione aperta: chiunque può creare un account dall'app. Non c'è un codice di invito, quindi le difese sono:
-// campi controllati con rigore, una pausa dopo ogni errore e, in produzione, il limite di tentativi per indirizzo
-// (vedi lib/limite.ts).
+// campi controllati con rigore, una pausa dopo ogni errore, il limite di tentativi per indirizzo (vedi lib/limite.ts)
+// e l'email obbligatoria, confermata con un codice prima che l'account esista (vedi lib/codici-email.ts).
 
 export const LUNGHEZZA_MIN_NOME = 2
 export const LUNGHEZZA_MAX_NOME = 80

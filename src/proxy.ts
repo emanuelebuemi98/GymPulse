@@ -6,8 +6,10 @@ import { COOKIE_SESSIONE, tokenValido } from '@/lib/sessione-auth'
 export function proxy(richiesta: NextRequest) {
   const { pathname, search } = richiesta.nextUrl
 
-  // Le due pagine pubbliche: accesso e registrazione (che chiede comunque il codice di invito).
-  if (pathname === '/login' || pathname === '/login/registrati') return NextResponse.next()
+  // Le tre pagine pubbliche: accesso, registrazione e recupero della password.
+  if (pathname === '/login' || pathname === '/login/registrati' || pathname === '/login/recupera') {
+    return NextResponse.next()
+  }
 
   if (tokenValido(richiesta.cookies.get(COOKIE_SESSIONE)?.value, process.env.AUTH_SECRET)) {
     return NextResponse.next()

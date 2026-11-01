@@ -62,6 +62,9 @@ export function creaLimite(massimo: number, finestraMs: number, maxVoci = 5000) 
   }
 }
 
+export const testoLimite = (secondi: number) =>
+  `Troppi tentativi. Riprova tra ${secondi >= 120 ? `${Math.ceil(secondi / 60)} minuti` : `${secondi} secondi`}.`
+
 // L'indirizzo di chi ha fatto la richiesta. Su Vercel arriva in x-forwarded-for; il primo valore è il client.
 // Senza intestazione (in locale) si usa una chiave fissa: un solo "indirizzo" per tutti, il che va bene per la prova.
 export function indirizzoClient(intestazioni: { get(nome: string): string | null }): string {

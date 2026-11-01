@@ -37,12 +37,19 @@ export default async function LoginPage({ searchParams }: Props) {
         <FormLogin da={da} />
       </section>
 
-      <p className="text-center text-sm text-muto">
-        Non hai un account?{' '}
-        <Link href="/login/registrati" className="font-semibold text-accento underline">
-          Creane uno
-        </Link>
-      </p>
+      <div className="space-y-2 text-center text-sm text-muto">
+        <p>
+          <Link href="/login/recupera" className="font-semibold text-accento underline">
+            Password dimenticata?
+          </Link>
+        </p>
+        <p>
+          Non hai un account?{' '}
+          <Link href="/login/registrati" className="font-semibold text-accento underline">
+            Creane uno
+          </Link>
+        </p>
+      </div>
 
       {suggerimento && (
         <p role="status" className="rounded-2xl bg-attenzione/15 p-3 text-sm text-attenzione">

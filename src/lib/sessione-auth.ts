@@ -30,12 +30,9 @@ export function normalizzaUsername(testo: string): string {
 
 const FORMATO_USERNAME = /^[a-z0-9][a-z0-9._-]{2,29}$/
 
-// Regole per scegliere nome utente e password. Restituisce il problema, o null se vanno bene.
-// Il nome utente va già normalizzato.
-export function validaNuoveCredenziali(username: string, password: string): string | null {
-  if (!FORMATO_USERNAME.test(username)) {
-    return 'Il nome utente deve avere da 3 a 30 caratteri: lettere minuscole, numeri, punto, trattino o underscore'
-  }
+// Regole per scegliere una password nuova (alla registrazione, al cambio e al recupero). Restituisce il problema,
+// o null se va bene. Il nome utente va già normalizzato.
+export function validaNuovaPassword(username: string, password: string): string | null {
   if (password.length < LUNGHEZZA_MIN_PASSWORD) {
     return `La password deve avere almeno ${LUNGHEZZA_MIN_PASSWORD} caratteri`
   }
@@ -44,6 +41,14 @@ export function validaNuoveCredenziali(username: string, password: string): stri
   }
   if (password.toLowerCase() === username) return 'La password non può essere uguale al nome utente'
   return null
+}
+
+// Regole per scegliere nome utente e password alla registrazione. Restituisce il problema, o null se vanno bene.
+export function validaNuoveCredenziali(username: string, password: string): string | null {
+  if (!FORMATO_USERNAME.test(username)) {
+    return 'Il nome utente deve avere da 3 a 30 caratteri: lettere minuscole, numeri, punto, trattino o underscore'
+  }
+  return validaNuovaPassword(username, password)
 }
 
 function firma(contenuto: string, segreto: string): string {
