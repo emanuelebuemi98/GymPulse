@@ -1,6 +1,6 @@
 # GymPulse
 
-**Il diario di allenamento in palestra.** Ognuno ha il proprio account e la propria scheda A/B/C. In palestra registri ogni serie con kg e ripetizioni, l'app ti suggerisce i valori dell'ultima volta e fa partire il timer di recupero. A casa guardi lo storico e i progressi.
+**Il diario di allenamento in palestra.** Ognuno ha il proprio account e la propria scheda, con da 1 a 7 giornate di allenamento a scelta. In palestra registri ogni serie con kg e ripetizioni, l'app ti suggerisce i valori dell'ultima volta e fa partire il timer di recupero. A casa guardi lo storico e i progressi.
 
 Si usa dal browser del telefono e funziona anche in locale sul PC.
 
@@ -16,16 +16,17 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 |---|---|
 | **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori. L'email si conferma con un codice e l'account nasce solo dopo il codice giusto. Ogni persona vede solo i propri dati. |
 | **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
-| **La tua scheda A/B/C** | Parti con tre giornate vuote e le riempi dall'app: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. |
+| **La tua scheda** | Parti con tre giornate vuote (A, B, C) e le riempi dall'app: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. |
+| **Quante giornate vuoi** | Il numero di giornate non è fisso: da **1 a 7**, a seconda di quante volte ti alleni a settimana. Dalla pagina Scheda il **+** aggiunge la giornata successiva (D, E, …) e "Togli la giornata" la toglie, finché ne resta una. Togliendo una giornata che ha già sedute registrate, le sedute **non si perdono**: restano nello storico, nei progressi e nell'export, e la giornata sparisce solo dalla scheda. |
 | **Sessione di allenamento** | Per ogni serie scrivi kg e ripetizioni e la confermi con ✓. Puoi aggiungere o togliere serie, aggiungere esercizi extra e cambiare la data. |
 | **Valori dell'ultima volta** | Nei campi vedi in grigio i kg e le ripetizioni dell'ultima seduta. Contano solo dopo la conferma: se confermi una serie vuota vale il suggerimento. |
 | **Timer di recupero** | Dopo ogni serie parte il conto alla rovescia del recupero previsto dalla scheda (con vibrazione sui telefoni che la supportano). |
 | **Suggerimento del carico** | Per gli esercizi con "carico a salire" (es. panca, squat, stacco) l'app propone il peso successivo quando hai completato tutte le ripetizioni previste. |
-| **Giornata consigliata** | La home ti dice cosa tocca oggi. Dentro la settimana segue l'ordine A → B → C: propone la giornata dopo l'ultima registrata. **Ogni lunedì riparte da A**, anche se la settimana prima non hai finito il giro (le settimane vanno da lunedì a domenica, all'ora di Roma). Le altre giornate restano sempre a un tocco, nell'elenco sotto. |
+| **Giornata consigliata** | La home ti dice cosa tocca oggi. Dentro la settimana segue l'ordine delle giornate (A → B → C → …): propone la giornata dopo l'ultima registrata. **Ogni lunedì riparte dalla prima**, anche se la settimana prima non hai finito il giro (le settimane vanno da lunedì a domenica, all'ora di Roma). Le altre giornate restano sempre a un tocco, nell'elenco sotto. |
 | **Bozza che non si perde** | Se chiudi la pagina o il browser, o il telefono si spegne, a metà allenamento, le serie già confermate restano nel browser per 12 ore, **anche se nel frattempo l'accesso è scaduto**. Nella home compare "Riprendi la sessione": tocchi, accedi di nuovo se serve, e ritrovi tutto com'era. Ogni account ha la sua bozza, anche sullo stesso browser. |
 | **Sessione di accesso** | Vale **fino alla prossima mezzanotte di Roma**: accedi quando inizi ad allenarti e non vieni buttato fuori a metà, anche se un giorno ti alleni alle 17:30 e il giorno dopo alle 18:30. Chiudere il browser per sbaglio non fa uscire. **Cambiando la password (con il recupero) tutte le sessioni aperte, su qualunque dispositivo, si chiudono** e si accede di nuovo con la password nuova. |
 | **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
-| **Progressi: panoramica** | Sedute per settimana e volume per settimana (le settimane senza sedute ci sono, a zero), sedute per giornata A/B/C e gli ultimi record. |
+| **Progressi: panoramica** | Sedute per settimana e volume per settimana (le settimane senza sedute ci sono, a zero), sedute per giornata e gli ultimi record. |
 | **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, massimale stimato e volume per seduta. Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri. |
 | **Volume e massimale stimato** | Volume = kg × ripetizioni. Il massimale (1RM) è stimato con la formula di Epley, `peso × (1 + ripetizioni / 30)`, sulla serie migliore di ogni seduta. Le sedute con ripetizioni non registrate (dati iniziali) non entrano nel massimale e nel volume sono barre più chiare. |
 | **Dati dell'orologio** | Per ogni seduta, in modo facoltativo: durata, calorie, battiti medi e massimi. Si scrivono a mano oppure si legge un file **TCX** esportato dall'app dell'orologio: i campi si compilano da soli e restano modificabili. Compaiono nel dettaglio e nell'elenco dello storico. Vedi "Smartwatch" più sotto per cosa funziona e cosa no. |
@@ -192,6 +193,7 @@ GymPulse/
 │   │   ├── 20261031120000_dati_orologio/             # battiti medi e massimi e calorie dell'orologio
 │   │   ├── 20261031130000_codice_recupero/           # primo tentativo con il cellulare (sostituito dall'email)
 │   │   ├── 20261031150000_email_al_posto_del_telefono/ # email dell'utente, codici per email, registrazioni in attesa
+│   │   ├── 20261101100000_giornate_archiviabili/     # una giornata tolta con sedute resta per lo storico
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account o cambia la password
@@ -227,7 +229,8 @@ GymPulse/
 │   │   ├── FormSessione.tsx                          # la sessione: serie, ✓, timer, bozza
 │   │   ├── EditorScheda.tsx                          # modifica di una giornata
 │   │   ├── GraficoSerie.tsx                          # grafico a linee o a barre (Recharts) con suggerimento e tabella
-│   │   ├── DistribuzioneGiornate.tsx                 # barre delle sedute per giornata A/B/C
+│   │   ├── DistribuzioneGiornate.tsx                 # barre delle sedute per giornata
+│   │   ├── AggiungiGiornata.tsx, RimuoviGiornata.tsx # il "+" e "Togli la giornata" nella pagina Scheda
 │   │   ├── SchedeProgressi.tsx                       # scelta tra panoramica e per esercizio
 │   │   ├── SelettoreEsercizio.tsx                    # menu per scegliere l'esercizio nei progressi
 │   │   ├── TabGiorni.tsx                             # scelta A / B / C
@@ -252,7 +255,7 @@ GymPulse/
 └── .gitignore                                        # elenco di file da ignorare durante il push su git
 ```
 
-Dentro `src/lib/` (31 file):
+Dentro `src/lib/` (32 file):
 
 | Gruppo | File |
 |---|---|
@@ -261,7 +264,7 @@ Dentro `src/lib/` (31 file):
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `orologio.ts` (limiti di battiti e calorie), `tcx.ts` (legge i file TCX, nel browser), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, massimale, carico, record), `panoramica.ts` (sedute e volume per settimana, sedute per giornata), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
-| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `bozza.ts` (la sessione in corso nel browser) |
+| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `bozza.ts` (la sessione in corso nel browser) |
 
 ## Modello dei dati
 
@@ -272,7 +275,7 @@ In ogni tabella l'`id` è la prima colonna.
 | Tabella | Colonne, nell'ordine | Id |
 |---|---|---|
 | `User` | `id`, `fullName` (nome completo), `username`, `passwordHash`, `email` | numero progressivo |
-| `GiornoScheda` | `id`, `userId`, `titolo` | sigla (testo), unica per persona |
+| `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | sigla (testo), unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `muscoli` | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
 | `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali`, `fcMediaBpm`, `fcMassimaBpm`, `kcalOrologio` | numero progressivo |
@@ -287,7 +290,7 @@ Due tabelle servono solo ai codici per email e non hanno dati della scheda:
 
 Del codice non si salva mai il numero ma un HMAC calcolato con `AUTH_SECRET`. `chiave` è l'indirizzo ridotto alla casella vera (senza `+qualcosa` e, su Gmail, senza punti) e serve solo ai limiti. Un codice o una registrazione "usati" non si cancellano, scadono: la riga resta perché conta nei limiti. Si cancellano da sole dopo due giorni.
 
-L'ordine delle giornate è quello delle sigle (A, B, C). L'app non registra il peso corporeo e non calcola le calorie: quelle di `kcalOrologio` le porti tu, a mano o da un file dell'orologio.
+L'ordine delle giornate è quello delle sigle (A, B, C, …). Una giornata nuova prende la lettera dopo la più alta già usata; la lettera di una giornata tolta che ha sedute **non si riusa** (altrimenti le vecchie sedute cambierebbero giornata), mentre quella di una giornata tolta senza sedute torna libera. L'app non registra il peso corporeo e non calcola le calorie: quelle di `kcalOrologio` le porti tu, a mano o da un file dell'orologio.
 
 Giornate, esercizi, voci, sedute e serie portano sempre lo `userId`. Le chiavi esterne sono composte: il database stesso rifiuta di collegare un dato a quello di un'altra persona, anche conoscendone l'id.
 
