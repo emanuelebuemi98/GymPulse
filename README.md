@@ -14,7 +14,8 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 
 | Cosa | Come funziona |
 |---|---|
-| **Account personali** | Ti registri dall'app con nome e cognome, nome utente e password. Ogni persona vede solo i propri dati. |
+| **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori. L'email si conferma con un codice e l'account nasce solo dopo il codice giusto. Ogni persona vede solo i propri dati. |
+| **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
 | **La tua scheda A/B/C** | Parti con tre giornate vuote e le riempi dall'app: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. |
 | **Sessione di allenamento** | Per ogni serie scrivi kg e ripetizioni e la confermi con ✓. Puoi aggiungere o togliere serie, aggiungere esercizi extra e cambiare la data. |
 | **Valori dell'ultima volta** | Nei campi vedi in grigio i kg e le ripetizioni dell'ultima seduta. Contano solo dopo la conferma: se confermi una serie vuota vale il suggerimento. |
@@ -33,7 +34,6 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 
 | Cosa | Situazione |
 |---|---|
-| **Recupero della password** | Non c'è una procedura dall'app. Per ora si reimposta da terminale con `npm run db:utente`. |
 | **Pubblicazione online** | Ultimo passo: Supabase per il database e Vercel per l'app. |
 
 ---
@@ -51,6 +51,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | Validazione | Zod | 4.6.7 | I dati arrivati dal browser si ricontrollano sempre sul server |
 | Accesso | Scritto nel progetto | — | Cookie firmato (HMAC-SHA256) e password con scrypt, entrambi di Node.js: nessuna libreria in più |
 | Grafici | Recharts | 3.10.1 | Linee e barre di una sola serie, in un solo colore (blu `#2a78d6`, controllato sul colore della carta) |
+| Email | Nodemailer | 10.1.2 | Invio SMTP dei codici. Scelta la 10.1.2 e non la 10.3.1 più recente, uscita da due giorni: un pacchetto che maneggia le credenziali l'ho voluto con almeno due settimane di vita |
 | Strumenti | `tsx` 4.23.15, `dotenv` 18.0.9 | | Per lo script `db:utente` |
 
 ---
@@ -99,11 +100,19 @@ git checkout dev
 
    Senza `AUTH_SECRET` nessuno può accedere: l'accesso resta chiuso.
 
+   **Email (registrazione e recupero della password).** Senza un servizio email configurato la registrazione e il recupero sono spenti, e l'app lo dice. Per provare in locale senza mandare nulla aggiungi al `.env`:
+
+   ```env
+   EMAIL_PROVIDER="console"
+   ```
+
+   Con questa riga l'email non parte: il messaggio, con il codice, compare nel terminale dove gira `npm run dev` (riga `[email:console]`). **Non si accende su Vercel**, dove la variabile `VERCEL` lo impedisce. Per mandare email vere serve un account di posta con SMTP (vedi "Email vere con Gmail" più sotto).
+
 3. **Database**: `docker compose up -d` (ascolta solo su `127.0.0.1:5432`).
 
 4. **Tabelle**: `npm run db:deploy` applica le migrazioni. Quando modifichi lo schema in sviluppo si usa `npm run db:migrate`.
 
-5. **Il primo account**: apri l'app e scegli *Crea account*. In alternativa, da terminale, aggiungi al `.env` queste tre righe:
+5. **Il primo account**: apri l'app e scegli *Crea account* (con `EMAIL_PROVIDER="console"` il codice lo leggi nel terminale). In alternativa, da terminale, senza email, aggiungi al `.env` queste tre righe:
 
    ```env
    NUOVO_NOME="Nome Cognome"
@@ -111,7 +120,7 @@ git checkout dev
    NUOVA_PASSWORD="almeno 10 caratteri"
    ```
 
-   poi lancia `npm run db:utente` e **toglile dal `.env`**: una password in chiaro non deve restare su disco. Se il nome utente esiste già, lo stesso comando ne cambia la password.
+   poi lancia `npm run db:utente` e **toglile dal `.env`**: una password in chiaro non deve restare su disco. Se il nome utente esiste già, lo stesso comando ne cambia la password. Un account creato così **non ha un'email**: la si collega dalla pagina Account, e finché non c'è la password non si recupera con il codice.
 
 6. **Avvio**: `npm run dev`, poi apri http://localhost:3000. Se la porta è occupata, Next sceglie la successiva (3001) e lo scrive nel terminale.
 
@@ -180,6 +189,8 @@ GymPulse/
 │   │   ├── 20261031100000_tabelle_riordinate/        # id come prima colonna, colonne superflue tolte
 │   │   ├── 20261031110000_senza_peso_corporeo/       # via la colonna del peso corporeo
 │   │   ├── 20261031120000_dati_orologio/             # battiti medi e massimi e calorie dell'orologio
+│   │   ├── 20261031130000_codice_recupero/           # primo tentativo con il cellulare (sostituito dall'email)
+│   │   ├── 20261031150000_email_al_posto_del_telefono/ # email dell'utente, codici per email, registrazioni in attesa
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account o cambia la password
@@ -197,8 +208,12 @@ GymPulse/
 │   │   │   └── export/route.ts                       # esportazione delle sedute in CSV
 │   │   ├── login/
 │   │   │   ├── page.tsx                              # accesso
-│   │   │   ├── actions.ts                            # accedi, registrati, esci
-│   │   │   └── registrati/page.tsx                   # creazione dell'account
+│   │   │   ├── actions.ts                            # accedi, registrati (con email), recupera la password, esci
+│   │   │   ├── registrati/page.tsx                   # creazione dell'account
+│   │   │   └── recupera/page.tsx                     # password dimenticata
+│   │   ├── account/
+│   │   │   ├── page.tsx                              # il tuo account e l'email per il recupero
+│   │   │   └── actions.ts                            # collega, conferma e cambia l'email (non si toglie)
 │   │   ├── scheda/
 │   │   │   ├── page.tsx                              # la scheda: scelta A/B/C e avvio della sessione
 │   │   │   └── modifica/page.tsx                     # l'editor della giornata
@@ -216,7 +231,8 @@ GymPulse/
 │   │   ├── SelettoreEsercizio.tsx                    # menu per scegliere l'esercizio nei progressi
 │   │   ├── TabGiorni.tsx                             # scelta A / B / C
 │   │   ├── NavSuperiore.tsx                          # menu in alto
-│   │   ├── FormLogin.tsx, FormRegistrazione.tsx      # moduli di accesso e registrazione
+│   │   ├── FormLogin.tsx, FormRegistrazione.tsx      # moduli di accesso e registrazione (a due passi, con il codice per email)
+│   │   ├── FormRecupero.tsx, FormEmail.tsx           # recupero della password e email nell'Account
 │   │   ├── CsvSedute.tsx                             # esporta e importa le sedute in CSV
 │   │   ├── EliminaSessione.tsx                       # pulsante per eliminare una seduta
 │   │   ├── icone.tsx                                 # icone SVG
@@ -235,11 +251,12 @@ GymPulse/
 └── .gitignore                                        # elenco di file da ignorare durante il push su git
 ```
 
-Dentro `src/lib/` (26 file):
+Dentro `src/lib/` (31 file):
 
 | Gruppo | File |
 |---|---|
-| Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi) |
+| Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account) |
+| Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (codici e registrazioni in attesa nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi) |
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `orologio.ts` (limiti di battiti e calorie), `tcx.ts` (legge i file TCX, nel browser), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, massimale, carico, record), `panoramica.ts` (sedute e volume per settimana, sedute per giornata), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
@@ -253,12 +270,21 @@ In ogni tabella l'`id` è la prima colonna.
 
 | Tabella | Colonne, nell'ordine | Id |
 |---|---|---|
-| `User` | `id`, `fullName` (nome completo), `username`, `passwordHash` | numero progressivo |
+| `User` | `id`, `fullName` (nome completo), `username`, `passwordHash`, `email` | numero progressivo |
 | `GiornoScheda` | `id`, `userId`, `titolo` | sigla (testo), unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `muscoli` | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
 | `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali`, `fcMediaBpm`, `fcMassimaBpm`, `kcalOrologio` | numero progressivo |
 | `SerieEseguita` | `id`, `userId`, `sessioneId`, `esercizioId`, `ordine`, `pesoKg`, `ripetizioni` | testo casuale |
+
+Due tabelle servono solo ai codici per email e non hanno dati della scheda:
+
+| Tabella | Colonne, nell'ordine | A cosa serve |
+|---|---|---|
+| `CodiceEmail` | `id`, `userId`, `scopo` (`email` o `recupero`), `email`, `chiave`, `codiceHash`, `tentativi`, `creatoIl`, `scadeIl` | i codici mandati a chi ha già un account |
+| `RegistrazioneSospesa` | `id` (uuid), `fullName`, `username`, `passwordHash`, `email`, `chiave`, `codiceHash`, `tentativi`, `creatoIl`, `scadeIl` | una registrazione in attesa del codice: l'account non esiste ancora |
+
+Del codice non si salva mai il numero ma un HMAC calcolato con `AUTH_SECRET`. `chiave` è l'indirizzo ridotto alla casella vera (senza `+qualcosa` e, su Gmail, senza punti) e serve solo ai limiti. Un codice o una registrazione "usati" non si cancellano, scadono: la riga resta perché conta nei limiti. Si cancellano da sole dopo due giorni.
 
 L'ordine delle giornate è quello delle sigle (A, B, C). L'app non registra il peso corporeo e non calcola le calorie: quelle di `kcalOrologio` le porti tu, a mano o da un file dell'orologio.
 
@@ -274,7 +300,12 @@ Modificare la scheda non tocca le sedute già salvate: le serie puntano agli ese
 - **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
 - **CSV**: ognuno scarica solo le proprie sedute. L'importazione controlla ogni riga (data, peso, ripetizioni, durata, note), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file esportato i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
 - **File TCX**: si leggono nel browser e al server arrivano solo quattro numeri, che il server ricontrolla (battiti tra 30 e 250, calorie fino a 10.000, massima non sotto la media). I file con definizioni di entità (`<!DOCTYPE`, `<!ENTITY`) si rifiutano, e oltre 25 milioni di caratteri non si leggono.
-- **Registrazione aperta a chiunque** conosca l'indirizzo. C'è un limite di 3 account all'ora per indirizzo e di 10 accessi ogni 15 minuti, ma il conteggio è in memoria: su Vercel vale per ogni istanza e rallenta senza bloccare del tutto. Per un blocco rigido servirebbe un archivio condiviso.
+- **Registrazione aperta a chiunque** conosca l'indirizzo, ma con l'email obbligatoria e confermata con un codice. Ci sono limiti per indirizzo di rete (3 account all'ora, 10 accessi ogni 15 minuti, 5 email di registrazione o di recupero all'ora) tenuti **in memoria**: su Vercel valgono per ogni istanza e rallentano senza bloccare del tutto.
+- **Limiti delle email nel database** (valgono per tutti i server e non si azzerano riavviando): 1 email al minuto per scopo, 3 all'ora e 10 al giorno per persona, **3 all'ora per ogni casella di destinazione** (ferma chi vuole riempire di messaggi l'indirizzo di un altro; `nome+1@gmail.com`, `n.ome@gmail.com` e `nome@googlemail.com` contano come la stessa casella) e un **tetto globale di 100 email in 24 ore** (cambia con `EMAIL_LIMITE_GIORNALIERO`). Le email sono gratis, ma il tetto protegge l'account che le spedisce: Google dichiara un massimo di 500 email al giorno e blocca l'invio per 1-24 ore se lo si supera. Se il tetto scatta, registrazione e recupero si fermano.
+- **Codici per email**: 6 cifre, valgono 10 minuti, 5 tentativi, uso unico, e un codice nuovo sostituisce il precedente. Nel database c'è solo un HMAC, legato a persona e scopo. Un codice di recupero vale solo se è stato mandato all'indirizzo che l'account ha *in quel momento*: cambiare l'email rende inutili i codici già mandati.
+- **Gli indirizzi sono controllati con rigore** (`lib/indirizzo-email.ts`): niente spazi, virgole, virgolette, a capo o più indirizzi. L'indirizzo finisce in un'intestazione del messaggio, quindi un valore con un a capo potrebbe aggiungere destinatari. Un indirizzo insolito ma valido può essere rifiutato: meglio questo che spedire a qualcosa che non si sa leggere.
+- **L'email apre la porta all'account**: chi ha accesso alla casella può cambiare la password. Per questo collegarla o cambiarla chiede la password (togliere non si può), e il recupero risponde in modo diverso a "non esiste o senza email" solo per dire subito a chi non ne ha una che da qui non può recuperare nulla.
+- **Il messaggio** è solo testo, senza link: non c'è niente da cliccare e niente da falsificare. Il codice non è nell'oggetto, che si vede anche a schermo bloccato.
 - **`.env`** escluso da Git; in Git va solo `.env.example`.
 
 ## Smartwatch: cosa funziona e cosa no
@@ -292,10 +323,42 @@ Come si legge un TCX: la durata è la somma dei giri; le calorie la somma delle 
 
 **Non ancora provato con file veri.** Il lettore è stato provato con file TCX scritti da me seguendo lo schema pubblicato da Garmin, non con file esportati da un orologio reale: è il primo controllo da fare con il tuo.
 
+## Email vere con Gmail
+
+L'invio è in `src/lib/email.ts` e parla con un server SMTP qualunque tramite Nodemailer. Il caso a costo zero è un **account Gmail**; per le email i servizi gratuiti più noti richiedono un dominio proprio (a pagamento), un account Gmail no.
+
+**Usa un account Gmail creato apposta per l'app, non il tuo personale.** La password per le app dà accesso all'account: se si perde, vuoi che sia una casella vuota e non la tua posta vera.
+
+1. Crea l'account Gmail (per esempio `gympulse.app@gmail.com`) e attiva la **verifica in due passaggi**: senza, Google non offre le password per le app.
+2. Nelle impostazioni dell'account Google crea una **password per le app**: sono 16 lettere. Google la mostra **una sola volta**; se la perdi se ne crea un'altra, e si revoca quando cambi la password dell'account.
+3. Imposta queste variabili. In locale nel `.env`, online **solo nelle variabili di Vercel**:
+
+   ```env
+   SMTP_UTENTE="gympulse.app@gmail.com"      # l'indirizzo da cui partono i messaggi
+   SMTP_PASSWORD="abcd efgh ijkl mnop"       # la password per le app (gli spazi si possono lasciare); NON la password dell'account
+   SMTP_HOST="smtp.gmail.com"                # facoltativa: è già il valore di partenza
+   SMTP_PORTA="587"                          # facoltativa: 587 (di partenza) oppure 465
+   EMAIL_LIMITE_GIORNALIERO="100"            # facoltativa: tetto alle email in 24 ore, per tutta l'app
+   ```
+
+4. Se manca qualcosa, o è scritto male, l'invio resta spento e l'app lo dice (nelle pagine di registrazione, recupero e Account) invece di fallire a metà. Nel log del server compare il motivo, senza mai l'indirizzo né il codice.
+
+**Cosa ho verificato e cosa no.** Le prime due righe vengono dalle pagine di Google lette durante il lavoro:
+
+- *Letto:* il server SMTP di Gmail è `smtp.gmail.com`, porta 587 con TLS, nome utente = l'indirizzo email, autenticazione obbligatoria.
+- *Letto:* Google dichiara un massimo di 500 email al giorno per account e, se si supera, blocca l'invio per 1-24 ore. Per questo il tetto dell'app è a 100.
+- *Letto:* Google dice che le password per le app "non sono consigliate e non servono nella maggior parte dei casi", ma resta il modo per far inviare a un'app una mail da Gmail con SMTP.
+- *Non so:* se il limite di 500 vale allo stesso modo via SMTP (la pagina non lo dice).
+- *Non so:* se Google blocchi o limiti un account nuovo che manda codici di accesso ad altri indirizzi, e se i messaggi finiscano nello spam del destinatario. I messaggi sono di solo testo, senza link e col solo codice, per ridurre il rischio, ma la consegna non l'ho potuta controllare.
+- *Mai provato con Gmail vero.* L'invio è stato provato con un trasporto finto (configurazione, mittente, destinatario, gestione degli errori) e con la modalità `console`. Non ho spedito nessuna email reale: il primo invio vero è il primo controllo da fare, mandandolo a te.
+- *Il segreto.* `SMTP_PASSWORD` non va nel codice né in Git. Se sospetti che sia uscita, revocala dalla pagina delle password per le app di Google e creane un'altra.
+
+**Per provare in locale senza mandare niente**, usa `EMAIL_PROVIDER="console"` come spiegato più su.
+
 ## Pubblicazione online (ultimo passo)
 
 1. **Supabase** per il database. Servono due connessioni: quella *transaction pooler* (porta 6543) per l'app e quella diretta o *session pooler* (porta 5432) per le migrazioni. Disattivare l'API REST automatica o attivare la Row Level Security, perché l'accesso passa solo dal backend.
-2. **Vercel** per l'app, collegato al ramo `main`. Variabili d'ambiente: `DATABASE_URL` e un `AUTH_SECRET` **nuovo**, diverso da quello locale.
+2. **Vercel** per l'app, collegato al ramo `main`. Variabili d'ambiente: `DATABASE_URL`, un `AUTH_SECRET` **nuovo**, diverso da quello locale, e le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`). Senza queste la registrazione e il recupero restano spenti.
 3. Le credenziali di Supabase vanno solo nelle variabili di Vercel, mai nel codice e mai nel `.env`.
 
 ## Roadmap
@@ -304,6 +367,6 @@ Come si legge un TCX: la durata è la somma dei giri; le calorie la somma delle 
 2. ~~Account personali con registrazione dall'app e dati separati per persona~~ (fatto)
 3. ~~Grafici con una libreria e panoramica generale dei progressi~~ (fatto)
 4. ~~Export e import CSV delle sedute, al posto del backup JSON~~ (fatto)
-5. Recupero della password dall'app
+5. ~~Recupero della password dall'app~~ (fatto, con codice per email; da provare con Gmail vero)
 6. ~~Smartwatch: dati a mano e da file TCX~~ (fatto; da provare con un file vero)
 7. Collegamento a Supabase e pubblicazione su Vercel
