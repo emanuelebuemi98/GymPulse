@@ -99,6 +99,9 @@ model GiornoScheda {
 
 // Esercizi noti a una persona: quelli della sua scheda e quelli che ha aggiunto.
 // L'unicità (userId, id) serve alle chiavi esterne composte di voci e serie.
+// muscoli: il gruppo muscolare dell'esercizio, uno solo tra PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE, ADDOME.
+// Il database accetta solo questi nomi (vincolo Esercizio_muscoli_standard, scritto a mano nella migrazione perché
+// Prisma non lo descrive) o il testo vuoto, che resta agli esercizi arrivati da un CSV finché non li si apre dalla scheda.
 model Esercizio {
   id      Int             @id @default(autoincrement())
   userId  Int
