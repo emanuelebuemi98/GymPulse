@@ -17,6 +17,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori. L'email si conferma con un codice e l'account nasce solo dopo il codice giusto. Ogni persona vede solo i propri dati. |
 | **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
 | **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. |
+| **Muscoli per categoria** | Per ogni esercizio scegli il gruppo muscolare toccando una delle sette categorie standard: **PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE, ADDOME**. Ogni esercizio ne ha **una sola** (la scheda non si salva senza). Si salvano nell'esercizio, quindi valgono in ogni giornata che lo usa, e compaiono nel dettaglio della seduta. Il database accetta solo questi nomi: la migrazione `muscoli_standard` ha convertito i testi liberi di prima nella categoria nominata per prima ("Quadricipiti / glutei" → GAMBE, "Tricipiti / petto basso" → TRICIPITI) e ha aggiunto il vincolo. Gli esercizi arrivati da un file CSV partono senza categoria, da scegliere dalla scheda. |
 | **Quante giornate vuoi** | Il numero di giornate non è fisso: da **1 a 7**, a seconda di quante volte ti alleni a settimana. Dalla pagina Scheda il **+** aggiunge la giornata successiva (B, C, D, …) e "Togli la giornata" la toglie, finché ne resta una. Togliendo una giornata che ha già sedute registrate, le sedute **non si perdono**: restano nello storico, nei progressi e nell'export, e la giornata sparisce solo dalla scheda. |
 | **Sessione di allenamento** | Per ogni serie scrivi kg e ripetizioni e la confermi con ✓. Puoi aggiungere o togliere serie, aggiungere esercizi extra e cambiare la data. |
 | **Valori dell'ultima volta** | Nei campi vedi in grigio i kg e le ripetizioni dell'ultima seduta. Contano solo dopo la conferma: se confermi una serie vuota vale il suggerimento. |
@@ -255,7 +256,7 @@ GymPulse/
 └── .gitignore                                        # elenco di file da ignorare durante il push su git
 ```
 
-Dentro `src/lib/` (32 file):
+Dentro `src/lib/` (33 file):
 
 | Gruppo | File |
 |---|---|
@@ -264,7 +265,7 @@ Dentro `src/lib/` (32 file):
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `orologio.ts` (limiti di battiti e calorie), `tcx.ts` (legge i file TCX, nel browser), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, massimale, carico, record), `panoramica.ts` (sedute e volume per settimana, sedute per giornata), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
-| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `bozza.ts` (la sessione in corso nel browser) |
+| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `muscoli.ts` (le sette categorie), `bozza.ts` (la sessione in corso nel browser) |
 
 ## Modello dei dati
 
@@ -276,7 +277,7 @@ In ogni tabella l'`id` è la prima colonna.
 |---|---|---|
 | `User` | `id`, `fullName` (nome completo), `username`, `passwordHash`, `email` | numero progressivo |
 | `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | sigla (testo), unica per persona |
-| `Esercizio` | `id`, `userId`, `nome`, `muscoli` | numero progressivo |
+| `Esercizio` | `id`, `userId`, `nome`, `muscoli` (una delle sette categorie standard, es. `PETTO`) | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
 | `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali`, `fcMediaBpm`, `fcMassimaBpm`, `kcalOrologio` | numero progressivo |
 | `SerieEseguita` | `id`, `userId`, `sessioneId`, `esercizioId`, `ordine`, `pesoKg`, `ripetizioni` | testo casuale |
@@ -301,6 +302,7 @@ Modificare la scheda non tocca le sedute già salvate: le serie puntano agli ese
 - **Cookie di accesso** `httpOnly`, `SameSite=Lax`, con `Secure` su https, valido fino alla prossima mezzanotte di Roma (l'ora si legge dal fuso di Roma e non da quello del server, che su Vercel è UTC; il cambio tra ora legale e solare avviene di notte, tra le 2 e le 3, quindi non sposta mai la mezzanotte). Contiene l'id dell'utente, la scadenza e un'impronta della sua password, firmati: non può essere modificato per diventare un altro. L'impronta è un HMAC calcolato con `AUTH_SECRET` sull'hash della password: non permette di risalire né all'una né all'altro. A ogni richiesta l'app la confronta con la password che la persona ha adesso (una lettura del database per richiesta): se la password è cambiata, il cookie non vale più. La prima porta (`proxy.ts`) controlla solo firma e scadenza, il confronto con il database lo fanno pagine e azioni.
 - **Password** salvate come hash scrypt. Lo stesso messaggio d'errore per utente inesistente e password sbagliata, con una breve pausa, così non si scoprono i nomi esistenti.
 - **L'utente si ricava sempre dal cookie**, mai da un id mandato dal browser. Il proxy chiude le pagine, e ogni pagina e ogni azione ricontrolla da sola.
+- **Più account nello stesso browser.** Un browser ha un solo cookie di accesso per tutte le sue schede: se in una scheda si entra con un altro account, una scheda rimasta aperta sul primo scriverebbe nel secondo (era un difetto vero: la scheda di una persona finiva in quella di un'altra). Ora ogni pagina che scrive manda l'id dell'account per cui è stata disegnata, e il server **rifiuta** se non coincide con quello del cookie. L'id mandato dalla pagina serve solo a rifiutare: l'account su cui si scrive resta sempre quello del cookie. In pratica, in un browser si usa un account alla volta; per due account insieme servono due browser o una finestra in incognito.
 - **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
 - **CSV**: ognuno scarica solo le proprie sedute. L'importazione controlla ogni riga (data, peso, ripetizioni, durata, note), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file esportato i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
 - **File TCX**: si leggono nel browser e al server arrivano solo quattro numeri, che il server ricontrolla (battiti tra 30 e 250, calorie fino a 10.000, massima non sotto la media). I file con definizioni di entità (`<!DOCTYPE`, `<!ENTITY`) si rifiutano, e oltre 25 milioni di caratteri non si leggono.
