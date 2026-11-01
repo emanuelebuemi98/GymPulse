@@ -11,11 +11,12 @@ import {
   type TipoVoce,
   type VoceForm,
 } from '@/lib/scheda-form'
+import { GRUPPI_MUSCOLARI } from '@/lib/muscoli'
 import type { VoceCatalogo } from '@/lib/tipi'
 import { IconaCestino, IconaGiu, IconaPiu, IconaSu } from './icone'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
-type Props = { giorno: Giorno; catalogo: VoceCatalogo[] }
+type Props = { utenteId: number; giorno: Giorno; catalogo: VoceCatalogo[] }
 
 const etichetteTipo: Record<TipoVoce, string> = {
   serie: 'Serie × ripetizioni',
@@ -23,7 +24,7 @@ const etichetteTipo: Record<TipoVoce, string> = {
   libero: 'Serie a scelta',
 }
 
-export function EditorScheda({ giorno, catalogo }: Props) {
+export function EditorScheda({ utenteId, giorno, catalogo }: Props) {
   const router = useRouter()
   const [titolo, setTitolo] = useState(giorno.titolo)
   const [voci, setVoci] = useState<VoceForm[]>(() => giorno.esercizi.map(voceFormDaEsercizio))
@@ -52,7 +53,10 @@ export function EditorScheda({ giorno, catalogo }: Props) {
   function aggiungiDalCatalogo() {
     const scelto = aggiunta === null ? undefined : catalogo.find((voce) => voce.id === aggiunta)
     if (!scelto) return
-    setVoci((prec) => [...prec, nuovaVoceForm(`catalogo-${scelto.id}`, { esercizioId: scelto.id, nome: scelto.nome })])
+    setVoci((prec) => [
+      ...prec,
+      nuovaVoceForm(`catalogo-${scelto.id}`, { esercizioId: scelto.id, nome: scelto.nome, muscoli: scelto.muscoli }),
+    ])
     setAggiunta(null)
   }
 
@@ -70,7 +74,7 @@ export function EditorScheda({ giorno, catalogo }: Props) {
       ...prec,
       nuovaVoceForm(
         `nuovo-${contatore}`,
-        esistente ? { esercizioId: esistente.id, nome: esistente.nome } : { nomeNuovo: nome },
+        esistente ? { esercizioId: esistente.id, nome: esistente.nome, muscoli: esistente.muscoli } : { nomeNuovo: nome },
       ),
     ])
     setNomeLibero('')
@@ -83,7 +87,7 @@ export function EditorScheda({ giorno, catalogo }: Props) {
     if (sbagliata) return setErrore(sbagliata.errore)
 
     startTransition(async () => {
-      const esito = await salvaScheda({ giornoId: giorno.id, titolo, voci: convertite })
+      const esito = await salvaScheda(utenteId, { giornoId: giorno.id, titolo, voci: convertite })
       if ('errore' in esito) return setErrore(esito.errore)
       router.push(`/scheda?r=${giorno.id}`)
       router.refresh()
@@ -128,6 +132,29 @@ export function EditorScheda({ giorno, catalogo }: Props) {
                 </button>
               </div>
             </div>
+
+            <fieldset className="space-y-1.5">
+              <legend className="text-sm text-muto">Gruppo muscolare</legend>
+              <div className="flex flex-wrap gap-1.5">
+                {GRUPPI_MUSCOLARI.map((gruppo) => {
+                  const scelto = voce.muscoli === gruppo
+                  return (
+                    <button
+                      key={gruppo}
+                      type="button"
+                      aria-pressed={scelto}
+                      onClick={() => modifica(voce.chiave, { muscoli: gruppo })}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                        scelto ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta text-muto'
+                      }`}
+                    >
+                      {gruppo}
+                    </button>
+                  )
+                })}
+              </div>
+              {voce.muscoli === null && <p className="text-xs text-muto">Scegline uno.</p>}
+            </fieldset>
 
             <label className="block space-y-1 text-sm text-muto">
               <span>Tipo di obiettivo</span>

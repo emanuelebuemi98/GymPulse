@@ -118,7 +118,7 @@ export default async function DettaglioSessionePage({ params }: Props) {
         </p>
       )}
 
-      <EliminaSessione id={sessione.id} />
+      <EliminaSessione utenteId={userId} id={sessione.id} />
     </div>
   )
 }

@@ -47,7 +47,7 @@ export default async function AccountPage() {
         )}
 
         {attiva ? (
-          <FormEmail haEmail={haEmail} />
+          <FormEmail haEmail={haEmail} utenteId={userId} />
         ) : (
           <p className="rounded-2xl bg-carta-alta p-3 text-sm text-muto">
             L&apos;invio delle email non è attivo su questo server, quindi non si può collegare un indirizzo. Chi gestisce

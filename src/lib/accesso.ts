@@ -43,6 +43,23 @@ export const utenteCorrente = cache(async (): Promise<number | null> => {
   return dati.userId
 })
 
+export type UtenteDellaPagina = { userId: number } | { errore: string; scaduta?: true }
+
+const SESSIONE_SCADUTA = 'Sessione scaduta: accedi di nuovo e riprova (la sessione in corso è salvata nel browser).'
+const ACCOUNT_CAMBIATO =
+  'In un’altra scheda di questo browser hai fatto l’accesso con un altro account, quindi non ho salvato niente. Ricarica la pagina; le serie confermate restano nel telefono: per riprenderle esci e rientra con l’account giusto.'
+
+// Per le azioni che scrivono. Il browser ha un solo cookie di accesso per tutte le sue schede: se in una scheda si accede
+// con un altro account, una pagina rimasta aperta su quello di prima scriverebbe nell'account nuovo. Ogni pagina quindi
+// manda l'id dell'account per cui è stata disegnata, e qui si rifiuta tutto se non coincide con quello del cookie.
+// Il confronto serve solo a RIFIUTARE: l'utente vero resta sempre quello del cookie, mai quello dichiarato dalla pagina.
+export async function utenteDellaPagina(atteso: unknown): Promise<UtenteDellaPagina> {
+  const userId = await utenteCorrente()
+  if (!userId) return { errore: SESSIONE_SCADUTA, scaduta: true }
+  if (atteso !== userId) return { errore: ACCOUNT_CAMBIATO }
+  return { userId }
+}
+
 export async function haAccesso(): Promise<boolean> {
   return (await utenteCorrente()) !== null
 }

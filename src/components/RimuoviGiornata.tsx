@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { rimuoviGiornata } from '@/app/actions'
 import { IconaCestino } from './icone'
 
-type Props = { id: string; titolo: string; sedute: number }
+type Props = { utenteId: number; id: string; titolo: string; sedute: number }
 
 // Toglie una giornata dalla scheda, dopo una conferma che dice cosa succede davvero: se ha sedute registrate non si
 // cancellano, la giornata resta solo per lo storico.
-export function RimuoviGiornata({ id, titolo, sedute }: Props) {
+export function RimuoviGiornata({ utenteId, id, titolo, sedute }: Props) {
   const router = useRouter()
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
@@ -23,7 +23,7 @@ export function RimuoviGiornata({ id, titolo, sedute }: Props) {
 
     setErrore(null)
     startTransition(async () => {
-      const esito = await rimuoviGiornata(id)
+      const esito = await rimuoviGiornata(utenteId, id)
       if ('errore' in esito) return setErrore(esito.errore)
       router.push('/scheda')
       router.refresh()

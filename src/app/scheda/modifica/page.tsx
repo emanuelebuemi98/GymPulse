@@ -19,5 +19,5 @@ export default async function ModificaSchedaPage({ searchParams }: Props) {
   if (!giorno) notFound()
 
   // `key` riporta l'editor allo stato salvato quando si cambia giornata.
-  return <EditorScheda key={giorno.id} giorno={giorno} catalogo={catalogo} />
+  return <EditorScheda key={giorno.id} utenteId={userId} giorno={giorno} catalogo={catalogo} />
 }

@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { utenteCorrente } from '@/lib/accesso'
+import { utenteDellaPagina } from '@/lib/accesso'
 import {
   MESSAGGI_RIFIUTO,
   annullaCodiceEmail,
@@ -47,8 +47,12 @@ const limitePassword = creaLimite(5, 15 * 60 * 1000)
 // L'email non si può togliere, solo sostituire: senza, una password dimenticata non si recupera più.
 // La password serve perché l'email è la chiave per cambiare la password: la sola sessione non basta.
 export async function gestisciEmail(_precedente: StatoEmail, dati: FormData): Promise<StatoEmail> {
-  const userId = await utenteCorrente()
-  if (!userId) return errore('Sessione scaduta: accedi di nuovo e riprova')
+  // La pagina manda l'id dell'account per cui è stata disegnata (campo nascosto): se nel browser nel frattempo è entrato
+  // un altro account, non si scrive niente. L'utente vero resta quello del cookie.
+  const dichiarato = Number(dati.get('utenteId'))
+  const utente = await utenteDellaPagina(Number.isSafeInteger(dichiarato) ? dichiarato : null)
+  if ('errore' in utente) return errore(utente.errore)
+  const userId = utente.userId
 
   const azione = dati.get('azione')
   if (azione === 'conferma') return conferma(userId, dati)

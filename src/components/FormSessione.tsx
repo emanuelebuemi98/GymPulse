@@ -317,7 +317,7 @@ export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props
     startTransition(async () => {
       let esito: Awaited<ReturnType<typeof salvaSessione>>
       try {
-        esito = await salvaSessione({
+        esito = await salvaSessione(utenteId, {
           giornoId: giorno.id,
           data,
           note: note.trim() === '' ? null : note,

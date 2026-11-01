@@ -32,7 +32,7 @@ export default async function SchedaPage({ searchParams }: Props) {
       <div className={`${stileCarta} space-y-3 p-5`}>
         <p className="text-muto">La scheda non ha ancora nessuna giornata.</p>
         <div className="w-24">
-          <AggiungiGiornata />
+          <AggiungiGiornata utenteId={userId} />
         </div>
       </div>
     )
@@ -50,7 +50,7 @@ export default async function SchedaPage({ searchParams }: Props) {
         giorni={giorni}
         attivo={giorno.id}
         percorso="/scheda"
-        aggiungi={giorni.length < GIORNATE_MASSIME ? <AggiungiGiornata /> : undefined}
+        aggiungi={giorni.length < GIORNATE_MASSIME ? <AggiungiGiornata utenteId={userId} /> : undefined}
       />
 
       <header className="flex items-end justify-between gap-3">
@@ -93,7 +93,7 @@ export default async function SchedaPage({ searchParams }: Props) {
         })}
       </ol>
 
-      {giorni.length > 1 && <RimuoviGiornata id={giorno.id} titolo={giorno.titolo} sedute={sedute} />}
+      {giorni.length > 1 && <RimuoviGiornata utenteId={userId} id={giorno.id} titolo={giorno.titolo} sedute={sedute} />}
     </div>
   )
 }

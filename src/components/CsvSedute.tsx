@@ -11,7 +11,7 @@ const LIMITE_CSV = 900_000
 
 const sedute = (n: number) => (n === 1 ? '1 seduta' : `${n} sedute`)
 
-export function CsvSedute() {
+export function CsvSedute({ utenteId }: { utenteId: number }) {
   const router = useRouter()
   const file = useRef<HTMLInputElement>(null)
   const [messaggio, setMessaggio] = useState<{ testo: string; errore: boolean } | null>(null)
@@ -30,7 +30,7 @@ export function CsvSedute() {
 
     const testo = await scelto.text()
     startTransition(async () => {
-      const esito = await importaCsv(testo)
+      const esito = await importaCsv(utenteId, testo)
       if ('errore' in esito) {
         setMessaggio({ testo: esito.errore, errore: true })
         return

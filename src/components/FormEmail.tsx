@@ -8,11 +8,12 @@ const iniziale: StatoEmail = { passo: 'indirizzo', errore: null, messaggio: null
 
 // Collega o cambia l'email per il recupero della password. Due passi: l'indirizzo con la password,
 // poi il codice arrivato per email.
-export function FormEmail({ haEmail }: { haEmail: boolean }) {
+export function FormEmail({ haEmail, utenteId }: { haEmail: boolean; utenteId: number }) {
   const [stato, azione, inCorso] = useActionState(gestisciEmail, iniziale)
 
   return (
     <form key={stato.passo} action={azione} className="space-y-3">
+      <input type="hidden" name="utenteId" value={utenteId} />
       {stato.passo === 'indirizzo' ? (
         <>
           <label className="block space-y-1 text-sm font-semibold text-muto">

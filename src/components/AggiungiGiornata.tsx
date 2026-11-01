@@ -6,13 +6,13 @@ import { aggiungiGiornata } from '@/app/actions'
 import { IconaPiu } from './icone'
 
 // Il "+" in fondo alle linguette delle giornate: crea la giornata successiva e porta subito a riempirla.
-export function AggiungiGiornata() {
+export function AggiungiGiornata({ utenteId }: { utenteId: number }) {
   const router = useRouter()
   const [inCorso, startTransition] = useTransition()
 
   function aggiungi() {
     startTransition(async () => {
-      const esito = await aggiungiGiornata()
+      const esito = await aggiungiGiornata(utenteId)
       if ('errore' in esito) {
         window.alert(esito.errore)
         return

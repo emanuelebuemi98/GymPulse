@@ -118,7 +118,7 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <CsvSedute />
+      <CsvSedute utenteId={userId} />
     </div>
   )
 }

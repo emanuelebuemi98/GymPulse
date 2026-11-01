@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { utenteCorrente } from '@/lib/accesso'
+import { utenteDellaPagina } from '@/lib/accesso'
 import { trovaOCreaEsercizio } from '@/lib/catalogo'
 import { LIMITE_CSV, leggiCsv } from '@/lib/csv'
 import { db } from '@/lib/db'
@@ -16,16 +16,22 @@ import { validaSessione } from '@/lib/sessione-schema'
 // di un'altra persona non sono raggiungibili nemmeno conoscendone gli id.
 
 const ID_MASSIMO = 2_147_483_647
-const NON_AUTORIZZATO = 'Sessione scaduta: accedi di nuovo e riprova (la sessione in corso è salvata nel browser).'
+
+// Ogni azione che scrive riceve come primo argomento l'id dell'account per cui la pagina è stata disegnata (utenteId) e lo
+// confronta con quello del cookie (vedi utenteDellaPagina): una scheda rimasta aperta su un altro account non scrive.
 
 function aggiornaPagine() {
   revalidatePath('/', 'layout')
 }
 
 // `scaduta` dice al form che l'accesso non vale più: oltre al messaggio mostra il modo di accedere di nuovo.
-export async function salvaSessione(input: unknown): Promise<{ id: number } | { errore: string; scaduta?: true }> {
-  const userId = await utenteCorrente()
-  if (!userId) return { errore: NON_AUTORIZZATO, scaduta: true }
+export async function salvaSessione(
+  utenteId: number,
+  input: unknown,
+): Promise<{ id: number } | { errore: string; scaduta?: true }> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return utente
+  const userId = utente.userId
 
   const esito = validaSessione(input)
   if (!esito.ok) return { errore: esito.errore }
@@ -74,9 +80,10 @@ export async function salvaSessione(input: unknown): Promise<{ id: number } | { 
   return { id }
 }
 
-export async function salvaScheda(input: unknown): Promise<{ ok: true } | { errore: string }> {
-  const userId = await utenteCorrente()
-  if (!userId) return { errore: NON_AUTORIZZATO }
+export async function salvaScheda(utenteId: number, input: unknown): Promise<{ ok: true } | { errore: string }> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return { errore: utente.errore }
+  const userId = utente.userId
 
   const esito = validaScheda(input)
   if (!esito.ok) return { errore: esito.errore }
@@ -97,6 +104,9 @@ export async function salvaScheda(input: unknown): Promise<{ ok: true } | { erro
     let ordine = 0
     for (const voce of voci) {
       const esercizioId = voce.esercizioId ?? (await trovaOCreaEsercizio(tx, userId, voce.nomeNuovo!))
+      // I muscoli sono dell'esercizio e non della voce: valgono in ogni giornata che lo usa. updateMany con lo userId:
+      // non si può toccare l'esercizio di un altro account nemmeno conoscendone l'id.
+      await tx.esercizio.updateMany({ where: { id: esercizioId, userId }, data: { muscoli: voce.muscoli } })
       await tx.voceScheda.create({
         data: {
           userId,
@@ -117,9 +127,10 @@ export async function salvaScheda(input: unknown): Promise<{ ok: true } | { erro
 
 // Aggiunge una giornata in fondo alla scheda, con la sigla successiva (A, B, C, D, ...), fino a 7. Parte vuota: gli
 // esercizi si scelgono dalla pagina di modifica, dove si viene portati subito dopo.
-export async function aggiungiGiornata(): Promise<{ id: string } | { errore: string }> {
-  const userId = await utenteCorrente()
-  if (!userId) return { errore: NON_AUTORIZZATO }
+export async function aggiungiGiornata(utenteId: number): Promise<{ id: string } | { errore: string }> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return { errore: utente.errore }
+  const userId = utente.userId
 
   // Il blocco (advisory lock) per persona fa passare una richiesta alla volta: due "Aggiungi" insieme non sforano il limite
   // né scelgono la stessa sigla.
@@ -145,9 +156,13 @@ export async function aggiungiGiornata(): Promise<{ id: string } | { errore: str
 // Toglie una giornata dalla scheda. Una scheda ha sempre almeno una giornata. Se la giornata non ha sedute si cancella; se
 // ne ha, si segna come non attiva e resta solo per lo storico: le sedute già registrate non si perdono. Gli esercizi
 // restano nel catalogo della persona. Chi chiama deve avere chiesto conferma.
-export async function rimuoviGiornata(id: unknown): Promise<{ ok: true; archiviata: boolean } | { errore: string }> {
-  const userId = await utenteCorrente()
-  if (!userId) return { errore: NON_AUTORIZZATO }
+export async function rimuoviGiornata(
+  utenteId: number,
+  id: unknown,
+): Promise<{ ok: true; archiviata: boolean } | { errore: string }> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return { errore: utente.errore }
+  const userId = utente.userId
   if (typeof id !== 'string' || !/^[A-Z]$/.test(id)) return { errore: 'Giornata non valida' }
 
   try {
@@ -179,9 +194,10 @@ export async function rimuoviGiornata(id: unknown): Promise<{ ok: true; archivia
   }
 }
 
-export async function eliminaSessione(id: unknown): Promise<{ errore: string } | never> {
-  const userId = await utenteCorrente()
-  if (!userId) return { errore: NON_AUTORIZZATO }
+export async function eliminaSessione(utenteId: number, id: unknown): Promise<{ errore: string } | never> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return { errore: utente.errore }
+  const userId = utente.userId
   if (typeof id !== 'number' || !Number.isInteger(id) || id < 1 || id > ID_MASSIMO) return { errore: 'Seduta non valida' }
 
   const { count } = await db.sessione.deleteMany({ where: { id, userId } })
@@ -196,9 +212,13 @@ export async function eliminaSessione(id: unknown): Promise<{ errore: string } |
 // non duplica niente. Gli esercizi si ritrovano per nome (senza badare alle maiuscole) e se non ci sono si creano.
 // Le giornate invece devono esistere già: l'importazione non ne inventa. Contano anche quelle tolte dalla scheda e
 // rimaste per lo storico, perché le sedute di un file esportato un tempo ci appartengono ancora.
-export async function importaCsv(testo: unknown): Promise<{ aggiunte: number; giaPresenti: number } | { errore: string }> {
-  const userId = await utenteCorrente()
-  if (!userId) return { errore: NON_AUTORIZZATO }
+export async function importaCsv(
+  utenteId: number,
+  testo: unknown,
+): Promise<{ aggiunte: number; giaPresenti: number } | { errore: string }> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return { errore: utente.errore }
+  const userId = utente.userId
   if (typeof testo !== 'string') return { errore: 'File non valido' }
   if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
 

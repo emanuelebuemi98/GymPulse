@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { eliminaSessione } from '@/app/actions'
 import { IconaCestino } from './icone'
 
-export function EliminaSessione({ id }: { id: number }) {
+export function EliminaSessione({ utenteId, id }: { utenteId: number; id: number }) {
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
 
@@ -12,7 +12,7 @@ export function EliminaSessione({ id }: { id: number }) {
     if (!window.confirm('Eliminare questa seduta? Non si può annullare.')) return
     setErrore(null)
     startTransition(async () => {
-      const esito = await eliminaSessione(id)
+      const esito = await eliminaSessione(utenteId, id)
       if (esito && 'errore' in esito) setErrore(esito.errore)
     })
   }
