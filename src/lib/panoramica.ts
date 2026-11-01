@@ -1,17 +1,16 @@
-import { dataIso } from './formato'
+import { dataIso, formatNumero } from './formato'
+import { GRUPPI_MUSCOLARI, gruppoDa, type GruppoMuscolare } from './muscoli'
+import { descriviSomma } from './progressi'
 
-// Riepiloghi per la panoramica dei progressi: sedute raggruppate per settimana e per giornata della scheda.
-// Le settimane vanno da lunedì a domenica e seguono il fuso di Roma, come tutte le date dell'app.
+// Riepiloghi per la panoramica dei progressi: sedute raggruppate per settimana e per giornata della scheda, e kg per
+// gruppo muscolare. Le settimane vanno da lunedì a domenica e seguono il fuso di Roma, come tutte le date dell'app.
 
 export type SedutaSintesi = {
   data: Date
   giornoId: string
   giornoTitolo: string
-  volumeKg: number
-  datiIniziali: boolean
 }
-// daVerificare: la settimana contiene una seduta con ripetizioni non registrate, quindi il volume è solo indicativo.
-export type Settimana = { inizio: string; sedute: number; volumeKg: number; daVerificare: boolean }
+export type Settimana = { inizio: string; sedute: number }
 export type GiornataConteggio = { id: string; titolo: string; sedute: number }
 
 const GIORNO_MS = 86_400_000
@@ -31,23 +30,26 @@ export function lunediDi(iso: string): string {
   return isoDa(ms - giorniDalLunedi * GIORNO_MS)
 }
 
+// Il lunedì `n` settimane dopo (o prima, se negativo) il lunedì `iso`.
+export function spostaSettimane(iso: string, n: number): string {
+  return isoDa(utcDa(iso) + n * SETTIMANA_MS)
+}
+
 // Un istante a mezzogiorno UTC: a Roma cade sempre nello stesso giorno, quindi si può formattare con le date dell'app.
 export function istanteDaIso(iso: string): Date {
   return new Date(`${iso}T12:00:00Z`)
 }
 
-// Sedute e volume di ogni settimana, dalla più vecchia. Le settimane senza sedute ci sono, a zero: così
-// una pausa si vede. Si parte dalla prima seduta e si arriva alla settimana in corso, al massimo `massimo` settimane.
+// Sedute di ogni settimana, dalla più vecchia. Le settimane senza sedute ci sono, a zero: così una pausa si vede.
+// Si parte dalla prima seduta e si arriva alla settimana in corso, al massimo `massimo` settimane.
 export function perSettimana(sedute: SedutaSintesi[], oggi = new Date(), massimo = 12): Settimana[] {
   if (sedute.length === 0) return []
 
   const perInizio = new Map<string, Settimana>()
   for (const seduta of sedute) {
     const inizio = lunediDi(dataIso(seduta.data))
-    const settimana = perInizio.get(inizio) ?? { inizio, sedute: 0, volumeKg: 0, daVerificare: false }
+    const settimana = perInizio.get(inizio) ?? { inizio, sedute: 0 }
     settimana.sedute += 1
-    settimana.volumeKg += seduta.volumeKg
-    settimana.daVerificare ||= seduta.datiIniziali
     perInizio.set(inizio, settimana)
   }
 
@@ -58,7 +60,7 @@ export function perSettimana(sedute: SedutaSintesi[], oggi = new Date(), massimo
   const risultato: Settimana[] = []
   for (let ms = prima; ms <= ultima; ms += SETTIMANA_MS) {
     const inizio = isoDa(ms)
-    risultato.push(perInizio.get(inizio) ?? { inizio, sedute: 0, volumeKg: 0, daVerificare: false })
+    risultato.push(perInizio.get(inizio) ?? { inizio, sedute: 0 })
   }
   return risultato
 }
@@ -72,4 +74,62 @@ export function perGiornata(sedute: Pick<SedutaSintesi, 'giornoId' | 'giornoTito
     giornate.set(seduta.giornoId, giornata)
   }
   return [...giornate.values()].sort((a, b) => a.id.localeCompare(b.id, 'it'))
+}
+
+// I gruppi del grafico dei kg per settimana, nell'ordine standard. L'addome è escluso.
+export const GRUPPI_NEL_GRAFICO: readonly GruppoMuscolare[] = GRUPPI_MUSCOLARI.filter((gruppo) => gruppo !== 'ADDOME')
+
+export type SerieConGruppo = {
+  data: Date
+  esercizioId: number
+  esercizio: string
+  muscoli: string
+  pesoKg: number | null
+}
+// calcolo: come si arriva ai kg dell'esercizio, già scritto per il suggerimento ("25 × 4 = 100 kg").
+export type EsercizioPeso = { esercizioId: number; nome: string; pesoKg: number; calcolo: string }
+export type PesoGruppo = { gruppo: GruppoMuscolare; pesoKg: number; esercizi: EsercizioPeso[] }
+
+// I kg di ogni serie della settimana che comincia nel lunedì `inizio`, sommati per gruppo muscolare (senza moltiplicare
+// per le ripetizioni) e, dentro ogni gruppo, per esercizio. Tutti i gruppi del grafico ci sono, anche a zero: si vede
+// cosa non è stato allenato. `senzaGruppo` sono i kg degli esercizi che non hanno ancora un gruppo, per esempio quelli
+// arrivati da un CSV: non si sa dove metterli, quindi si dicono a parte.
+export function pesoPerGruppo(
+  serie: SerieConGruppo[],
+  inizio: string,
+): { gruppi: PesoGruppo[]; senzaGruppo: number } {
+  // Le serie di ogni esercizio restano nell'ordine in cui sono state fatte: la prima seduta della settimana per prima.
+  const dellaSettimana = serie
+    .filter((s) => lunediDi(dataIso(s.data)) === inizio)
+    .sort((a, b) => a.data.getTime() - b.data.getTime())
+
+  const perGruppo = new Map<GruppoMuscolare, Map<number, { nome: string; pesi: number[] }>>()
+  let senzaGruppo = 0
+
+  for (const s of dellaSettimana) {
+    const gruppo = gruppoDa(s.muscoli)
+    if (gruppo === null) {
+      senzaGruppo += s.pesoKg ?? 0
+      continue
+    }
+    if (s.pesoKg === null) continue
+    const esercizi = perGruppo.get(gruppo) ?? new Map<number, { nome: string; pesi: number[] }>()
+    const voce = esercizi.get(s.esercizioId) ?? { nome: s.esercizio, pesi: [] }
+    voce.pesi.push(s.pesoKg)
+    esercizi.set(s.esercizioId, voce)
+    perGruppo.set(gruppo, esercizi)
+  }
+
+  const gruppi = GRUPPI_NEL_GRAFICO.map((gruppo): PesoGruppo => {
+    const esercizi = [...(perGruppo.get(gruppo) ?? [])]
+      .map(([esercizioId, { nome, pesi }]): EsercizioPeso => {
+        const pesoKg = pesi.reduce((totale, kg) => totale + kg, 0)
+        const totale = `${formatNumero(pesoKg, 2)} kg`
+        return { esercizioId, nome, pesoKg, calcolo: pesi.length === 1 ? totale : `${descriviSomma(pesi)} = ${totale}` }
+      })
+      .sort((a, b) => b.pesoKg - a.pesoKg || a.nome.localeCompare(b.nome, 'it'))
+    return { gruppo, pesoKg: esercizi.reduce((totale, e) => totale + e.pesoKg, 0), esercizi }
+  })
+
+  return { gruppi, senzaGruppo }
 }

@@ -1,5 +1,6 @@
 import type { Esercizio } from './scheda-tipi'
-import { prossimoCarico, stimaRM } from './allenamento'
+import { prossimoCarico } from './allenamento'
+import { formatNumero } from './formato'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
 
 export type SuggerimentoCarico = {
@@ -15,10 +16,24 @@ export function volumeSerie(serie: SerieRegistrata[]): number {
   return serie.reduce((totale, s) => totale + (s.pesoKg ?? 0) * s.ripetizioni, 0)
 }
 
-// Miglior massimale stimato fra le serie con peso. Null se nessuna serie ha un peso.
-export function miglioreRM(serie: SerieRegistrata[]): number | null {
-  const stime = serie.flatMap((s) => (s.pesoKg === null ? [] : [stimaRM(s.pesoKg, s.ripetizioni)]))
-  return stime.length === 0 ? null : Math.max(...stime)
+// Peso totale: i kg di ogni serie sommati, senza moltiplicare per le ripetizioni (serie da 120, 150 e 160 kg → 430).
+// Le serie senza peso non contano.
+export function pesoTotaleKg(serie: SerieRegistrata[]): number {
+  return serie.reduce((totale, s) => totale + (s.pesoKg ?? 0), 0)
+}
+
+// Come si arriva a una somma, a parole: "25 × 4" per quattro serie da 25, "120 + 150 + 160" per serie diverse,
+// "25 × 4 + 30 × 2" quando ci sono blocchi uguali di seguito.
+export function descriviSomma(valori: number[]): string {
+  const blocchi: { valore: number; volte: number }[] = []
+  for (const valore of valori) {
+    const ultimo = blocchi[blocchi.length - 1]
+    if (ultimo && ultimo.valore === valore) ultimo.volte += 1
+    else blocchi.push({ valore, volte: 1 })
+  }
+  return blocchi
+    .map(({ valore, volte }) => (volte === 1 ? formatNumero(valore, 2) : `${formatNumero(valore, 2)} × ${volte}`))
+    .join(' + ')
 }
 
 // Peso più alto tra le serie. Null se nessuna serie ha un peso.

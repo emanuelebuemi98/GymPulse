@@ -5,10 +5,11 @@ import { GraficoSerie, type PuntoSerie } from '@/components/GraficoSerie'
 import { SchedeProgressi } from '@/components/SchedeProgressi'
 import { SelettoreEsercizio } from '@/components/SelettoreEsercizio'
 import { stileCarta } from '@/components/stili'
-import { formatData, formatDataBreve, formatDataNumerica, formatNumero } from '@/lib/formato'
-import { istanteDaIso, perGiornata, perSettimana } from '@/lib/panoramica'
-import { miglioreRM } from '@/lib/progressi'
-import { andamentoEsercizio, elencoSessioni, eserciziConDati, recordPerEsercizio } from '@/lib/storico'
+import { PesoPerGruppo } from '@/components/PesoPerGruppo'
+import { dataIso, formatData, formatDataBreve, formatDataNumerica, formatNumero } from '@/lib/formato'
+import { istanteDaIso, lunediDi, pesoPerGruppo, perGiornata, perSettimana, spostaSettimane } from '@/lib/panoramica'
+import { descriviSomma } from '@/lib/progressi'
+import { andamentoEsercizio, elencoSessioni, eserciziConDati, recordPerEsercizio, serieConGruppo } from '@/lib/storico'
 import { idDaParametro } from '@/lib/url'
 import { richiediUtente } from '@/lib/accesso'
 
@@ -19,14 +20,14 @@ export const metadata: Metadata = { title: 'Progressi' }
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
-const NOTA_DA_VERIFICARE = '* Barre chiare: basate su ripetizioni non registrate, quindi indicative.'
+const NOTA_DA_VERIFICARE = '* Ripetizioni non registrate: sono quelle previste dalla scheda, quindi indicative.'
 const RECORD_RECENTI = 5
 
 const sedute = (n: number) => (n === 1 ? '1 seduta' : `${n} sedute`)
 
 export default async function ProgressiPage({ searchParams }: Props) {
   const userId = await richiediUtente()
-  const parametro = (await searchParams).e
+  const { e: parametro, s: settimana } = await searchParams
   const esercizi = await eserciziConDati(userId)
 
   if (esercizi.length === 0) {
@@ -40,17 +41,42 @@ export default async function ProgressiPage({ searchParams }: Props) {
 
   // Senza "e" nell'indirizzo si vede la panoramica; con "e" l'andamento di un esercizio.
   if (parametro === undefined) {
-    return <Panoramica userId={userId} primoEsercizio={esercizi[0].id} />
+    return <Panoramica userId={userId} primoEsercizio={esercizi[0].id} settimana={settimana} />
   }
   const scelto = esercizi.find((e) => e.id === idDaParametro(parametro)) ?? esercizi[0]
   return <PerEsercizio userId={userId} esercizi={esercizi} scelto={scelto} />
 }
 
-async function Panoramica({ userId, primoEsercizio }: { userId: number; primoEsercizio: number }) {
-  const [elenco, record] = await Promise.all([elencoSessioni(userId), recordPerEsercizio(userId)])
+// La settimana da mostrare nei kg per gruppo: quella scelta con "s" (AAAA-MM-GG, anche un giorno qualunque della
+// settimana), altrimenti quella in corso. Sta sempre tra la prima settimana con sedute e l'ultima.
+function settimanaScelta(parametro: string | string[] | undefined, primo: string, ultimo: string, corrente: string) {
+  const letto = typeof parametro === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(parametro) ? lunediDi(parametro) : corrente
+  return letto < primo ? primo : letto > ultimo ? ultimo : letto
+}
+
+async function Panoramica({
+  userId,
+  primoEsercizio,
+  settimana,
+}: {
+  userId: number
+  primoEsercizio: number
+  settimana: string | string[] | undefined
+}) {
+  const [elenco, record, serie] = await Promise.all([elencoSessioni(userId), recordPerEsercizio(userId), serieConGruppo(userId)])
   const settimane = perSettimana(elenco)
   const giornate = perGiornata(elenco)
   const recenti = [...record].sort((a, b) => b.data.getTime() - a.data.getTime()).slice(0, RECORD_RECENTI)
+
+  const corrente = lunediDi(dataIso(new Date()))
+  const inizi = elenco.map((s) => lunediDi(dataIso(s.data))).sort()
+  const primaSettimana = inizi[0] ?? corrente
+  const ultimaSettimana = inizi[inizi.length - 1] > corrente ? inizi[inizi.length - 1] : corrente
+  const inizio = settimanaScelta(settimana, primaSettimana, ultimaSettimana, corrente)
+  const precedente = inizio > primaSettimana ? spostaSettimane(inizio, -1) : null
+  const successiva = inizio < ultimaSettimana ? spostaSettimane(inizio, 1) : null
+  const { gruppi, senzaGruppo } = pesoPerGruppo(serie, inizio)
+  const fineSettimana = istanteDaIso(spostaSettimane(inizio, 1)).getTime() - 86_400_000
 
   const puntiSedute: PuntoSerie[] = settimane.map((s) => ({
     istante: istanteDaIso(s.inizio).getTime(),
@@ -59,14 +85,8 @@ async function Panoramica({ userId, primoEsercizio }: { userId: number; primoEse
     valore: s.sedute,
     testo: sedute(s.sedute),
   }))
-  const puntiVolume: PuntoSerie[] = settimane.map((s) => ({
-    istante: istanteDaIso(s.inizio).getTime(),
-    etichetta: formatDataBreve(istanteDaIso(s.inizio)),
-    descrizione: `Settimana dal ${formatData(istanteDaIso(s.inizio))}`,
-    valore: s.volumeKg,
-    testo: `${formatNumero(s.volumeKg, 0)} kg`,
-    attenuato: s.daVerificare,
-  }))
+  const stileFreccia = 'rounded-full border border-bordo bg-carta px-4 py-2 text-sm font-semibold transition active:bg-carta-alta'
+  const stileFrecciaOff = 'rounded-full border border-bordo px-4 py-2 text-sm font-semibold text-muto opacity-40'
 
   return (
     <div className="space-y-5">
@@ -76,7 +96,7 @@ async function Panoramica({ userId, primoEsercizio }: { userId: number; primoEse
       <section className={`${stileCarta} space-y-3 p-4`}>
         <div>
           <h2 className="text-lg font-extrabold">Sedute per settimana</h2>
-          <p className="text-sm text-muto">Quante volte ti sei allenato, settimana per settimana (da lunedì).</p>
+          <p className="text-sm text-muto">Quante volte ti sei allenato, settimana per settimana</p>
         </div>
         <GraficoSerie
           tipo="barre"
@@ -90,17 +110,40 @@ async function Panoramica({ userId, primoEsercizio }: { userId: number; primoEse
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <div>
-          <h2 className="text-lg font-extrabold">Volume per settimana</h2>
-          <p className="text-sm text-muto">Kg × ripetizioni di tutte le sedute della settimana.</p>
+          <h2 className="text-lg font-extrabold">Kg per gruppo muscolare</h2>
+          <p className="text-sm text-muto">
+            I kg di tutte le serie della settimana, sommati per gruppo. L&apos;addome è escuso.
+          </p>
         </div>
-        <GraficoSerie
-          tipo="barre"
-          punti={puntiVolume}
-          titolo="Volume per settimana"
-          colonnaEtichetta="Settimana"
-          colonnaValore="Volume"
-          notaAttenuati={NOTA_DA_VERIFICARE}
-        />
+        <div className="flex items-center justify-between gap-2">
+          {precedente ? (
+            <Link href={`/progressi?s=${precedente}`} aria-label="Settimana precedente" className={stileFreccia}>
+              ←
+            </Link>
+          ) : (
+            <span aria-hidden="true" className={stileFrecciaOff}>
+              ←
+            </span>
+          )}
+          <p className="text-center text-sm font-semibold tabular-nums">
+            {formatData(istanteDaIso(inizio))} – {formatData(new Date(fineSettimana))}
+          </p>
+          {successiva ? (
+            <Link href={`/progressi?s=${successiva}`} aria-label="Settimana successiva" className={stileFreccia}>
+              →
+            </Link>
+          ) : (
+            <span aria-hidden="true" className={stileFrecciaOff}>
+              →
+            </span>
+          )}
+        </div>
+        <PesoPerGruppo gruppi={gruppi} />
+        {senzaGruppo > 0 && (
+          <p className="text-xs text-attenzione">
+            Non contati: {formatNumero(senzaGruppo)} kg di esercizi senza gruppo muscolare. Sceglilo dalla scheda.
+          </p>
+        )}
       </section>
 
       <section className={`${stileCarta} space-y-3 p-4`}>
@@ -166,7 +209,6 @@ async function PerEsercizio({
 }) {
   const andamento = await andamentoEsercizio(userId, scelto.id)
   const conCarico = andamento.some((s) => s.massimoKg !== null)
-  const daVerificare = andamento.some((s) => s.datiIniziali)
 
   const comuni = (seduta: (typeof andamento)[number]) => ({
     istante: seduta.data.getTime(),
@@ -184,23 +226,30 @@ async function PerEsercizio({
     return [{ ...comuni(seduta), valore: ripetizioni, testo: `${ripetizioni} rip` }]
   })
 
-  // Il massimale stimato parte dalle ripetizioni: nelle sedute con dati iniziali non sono state registrate, quindi non conta.
-  const puntiMassimale: PuntoSerie[] = andamento.flatMap((seduta) => {
-    if (seduta.datiIniziali) return []
-    const rm = miglioreRM(seduta.serie)
-    return rm === null ? [] : [{ ...comuni(seduta), valore: rm, testo: `${formatNumero(rm)} kg` }]
-  })
-
-  const puntiVolume: PuntoSerie[] = andamento
-    .filter((seduta) => seduta.volumeKg > 0)
+  // Il peso totale di ogni seduta: i kg di tutte le serie sommati (120 + 150 + 160 = 430), senza le ripetizioni.
+  // Il suggerimento mostra come si arriva alla somma.
+  const puntiPesoTotale: PuntoSerie[] = andamento
+    .filter((seduta) => seduta.pesoTotaleKg > 0)
     .map((seduta) => ({
       ...comuni(seduta),
-      valore: seduta.volumeKg,
-      testo: `${formatNumero(seduta.volumeKg, 0)} kg`,
-      attenuato: seduta.datiIniziali,
+      valore: seduta.pesoTotaleKg,
+      testo: `${formatNumero(seduta.pesoTotaleKg)} kg`,
+      dettaglio: `${descriviSomma(seduta.serie.flatMap((s) => (s.pesoKg === null ? [] : [s.pesoKg])))} kg`,
     }))
 
-  const rm = puntiMassimale.length > 0 ? Math.max(...puntiMassimale.map((p) => p.valore)) : null
+  // Le ripetizioni di ogni seduta sommate. Nelle sedute con dati iniziali sono quelle previste dalla scheda, non quelle
+  // fatte: lo dicono il suggerimento, l'asterisco nella tabella e la nota. Le barre hanno sempre lo stesso colore.
+  const puntiRipetizioni: PuntoSerie[] = andamento.map((seduta) => {
+    const ripetizioni = seduta.serie.map((s) => s.ripetizioni)
+    const totale = ripetizioni.reduce((somma, r) => somma + r, 0)
+    return {
+      ...comuni(seduta),
+      valore: totale,
+      testo: `${totale} rip`,
+      dettaglio: ripetizioni.length > 1 ? `${descriviSomma(ripetizioni)} rip` : undefined,
+      attenuato: seduta.datiIniziali,
+    }
+  })
 
   return (
     <div className="space-y-5">
@@ -229,39 +278,36 @@ async function PerEsercizio({
       {conCarico && (
         <section className={`${stileCarta} space-y-3 p-4`}>
           <div>
-            <h2 className="text-lg font-extrabold">Massimale stimato</h2>
+            <h2 className="text-lg font-extrabold">Peso totale per seduta</h2>
             <p className="text-sm text-muto">
-              Il peso che potresti sollevare una volta sola, stimato dalla serie migliore di ogni seduta.
+              I kg di tutte le serie di questo esercizio sommati, seduta per seduta in base al numero di ripetizioni.
             </p>
           </div>
-          {puntiMassimale.length === 0 ? (
-            <p className="text-sm text-muto">
-              Servono sedute con ripetizioni registrate: nelle sedute con dati iniziali non lo sono.
-            </p>
-          ) : (
-            <GraficoSerie
-              tipo="linea"
-              punti={puntiMassimale}
-              titolo={`Massimale stimato di ${scelto.nome}`}
-              colonnaEtichetta="Data"
-              colonnaValore="Massimale stimato"
-            />
-          )}
+          <GraficoSerie
+            tipo="barre"
+            punti={puntiPesoTotale}
+            titolo={`Peso totale di ${scelto.nome}`}
+            colonnaEtichetta="Data"
+            colonnaValore="Peso totale"
+          />
         </section>
       )}
 
       {conCarico && (
         <section className={`${stileCarta} space-y-3 p-4`}>
           <div>
-            <h2 className="text-lg font-extrabold">Volume per seduta</h2>
-            <p className="text-sm text-muto">Kg × ripetizioni di questo esercizio, seduta per seduta.</p>
+            <h2 className="text-lg font-extrabold">Ripetizioni totali per seduta</h2>
+            <p className="text-sm text-muto">
+              Le ripetizioni di tutte le serie di questo esercizio sommate, seduta per seduta.
+            </p>
           </div>
           <GraficoSerie
             tipo="barre"
-            punti={puntiVolume}
-            titolo={`Volume di ${scelto.nome}`}
+            punti={puntiRipetizioni}
+            titolo={`Ripetizioni totali di ${scelto.nome}`}
             colonnaEtichetta="Data"
-            colonnaValore="Volume"
+            colonnaValore="Ripetizioni"
+            interi
             notaAttenuati={NOTA_DA_VERIFICARE}
           />
         </section>
@@ -271,9 +317,7 @@ async function PerEsercizio({
         <span aria-hidden="true">ⓘ</span>
         <span>
           Ogni dato vale solo per lo stesso esercizio: i kg di macchine, cavi, manubri e bilanciere non sono
-          confrontabili tra loro. Il volume è solo indicativo
-          {rm !== null && `, e il massimale stimato (al massimo ${formatNumero(rm)} kg, formula di Epley) non è una misura diretta`}
-          {daVerificare && '. Alcune sedute hanno ripetizioni non registrate'}.
+          confrontabili tra loro.
         </span>
       </p>
     </div>

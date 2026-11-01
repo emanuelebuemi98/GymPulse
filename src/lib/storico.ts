@@ -1,6 +1,7 @@
 import type { SedutaEsportata } from './csv'
 import { db } from './db'
-import { calcolaRecord, massimoKg, volumeSerie, type RecordEsercizio } from './progressi'
+import type { SerieConGruppo } from './panoramica'
+import { calcolaRecord, massimoKg, pesoTotaleKg, volumeSerie, type RecordEsercizio } from './progressi'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
 
 // Conteggi e ultima seduta per la home.
@@ -123,7 +124,7 @@ export type SedutaEsercizio = {
   datiIniziali: boolean
   serie: SerieRegistrata[]
   massimoKg: number | null
-  volumeKg: number
+  pesoTotaleKg: number
 }
 
 // Esercizi con almeno una serie registrata: sono quelli che hanno un andamento da mostrare.
@@ -158,7 +159,29 @@ export async function andamentoEsercizio(userId: number, esercizioId: number): P
     sessioneId,
     ...gruppo,
     massimoKg: massimoKg(gruppo.serie),
-    volumeKg: volumeSerie(gruppo.serie),
+    pesoTotaleKg: pesoTotaleKg(gruppo.serie),
+  }))
+}
+
+// Tutte le serie con l'esercizio, il suo gruppo muscolare e la data della seduta: servono ai kg per gruppo della
+// panoramica. Dalla più vecchia, e dentro una seduta nell'ordine in cui sono state fatte.
+export async function serieConGruppo(userId: number): Promise<SerieConGruppo[]> {
+  const righe = await db.serieEseguita.findMany({
+    where: { userId },
+    select: {
+      esercizioId: true,
+      pesoKg: true,
+      esercizio: { select: { nome: true, muscoli: true } },
+      sessione: { select: { data: true } },
+    },
+    orderBy: [{ sessione: { data: 'asc' } }, { ordine: 'asc' }],
+  })
+  return righe.map((riga) => ({
+    data: riga.sessione.data,
+    esercizioId: riga.esercizioId,
+    esercizio: riga.esercizio.nome,
+    muscoli: riga.esercizio.muscoli,
+    pesoKg: riga.pesoKg,
   }))
 }
 

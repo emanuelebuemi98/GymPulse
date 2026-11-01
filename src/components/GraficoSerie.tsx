@@ -4,7 +4,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   LabelList,
   Line,
   LineChart,
@@ -22,7 +21,8 @@ export type PuntoSerie = {
   descrizione: string // testo completo per suggerimento e tabella (es. 28 ott 2026)
   valore: number // altezza del punto o della barra
   testo: string // valore con unità, già formattato (es. 62,5 kg)
-  attenuato?: boolean // barra più chiara: il dato si basa su ripetizioni da verificare
+  dettaglio?: string // come si arriva al valore, nel suggerimento e nella tabella (es. 120 + 150 + 160)
+  attenuato?: boolean // il dato si basa su ripetizioni da verificare: lo dicono suggerimento, tabella (*) e nota
 }
 
 type Props = {
@@ -32,7 +32,7 @@ type Props = {
   colonnaEtichetta: string // intestazione della tabella alternativa
   colonnaValore: string
   interi?: boolean // l'asse mostra solo numeri interi (conteggi)
-  notaAttenuati?: string // spiegazione delle barre chiare, mostrata sotto il grafico
+  notaAttenuati?: string // spiegazione dell'asterisco dei dati da verificare, mostrata sotto il grafico
 }
 
 // Colori del tema chiaro: la serie usa lo slot 1 della palette dei grafici (validato sulla superficie della carta,
@@ -50,7 +50,6 @@ const COLORI = {
 }
 
 const MARGINI = { top: 22, right: 26, bottom: 0, left: 0 }
-const OPACITA_ATTENUATA = 0.4
 // Con più punti di così gli anelli dei marcatori si toccano e coprono la linea: resta solo l'ultimo.
 const PUNTI_CON_MARCATORI = 12
 // Larghezza di un carattere dell'asse a 12 px, con un po' di margine.
@@ -65,6 +64,7 @@ function Suggerimento({ active, payload }: { active?: boolean; payload?: { paylo
   return (
     <div className="rounded-2xl bg-inchiostro px-3 py-2 text-su-inchiostro shadow-lg">
       <p className="font-bold">{punto.testo}</p>
+      {punto.dettaglio && <p className="text-xs tabular-nums text-su-inchiostro/70">{punto.dettaglio}</p>}
       <p className="text-xs text-su-inchiostro/70">{punto.descrizione}</p>
       {punto.attenuato && <p className="text-xs text-su-inchiostro/70">Ripetizioni da verificare</p>}
     </div>
@@ -228,9 +228,6 @@ export function GraficoSerie({
                 isAnimationActive={false}
               />
               <Bar dataKey="valore" fill={COLORI.serie} maxBarSize={24} radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                {datiBarre.map((punto, indice) => (
-                  <Cell key={indice} fillOpacity={punto.attenuato ? OPACITA_ATTENUATA : 1} />
-                ))}
                 <LabelList dataKey="marcato" content={disegnaEtichettaBarra} />
               </Bar>
             </BarChart>
@@ -257,6 +254,7 @@ export function GraficoSerie({
                 <td className="py-1.5 text-testo">
                   {punto.testo}
                   {punto.attenuato && ' *'}
+                  {punto.dettaglio && <span className="ml-1.5 text-xs text-muto">({punto.dettaglio})</span>}
                 </td>
               </tr>
             ))}

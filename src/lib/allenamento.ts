@@ -38,12 +38,6 @@ export function prossimoCarico(
   return completata ? pesoMassimo + incrementoKg : pesoMassimo
 }
 
-// Stima del massimale con la formula di Epley: peso × (1 + ripetizioni / 30).
-export function stimaRM(peso: number, ripetizioni: number): number {
-  if (ripetizioni < 1) throw new Error('Le ripetizioni devono essere almeno 1')
-  return peso * (1 + ripetizioni / 30)
-}
-
 export function descrizioneObiettivo(obiettivo: Obiettivo): string {
   switch (obiettivo.tipo) {
     case 'serie':
@@ -57,6 +51,12 @@ export function descrizioneObiettivo(obiettivo: Obiettivo): string {
         ? `${obiettivo.serieMin} serie`
         : `${obiettivo.serieMin}-${obiettivo.serieMax} serie`
   }
+}
+
+// Il recupero tra le serie di un esercizio, per la scheda: "recupero 2 min". Vuoto se l'esercizio non ne ha (a ripetizioni
+// totali o a serie libere) oppure è zero.
+export function descrizioneRecupero(obiettivo: Obiettivo): string | null {
+  return obiettivo.tipo === 'serie' && obiettivo.recuperoSec > 0 ? `recupero ${formatRecupero(obiettivo.recuperoSec)}` : null
 }
 
 export function formatRecupero(secondi: number): string {
