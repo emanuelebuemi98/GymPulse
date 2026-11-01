@@ -5,7 +5,7 @@ import { IconaPlay, IconaRegolazioni } from '@/components/icone'
 import { RimuoviGiornata } from '@/components/RimuoviGiornata'
 import { stileBottoneChiaro, stileCarta } from '@/components/stili'
 import { TabGiorni } from '@/components/TabGiorni'
-import { descrizioneObiettivo, giornoConsigliato } from '@/lib/allenamento'
+import { descrizioneObiettivo, descrizioneRecupero, giornoConsigliato } from '@/lib/allenamento'
 import { formatNumero } from '@/lib/formato'
 import { GIORNATE_MASSIME } from '@/lib/giornate'
 import { massimoKg } from '@/lib/progressi'
@@ -76,12 +76,16 @@ export default async function SchedaPage({ searchParams }: Props) {
       <ol className={`${stileCarta} divide-y divide-bordo overflow-hidden`}>
         {giorno.esercizi.map((esercizio, indice) => {
           const kg = massimoKg(ultime[esercizio.id]?.serie ?? [])
+          const recupero = descrizioneRecupero(esercizio.obiettivo)
           return (
             <li key={esercizio.id} className="flex items-center gap-3 px-4 py-3.5">
               <span className="w-6 shrink-0 text-sm font-bold text-muto tabular-nums">{indice + 1}</span>
               <span className="min-w-0 flex-1">
                 <span className="block font-bold">{esercizio.nome}</span>
-                <span className="block text-sm text-muto">{descrizioneObiettivo(esercizio.obiettivo)}</span>
+                <span className="block text-sm text-muto">
+                  {descrizioneObiettivo(esercizio.obiettivo)}
+                  {recupero && ` · ${recupero}`}
+                </span>
               </span>
               {kg !== null && (
                 <span className="shrink-0 rounded-full bg-carta-alta px-3 py-1 text-sm font-bold tabular-nums">
