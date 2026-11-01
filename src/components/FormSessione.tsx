@@ -36,6 +36,7 @@ type Bozza = {
 }
 
 type Props = {
+  utenteId: number // la bozza nel browser è di questa persona: due account sullo stesso browser non se la vedono
   giorno: Giorno
   ultime: UltimeVolte
   catalogo: VoceCatalogo[]
@@ -61,7 +62,7 @@ function testoSuggerimento(s: SuggerimentoCarico): string {
     : `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripMax} rip in ogni serie per salire`
 }
 
-export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
+export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props) {
   const router = useRouter()
   const definizioni = new Map(giorno.esercizi.map((e) => [e.id, e]))
   const suggerimentiCarico = suggerisciCarichi(giorno.esercizi, ultime)
@@ -76,6 +77,7 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
   const [esitoFile, setEsitoFile] = useState<{ testo: string; errore: boolean } | null>(null)
   const fileOrologio = useRef<HTMLInputElement>(null)
   const [errore, setErrore] = useState<string | null>(null)
+  const [scaduta, setScaduta] = useState(false)
   const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
   const [aggiunta, setAggiunta] = useState<number | null>(null)
   const [nomeLibero, setNomeLibero] = useState('')
@@ -88,7 +90,7 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
   // All'apertura riprende la bozza di questa giornata, se c'è: si legge qui e non nello stato iniziale
   // perché il server non ha il localStorage e le due versioni della pagina non coinciderebbero.
   useEffect(() => {
-    const bozza = leggiBozza<Bozza>(giorno.id)
+    const bozza = leggiBozza<Bozza>(utenteId, giorno.id)
     if (bozza) {
       setEsercizi(bozza.esercizi)
       setData(bozza.data)
@@ -99,12 +101,12 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
       setKcal(bozza.kcal ?? '')
     }
     setBozzaPronta(true)
-  }, [giorno.id])
+  }, [utenteId, giorno.id])
 
   useEffect(() => {
     if (!bozzaPronta) return
-    salvaBozza(giorno.id, { esercizi, data, note, durata, fcMedia, fcMax, kcal } satisfies Bozza)
-  }, [bozzaPronta, giorno.id, esercizi, data, note, durata, fcMedia, fcMax, kcal])
+    salvaBozza(utenteId, giorno.id, { esercizi, data, note, durata, fcMedia, fcMax, kcal } satisfies Bozza)
+  }, [bozzaPronta, utenteId, giorno.id, esercizi, data, note, durata, fcMedia, fcMax, kcal])
 
   useEffect(() => {
     if (!timer) return
@@ -285,12 +287,13 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
 
   function annulla() {
     if (righeConfermate > 0 && !window.confirm('Annullare la sessione? Le serie confermate andranno perse.')) return
-    eliminaBozza(giorno.id)
+    eliminaBozza(utenteId, giorno.id)
     router.push(`/scheda?r=${giorno.id}`)
   }
 
   function salva() {
     setErrore(null)
+    setScaduta(false)
     setErroreEsercizio(null)
 
     if (durata.trim() !== '' && durataMinuti === null) return setErrore('La durata deve essere un numero intero di minuti')
@@ -312,18 +315,29 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
     if (invio.every((es) => es.serie.length === 0)) return setErrore('Conferma almeno una serie con ✓')
 
     startTransition(async () => {
-      const esito = await salvaSessione({
-        giornoId: giorno.id,
-        data,
-        note: note.trim() === '' ? null : note,
-        durataMinuti,
-        fcMediaBpm,
-        fcMassimaBpm,
-        kcalOrologio,
-        esercizi: invio,
-      })
-      if ('errore' in esito) return setErrore(esito.errore)
-      eliminaBozza(giorno.id)
+      let esito: Awaited<ReturnType<typeof salvaSessione>>
+      try {
+        esito = await salvaSessione({
+          giornoId: giorno.id,
+          data,
+          note: note.trim() === '' ? null : note,
+          durataMinuti,
+          fcMediaBpm,
+          fcMassimaBpm,
+          kcalOrologio,
+          esercizi: invio,
+        })
+      } catch {
+        // Se l'accesso è scaduto del tutto, il server risponde con la pagina di login e non con il risultato
+        // dell'azione; lo stesso succede senza connessione. In entrambi i casi la sessione resta nel telefono.
+        setScaduta(true)
+        return setErrore('Non sono riuscito a salvare: manca la connessione oppure l’accesso è scaduto. Le serie confermate restano nel telefono.')
+      }
+      if ('errore' in esito) {
+        setScaduta(esito.scaduta === true)
+        return setErrore(esito.errore)
+      }
+      eliminaBozza(utenteId, giorno.id)
       router.push(`/storico/${esito.id}`)
     })
   }
@@ -513,9 +527,18 @@ export function FormSessione({ giorno, ultime, catalogo, oggi }: Props) {
       </section>
 
       {errore && (
-        <p role="alert" className="rounded-xl bg-errore/10 p-3 text-sm text-errore">
-          {errore}
-        </p>
+        <div role="alert" className="space-y-2 rounded-xl bg-errore/10 p-3 text-sm text-errore">
+          <p>{errore}</p>
+          {scaduta && (
+            // Un link vero e non il router: si esce dall'app e si torna qui dopo l'accesso, con la sessione ripresa.
+            <a
+              href={`/login?da=${encodeURIComponent(`/sessione?r=${giorno.id}`)}`}
+              className="inline-block rounded-full bg-errore px-4 py-2 font-bold text-su-accento"
+            >
+              Accedi di nuovo e riprendi
+            </a>
+          )}
+        </div>
       )}
 
       <button type="button" onClick={salva} disabled={inCorso} className={stileBottonePrimario}>

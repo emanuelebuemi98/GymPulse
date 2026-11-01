@@ -28,5 +28,14 @@ export default async function SessionePage({ searchParams }: Props) {
   const ultime = await ultimeVolte(userId, catalogo.map((voce) => voce.id))
 
   // `key` fa ripartire il form (e la sua bozza) quando si cambia giornata.
-  return <FormSessione key={giorno.id} giorno={giorno} ultime={ultime} catalogo={catalogo} oggi={dataIso(new Date())} />
+  return (
+    <FormSessione
+      key={giorno.id}
+      utenteId={userId}
+      giorno={giorno}
+      ultime={ultime}
+      catalogo={catalogo}
+      oggi={dataIso(new Date())}
+    />
+  )
 }

@@ -21,9 +21,10 @@ function aggiornaPagine() {
   revalidatePath('/', 'layout')
 }
 
-export async function salvaSessione(input: unknown): Promise<{ id: number } | { errore: string }> {
+// `scaduta` dice al form che l'accesso non vale più: oltre al messaggio mostra il modo di accedere di nuovo.
+export async function salvaSessione(input: unknown): Promise<{ id: number } | { errore: string; scaduta?: true }> {
   const userId = await utenteCorrente()
-  if (!userId) return { errore: NON_AUTORIZZATO }
+  if (!userId) return { errore: NON_AUTORIZZATO, scaduta: true }
 
   const esito = validaSessione(input)
   if (!esito.ok) return { errore: esito.errore }

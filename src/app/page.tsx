@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { CsvSedute } from '@/components/CsvSedute'
 import { IconaPlay } from '@/components/icone'
+import { SessioneInCorso } from '@/components/SessioneInCorso'
 import { stileCarta, stileEtichetta } from '@/components/stili'
 import { giornoConsigliato } from '@/lib/allenamento'
 import { formatDataLunga } from '@/lib/formato'
@@ -31,6 +32,9 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-7">
+      {/* Se c'è una sessione lasciata a metà (anche dopo aver chiuso il browser), si riprende da qui. */}
+      <SessioneInCorso utenteId={userId} giorni={giorni.map((giorno) => ({ id: giorno.id, titolo: giorno.titolo }))} />
+
       {/* Prima cosa: cosa fare oggi. */}
       <section className="relative overflow-hidden rounded-3xl bg-inchiostro p-6 text-su-inchiostro">
         <span
