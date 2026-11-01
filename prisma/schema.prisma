@@ -79,11 +79,17 @@ model RegistrazioneSospesa {
   @@index([creatoIl])
 }
 
-// Giornata della scheda di una persona. L'id è la sigla: A, B, C. L'ordine delle giornate è quello delle sigle.
+// Giornata della scheda di una persona. L'id è la sigla (A, B, C, ...): una lettera, e le giornate attive sono da 1 a
+// 7. L'ordine è quello delle sigle. Una nuova giornata prende la lettera dopo l'ultima usata, quindi le sigle possono
+// avere dei buchi (A, C, D) se se ne è tolta una in mezzo.
+// attiva = false: la giornata è stata tolta dalla scheda ma ha delle sedute registrate, che non si possono perdere.
+// Resta nel database solo per lo storico (nome e sigla), non compare più nella scheda e non si propone più.
+// Una giornata senza sedute, quando la si toglie, si cancella davvero.
 model GiornoScheda {
   id       String
   userId   Int
   titolo   String
+  attiva   Boolean      @default(true)
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   voci     VoceScheda[]
   sessioni Sessione[]
