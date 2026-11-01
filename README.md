@@ -119,7 +119,7 @@ git checkout dev
    ```env
    NUOVO_NOME="Nome Cognome"
    NUOVO_USERNAME="nomeutente"
-   NUOVA_PASSWORD="almeno 10 caratteri"
+   NUOVA_PASSWORD="almeno 8 caratteri"
    ```
 
    poi lancia `npm run db:utente` e **toglile dal `.env`**: una password in chiaro non deve restare su disco. Se il nome utente esiste già, lo stesso comando ne cambia la password. Un account creato così **non ha un'email**: la si collega dalla pagina Account, e finché non c'è la password non si recupera con il codice.
