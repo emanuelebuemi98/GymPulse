@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { FormSessione } from '@/components/FormSessione'
 import { stileCarta } from '@/components/stili'
 import { giornoConsigliato } from '@/lib/allenamento'
@@ -21,7 +22,14 @@ export default async function SessionePage({ searchParams }: Props) {
   const [giorni, catalogo, { ultima }] = await Promise.all([leggiScheda(userId), leggiCatalogo(userId), riepilogoHome(userId)])
 
   if (giorni.length === 0) {
-    return <p className={`${stileCarta} p-5 text-muto`}>La scheda è vuota: non c'è nessuna sessione da avviare.</p>
+    return (
+      <p className={`${stileCarta} p-5 text-muto`}>
+        La scheda non ha giornate: non c&apos;è nessuna sessione da avviare.{' '}
+        <Link href="/scheda" className="font-semibold text-accento underline">
+          Vai alla scheda
+        </Link>
+      </p>
+    )
   }
 
   const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)

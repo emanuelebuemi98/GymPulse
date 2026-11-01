@@ -1,3 +1,4 @@
+import { titoloGiornata } from './giornate'
 import { validaNuoveCredenziali } from './sessione-auth'
 
 // Registrazione aperta: chiunque può creare un account dall'app. Non c'è un codice di invito, quindi le difese sono:
@@ -35,9 +36,10 @@ export function validaRegistrazione(nome: string, username: string, password: st
 
 export type GiornataVuota = { id: string; titolo: string }
 
-// Ogni persona parte con tre giornate vuote (A, B, C) da riempire con la propria scheda.
+// Ogni persona parte con tre giornate vuote (A, B, C) da riempire con la propria scheda. Sono solo il punto di partenza:
+// dalla pagina Scheda se ne aggiungono (fino a 7) e se ne tolgono (fino a una sola).
 export function giornateVuote(): GiornataVuota[] {
-  return ['A', 'B', 'C'].map((id) => ({ id, titolo: `Giornata ${id}` }))
+  return ['A', 'B', 'C'].map((id) => ({ id, titolo: titoloGiornata(id) }))
 }
 
 // Errore di Prisma per un valore che deve essere unico (es. nome utente già preso).

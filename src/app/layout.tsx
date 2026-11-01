@@ -10,7 +10,7 @@ const bricolage = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-br
 
 export const metadata: Metadata = {
   title: { default: 'GymPulse', template: '%s · GymPulse' },
-  description: 'Il tuo diario di allenamento: scheda A, B e C, sedute, storico e progressi.',
+  description: 'Il tuo diario di allenamento: la tua scheda, le sedute, lo storico e i progressi.',
   applicationName: 'GymPulse',
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.svg' },

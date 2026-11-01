@@ -6,6 +6,7 @@ import { utenteCorrente } from '@/lib/accesso'
 import { trovaOCreaEsercizio } from '@/lib/catalogo'
 import { LIMITE_CSV, leggiCsv } from '@/lib/csv'
 import { db } from '@/lib/db'
+import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from '@/lib/giornate'
 import { campiObiettivo } from '@/lib/voci'
 import { validaScheda } from '@/lib/scheda-schema'
 import { validaSessione } from '@/lib/sessione-schema'
@@ -33,11 +34,9 @@ export async function salvaSessione(input: unknown): Promise<{ id: number } | { 
   // Gli esercizi senza serie confermate non vengono salvati (e non ne nasce uno nuovo nel catalogo).
   const esercizi = esito.dati.esercizi.filter((esercizio) => esercizio.serie.length > 0)
 
-  const giorno = await db.giornoScheda.findUnique({
-    where: { userId_id: { userId, id: giornoId } },
-    select: { id: true },
-  })
-  if (!giorno) return { errore: 'Giorno non valido' }
+  // Solo una giornata attiva: una tolta dalla scheda (rimasta per lo storico) non riceve sedute nuove.
+  const giorno = await db.giornoScheda.findFirst({ where: { userId, id: giornoId, attiva: true }, select: { id: true } })
+  if (!giorno) return { errore: 'Questa giornata non è più nella scheda: le serie confermate restano nel telefono, ma non si possono salvare qui' }
 
   const idCatalogo = esercizi.flatMap((esercizio) => (esercizio.esercizioId !== null ? [esercizio.esercizioId] : []))
   const trovati = await db.esercizio.count({ where: { userId, id: { in: idCatalogo } } })
@@ -83,10 +82,7 @@ export async function salvaScheda(input: unknown): Promise<{ ok: true } | { erro
   if (!esito.ok) return { errore: esito.errore }
   const { giornoId, titolo, voci } = esito.dati
 
-  const giorno = await db.giornoScheda.findUnique({
-    where: { userId_id: { userId, id: giornoId } },
-    select: { id: true },
-  })
+  const giorno = await db.giornoScheda.findFirst({ where: { userId, id: giornoId, attiva: true }, select: { id: true } })
   if (!giorno) return { errore: 'Giornata non trovata' }
 
   const idCatalogo = voci.flatMap((voce) => (voce.esercizioId !== null ? [voce.esercizioId] : []))
@@ -119,6 +115,70 @@ export async function salvaScheda(input: unknown): Promise<{ ok: true } | { erro
   return { ok: true }
 }
 
+// Aggiunge una giornata in fondo alla scheda, con la sigla successiva (A, B, C, D, ...), fino a 7. Parte vuota: gli
+// esercizi si scelgono dalla pagina di modifica, dove si viene portati subito dopo.
+export async function aggiungiGiornata(): Promise<{ id: string } | { errore: string }> {
+  const userId = await utenteCorrente()
+  if (!userId) return { errore: NON_AUTORIZZATO }
+
+  // Il blocco (advisory lock) per persona fa passare una richiesta alla volta: due "Aggiungi" insieme non sforano il limite
+  // né scelgono la stessa sigla.
+  const esito = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${userId}::bigint)`
+
+    // Si contano solo le attive per il limite; le sigle invece si guardano tutte, tolte comprese, perché non si riusano.
+    const tutte = await tx.giornoScheda.findMany({ where: { userId }, select: { id: true, attiva: true } })
+    if (tutte.filter((g) => g.attiva).length >= GIORNATE_MASSIME) {
+      return { errore: `Una scheda può avere al massimo ${GIORNATE_MASSIME} giornate` } as const
+    }
+    const sigla = prossimaSigla(tutte.map((g) => g.id))
+    if (sigla === null) return { errore: 'Non ci sono più sigle disponibili' } as const
+
+    await tx.giornoScheda.create({ data: { userId, id: sigla, titolo: titoloGiornata(sigla) } })
+    return { id: sigla } as const
+  })
+
+  if ('id' in esito) aggiornaPagine()
+  return esito
+}
+
+// Toglie una giornata dalla scheda. Una scheda ha sempre almeno una giornata. Se la giornata non ha sedute si cancella; se
+// ne ha, si segna come non attiva e resta solo per lo storico: le sedute già registrate non si perdono. Gli esercizi
+// restano nel catalogo della persona. Chi chiama deve avere chiesto conferma.
+export async function rimuoviGiornata(id: unknown): Promise<{ ok: true; archiviata: boolean } | { errore: string }> {
+  const userId = await utenteCorrente()
+  if (!userId) return { errore: NON_AUTORIZZATO }
+  if (typeof id !== 'string' || !/^[A-Z]$/.test(id)) return { errore: 'Giornata non valida' }
+
+  try {
+    const esito = await db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${userId}::bigint)`
+
+      const attive = await tx.giornoScheda.findMany({ where: { userId, attiva: true }, select: { id: true } })
+      if (!attive.some((g) => g.id === id)) return { errore: 'Giornata non trovata' } as const
+      if (attive.length <= 1) return { errore: 'Una scheda ha sempre almeno una giornata' } as const
+
+      // Le voci della giornata tolta non servono più in nessun caso.
+      await tx.voceScheda.deleteMany({ where: { userId, giornoId: id } })
+      const sedute = await tx.sessione.count({ where: { userId, giornoId: id } })
+      if (sedute > 0) {
+        await tx.giornoScheda.update({ where: { userId_id: { userId, id } }, data: { attiva: false } })
+        return { ok: true, archiviata: true } as const
+      }
+      await tx.giornoScheda.delete({ where: { userId_id: { userId, id } } })
+      return { ok: true, archiviata: false } as const
+    })
+
+    if ('ok' in esito) aggiornaPagine()
+    return esito
+  } catch (errore) {
+    // Succede solo se una seduta è stata salvata su questa giornata tra il conteggio e la cancellazione: la chiave
+    // esterna la protegge e la transazione torna indietro. Riprovando, la giornata resta per lo storico.
+    console.error('[scheda] giornata non rimossa', errore)
+    return { errore: 'Non sono riuscito a togliere la giornata: riprova' }
+  }
+}
+
 export async function eliminaSessione(id: unknown): Promise<{ errore: string } | never> {
   const userId = await utenteCorrente()
   if (!userId) return { errore: NON_AUTORIZZATO }
@@ -134,7 +194,8 @@ export async function eliminaSessione(id: unknown): Promise<{ errore: string } |
 // Aggiunge alle sedute DI CHI LA ESEGUE quelle scritte nel file CSV. Non cancella nulla: una seduta con la
 // stessa data e la stessa giornata di una già presente viene saltata, così importare due volte lo stesso file
 // non duplica niente. Gli esercizi si ritrovano per nome (senza badare alle maiuscole) e se non ci sono si creano.
-// Le giornate invece devono esistere già nella scheda: l'importazione non ne inventa.
+// Le giornate invece devono esistere già: l'importazione non ne inventa. Contano anche quelle tolte dalla scheda e
+// rimaste per lo storico, perché le sedute di un file esportato un tempo ci appartengono ancora.
 export async function importaCsv(testo: unknown): Promise<{ aggiunte: number; giaPresenti: number } | { errore: string }> {
   const userId = await utenteCorrente()
   if (!userId) return { errore: NON_AUTORIZZATO }

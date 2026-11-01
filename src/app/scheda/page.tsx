@@ -1,12 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { AggiungiGiornata } from '@/components/AggiungiGiornata'
 import { IconaPlay, IconaRegolazioni } from '@/components/icone'
+import { RimuoviGiornata } from '@/components/RimuoviGiornata'
 import { stileBottoneChiaro, stileCarta } from '@/components/stili'
 import { TabGiorni } from '@/components/TabGiorni'
 import { descrizioneObiettivo, giornoConsigliato } from '@/lib/allenamento'
 import { formatNumero } from '@/lib/formato'
+import { GIORNATE_MASSIME } from '@/lib/giornate'
 import { massimoKg } from '@/lib/progressi'
-import { leggiScheda } from '@/lib/scheda-db'
+import { contaSeduteGiornata, leggiScheda } from '@/lib/scheda-db'
 import { riepilogoHome, ultimeVolte } from '@/lib/storico'
 import { primoParametro } from '@/lib/url'
 import { richiediUtente } from '@/lib/accesso'
@@ -24,15 +27,31 @@ export default async function SchedaPage({ searchParams }: Props) {
   const [giorni, { ultima }] = await Promise.all([leggiScheda(userId), riepilogoHome(userId)])
 
   if (giorni.length === 0) {
-    return <p className={`${stileCarta} p-5 text-muto`}>La scheda è vuota. Esegui <code className="text-testo">npm run db:seed</code>.</p>
+    // Non dovrebbe capitare (una scheda ha sempre almeno una giornata), ma un account creato in altri modi potrebbe.
+    return (
+      <div className={`${stileCarta} space-y-3 p-5`}>
+        <p className="text-muto">La scheda non ha ancora nessuna giornata.</p>
+        <div className="w-24">
+          <AggiungiGiornata />
+        </div>
+      </div>
+    )
   }
 
   const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)
-  const ultime = await ultimeVolte(userId, giorno.esercizi.map((e) => e.id))
+  const [ultime, sedute] = await Promise.all([
+    ultimeVolte(userId, giorno.esercizi.map((e) => e.id)),
+    contaSeduteGiornata(userId, giorno.id),
+  ])
 
   return (
     <div className="space-y-5">
-      <TabGiorni giorni={giorni} attivo={giorno.id} percorso="/scheda" />
+      <TabGiorni
+        giorni={giorni}
+        attivo={giorno.id}
+        percorso="/scheda"
+        aggiungi={giorni.length < GIORNATE_MASSIME ? <AggiungiGiornata /> : undefined}
+      />
 
       <header className="flex items-end justify-between gap-3">
         <div className="min-w-0">
@@ -73,6 +92,8 @@ export default async function SchedaPage({ searchParams }: Props) {
           )
         })}
       </ol>
+
+      {giorni.length > 1 && <RimuoviGiornata id={giorno.id} titolo={giorno.titolo} sedute={sedute} />}
     </div>
   )
 }

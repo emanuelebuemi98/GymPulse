@@ -21,8 +21,10 @@ export default async function HomePage() {
       <div className={`${stileCarta} space-y-2 p-5`}>
         <h1 className="text-2xl font-extrabold">Scheda vuota</h1>
         <p className="text-muto">
-          Il database non contiene ancora la scheda. Esegui <code className="text-testo">npm run db:seed</code> e
-          ricarica la pagina.
+          La scheda non ha ancora nessuna giornata.{' '}
+          <Link href="/scheda" className="font-semibold text-accento underline">
+            Creane una
+          </Link>
         </p>
       </div>
     )
