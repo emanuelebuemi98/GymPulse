@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { GRUPPI_MUSCOLARI, type GruppoMuscolare } from './muscoli'
 import type { Obiettivo } from './scheda-tipi'
 import { RECUPERO_PREDEFINITO } from './voci'
 
@@ -25,6 +26,8 @@ const voceSchema = z
       .min(0, "L'incremento non può essere negativo")
       .max(50, "L'incremento è troppo alto")
       .nullable(),
+    // Il gruppo muscolare dell'esercizio: ognuno appartiene a una delle sette categorie.
+    muscoli: z.enum(GRUPPI_MUSCOLARI, { error: 'Scegli il gruppo muscolare di ogni esercizio' }),
   })
   .refine((v) => (v.esercizioId === null) !== (v.nomeNuovo === null), { message: 'Esercizio non valido' })
 
@@ -40,6 +43,8 @@ export type VoceNormalizzata = {
   obiettivo: Obiettivo
   nota: string | null
   incrementoKg: number | null
+  // Da salvare in Esercizio.muscoli.
+  muscoli: GruppoMuscolare
 }
 
 export type SchedaNormalizzata = {
@@ -99,6 +104,7 @@ export function validaScheda(input: unknown): EsitoScheda {
       obiettivo,
       nota: voce.nota ? voce.nota : null,
       incrementoKg: voce.incrementoKg ? voce.incrementoKg : null,
+      muscoli: voce.muscoli,
     })
   }
 
