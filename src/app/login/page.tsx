@@ -15,7 +15,9 @@ export const metadata: Metadata = { title: 'Accedi' }
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const da = percorsoSicuro(primoParametro((await searchParams).da))
+  const parametri = await searchParams
+  const da = percorsoSicuro(primoParametro(parametri.da))
+  const reimpostata = primoParametro(parametri.r) === '1'
   if (await haAccesso()) redirect(da)
 
   // In sviluppo dico cosa manca; online non svelo nulla (il dettaglio resta nel log del server).
@@ -32,6 +34,12 @@ export default async function LoginPage({ searchParams }: Props) {
         <h1 className="text-3xl font-extrabold tracking-tight">Accedi</h1>
         <p className="text-muto">Il tuo diario di allenamento è privato.</p>
       </header>
+
+      {reimpostata && (
+        <p role="status" className="rounded-2xl bg-ok/10 p-3 text-center text-sm font-semibold text-ok">
+          Password cambiata. Le sessioni aperte sono state chiuse: accedi con la password nuova.
+        </p>
+      )}
 
       <section className={`${stileCarta} p-5`}>
         <FormLogin da={da} />

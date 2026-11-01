@@ -114,7 +114,7 @@ export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<S
   }
 
   limiteAccessi.azzera(indirizzo)
-  await apriSessione(segreto.segreto, riga.id)
+  await apriSessione(segreto.segreto, riga.id, riga.passwordHash)
   redirect(percorsoSicuro(dati.get('da')))
 }
 
@@ -327,7 +327,7 @@ async function confermaRegistrazione(dati: FormData): Promise<StatoRegistrazione
   }
 
   limiteRegistrazioni.conta(indirizzo)
-  await apriSessione(segreto.segreto, userId)
+  await apriSessione(segreto.segreto, userId, passwordHash)
   redirect('/scheda/modifica?r=A')
 }
 
@@ -458,14 +458,17 @@ async function reimposta(dati: FormData): Promise<StatoRecupero> {
     return sulCodice('Codice non corretto o scaduto')
   }
 
-  // Cambio della password e scadenza di ogni altro codice nella stessa transazione.
+  // Cambio della password e scadenza di ogni altro codice nella stessa transazione. Con la password nuova cambia
+  // l'impronta scritta nei cookie, quindi ogni sessione aperta, su qualunque dispositivo, smette di valere.
   await db.$transaction([
     db.user.update({ where: { id: riga.id }, data: { passwordHash: await creaHashPassword(password) } }),
     invalidaCodiciEmail(riga.id),
   ])
 
-  await apriSessione(segreto.segreto, riga.id)
-  redirect('/account?r=1')
+  // Non si apre una sessione nuova: dopo un cambio di password si accede di nuovo con quella nuova. Il cookie rimasto
+  // in questo browser non vale più, e lo si toglie per non lasciarlo in giro.
+  ;(await cookies()).delete(COOKIE_SESSIONE)
+  redirect('/login?r=1')
 }
 
 export async function esci(): Promise<void> {

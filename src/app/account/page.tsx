@@ -4,7 +4,6 @@ import { stileCarta } from '@/components/stili'
 import { richiediUtente } from '@/lib/accesso'
 import { emailAttiva } from '@/lib/email'
 import { mascheraEmail } from '@/lib/indirizzo-email'
-import { primoParametro } from '@/lib/url'
 import { leggiUtente } from '@/lib/utente'
 
 // Legge il database a ogni richiesta.
@@ -12,16 +11,13 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = { title: 'Account' }
 
-type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
-
-export default async function AccountPage({ searchParams }: Props) {
+export default async function AccountPage() {
   const userId = await richiediUtente()
   const utente = await leggiUtente(userId)
   if (!utente) return null
 
   const haEmail = utente.email !== null
   const attiva = emailAttiva()
-  const appenaReimpostata = primoParametro((await searchParams).r) === '1'
 
   return (
     <div className="space-y-5">
@@ -31,12 +27,6 @@ export default async function AccountPage({ searchParams }: Props) {
           {utente.fullName} · <span className="font-semibold text-testo">{utente.username}</span>
         </p>
       </header>
-
-      {appenaReimpostata && (
-        <p role="status" className="rounded-2xl bg-ok/10 p-3 text-sm font-semibold text-ok">
-          Password cambiata.
-        </p>
-      )}
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Email per il recupero</h2>

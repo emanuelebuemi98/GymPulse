@@ -1,27 +1,47 @@
+import { cache } from 'react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { COOKIE_SESSIONE, DURATA_SESSIONE_SEC, creaToken, idUtenteDaToken } from './sessione-auth'
+import { db } from './db'
+import {
+  COOKIE_SESSIONE,
+  INTESTAZIONE_PERCORSO,
+  creaToken,
+  improntaGiusta,
+  leggiToken,
+  scadenzaSessione,
+} from './sessione-auth'
 
-// Apre la sessione: cookie firmato con l'id numerico dell'utente. "secure" solo su https (Vercel manda
-// x-forwarded-proto): su http locale il browser scarterebbe il cookie.
-export async function apriSessione(segreto: string, userId: number): Promise<void> {
+// Apre la sessione: cookie firmato con l'id numerico dell'utente e l'impronta della sua password. "secure" solo su
+// https (Vercel manda x-forwarded-proto): su http locale il browser scarterebbe il cookie.
+// Vale fino alla prossima mezzanotte di Roma (maxAge): il browser lo tiene anche se lo chiudi, e la stessa scadenza è
+// scritta nel token. L'istante è uno solo, usato per entrambi: a cavallo della mezzanotte non possono differire.
+export async function apriSessione(segreto: string, userId: number, passwordHash: string): Promise<void> {
   const archivio = await cookies()
   const èHttps = (await headers()).get('x-forwarded-proto') === 'https'
-  archivio.set(COOKIE_SESSIONE, creaToken(segreto, userId), {
+  const adesso = Date.now()
+  archivio.set(COOKIE_SESSIONE, creaToken(segreto, userId, passwordHash, adesso), {
     httpOnly: true,
     sameSite: 'lax',
     secure: èHttps,
     path: '/',
-    maxAge: DURATA_SESSIONE_SEC,
+    maxAge: Math.max(1, Math.round((scadenzaSessione(adesso) - adesso) / 1000)),
   })
 }
 
-// Chi sta facendo la richiesta, ricavato dal cookie firmato. È l'unica fonte dell'id dell'utente:
-// pagine e azioni non si fidano mai di un id mandato dal browser.
-export async function utenteCorrente(): Promise<number | null> {
+// Chi sta facendo la richiesta, ricavato dal cookie firmato E dal database: il token vale solo se l'impronta della
+// password che porta è ancora quella della persona. Cambiando la password, ogni sessione aperta smette di valere.
+// È l'unica fonte dell'id dell'utente: pagine e azioni non si fidano mai di un id mandato dal browser.
+// `cache` fa una sola lettura del database per richiesta, anche se menu, pagina e dati la chiedono più volte.
+export const utenteCorrente = cache(async (): Promise<number | null> => {
+  const segreto = process.env.AUTH_SECRET
   const archivio = await cookies()
-  return idUtenteDaToken(archivio.get(COOKIE_SESSIONE)?.value, process.env.AUTH_SECRET)
-}
+  const dati = leggiToken(archivio.get(COOKIE_SESSIONE)?.value, segreto)
+  if (!dati || !segreto) return null
+
+  const riga = await db.user.findUnique({ where: { id: dati.userId }, select: { passwordHash: true } })
+  if (!riga || !improntaGiusta(segreto, riga.passwordHash, dati.impronta)) return null
+  return dati.userId
+})
 
 export async function haAccesso(): Promise<boolean> {
   return (await utenteCorrente()) !== null
@@ -31,6 +51,10 @@ export async function haAccesso(): Promise<boolean> {
 // Il proxy ferma già chi non è entrato, ma non basta da solo: pagine e azioni sono punti d'ingresso pubblici.
 export async function richiediUtente(): Promise<number> {
   const id = await utenteCorrente()
-  if (!id) redirect('/login')
+  if (!id) {
+    // Dopo l'accesso si torna dove si era (l'indirizzo lo scrive il proxy; la pagina di login lo ricontrolla).
+    const percorso = (await headers()).get(INTESTAZIONE_PERCORSO)
+    redirect(percorso ? `/login?da=${encodeURIComponent(percorso)}` : '/login')
+  }
   return id
 }

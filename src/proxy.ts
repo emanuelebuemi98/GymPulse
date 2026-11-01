@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { COOKIE_SESSIONE, tokenValido } from '@/lib/sessione-auth'
+import { COOKIE_SESSIONE, INTESTAZIONE_PERCORSO, tokenValido } from '@/lib/sessione-auth'
 
 // Prima porta dell'app: senza un cookie di sessione valido si può vedere solo /login.
 // Gli stessi controlli si ripetono in pagine, azioni e /api/export (vedi lib/accesso.ts).
@@ -12,7 +12,12 @@ export function proxy(richiesta: NextRequest) {
   }
 
   if (tokenValido(richiesta.cookies.get(COOKIE_SESSIONE)?.value, process.env.AUTH_SECRET)) {
-    return NextResponse.next()
+    // Passa alle pagine l'indirizzo richiesto (sempre sovrascritto qui: un valore mandato dal browser non conta). Serve
+    // quando la firma è buona ma la password nel frattempo è cambiata: la pagina rimanda al login e, dopo l'accesso,
+    // si torna dove si era.
+    const intestazioni = new Headers(richiesta.headers)
+    intestazioni.set(INTESTAZIONE_PERCORSO, pathname + search)
+    return NextResponse.next({ request: { headers: intestazioni } })
   }
 
   if (pathname.startsWith('/api/')) {
