@@ -21,7 +21,7 @@ const nome = normalizzaNomeCompleto(process.env.NUOVO_NOME ?? '')
 const problema = validaNuoveCredenziali(username, password)
 if (problema) {
   console.error(`Credenziali non valide: ${problema}.`)
-  console.error('Uso: NUOVO_USERNAME=emanuele NUOVA_PASSWORD=<almeno 10 caratteri> NUOVO_NOME="Nome Cognome" npm run db:utente')
+  console.error('Uso: NUOVO_USERNAME=emanuele NUOVA_PASSWORD=<almeno 8 caratteri> NUOVO_NOME="Nome Cognome" npm run db:utente')
   process.exit(1)
 }
 

@@ -55,11 +55,11 @@ export function FormRecupero() {
               type="password"
               autoComplete="new-password"
               required
-              minLength={10}
+              minLength={8}
               maxLength={200}
               className={`${stileTesto} text-left`}
             />
-            <span className="block text-xs font-normal">Almeno 10 caratteri.</span>
+            <span className="block text-xs font-normal">Almeno 8 caratteri.</span>
           </label>
 
           <label className="block space-y-1 text-sm font-semibold text-muto">

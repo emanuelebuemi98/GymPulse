@@ -16,7 +16,7 @@ import { mezzanotteSuccessiva } from './formato'
 export const COOKIE_SESSIONE = 'gympulse_sessione'
 export const INTESTAZIONE_PERCORSO = 'x-gympulse-percorso'
 export const LUNGHEZZA_MIN_SEGRETO = 32
-export const LUNGHEZZA_MIN_PASSWORD = 10
+export const LUNGHEZZA_MIN_PASSWORD = 8
 export const LUNGHEZZA_MAX_PASSWORD = 200
 
 const VERSIONE = 'v4'
