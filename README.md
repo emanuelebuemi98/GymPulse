@@ -4,7 +4,7 @@
 
 Si usa dal browser del telefono e funziona anche in locale sul PC.
 
-> **Stato:** funziona in locale con PostgreSQL in Docker. Il collegamento a Supabase e la pubblicazione su Vercel non sono ancora fatti.
+> **Stato:** funziona in locale con PostgreSQL in Docker. Il collegamento a Neon e la pubblicazione su Vercel non sono ancora fatti.
 
 ---
 
@@ -37,7 +37,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 
 | Cosa | Situazione |
 |---|---|
-| **Pubblicazione online** | Ultimo passo: Supabase per il database e Vercel per l'app. |
+| **Pubblicazione online** | Ultimo passo: Neon per il database e Vercel per l'app. |
 
 ---
 
@@ -49,7 +49,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | Interfaccia | React | 19.3.1 | Libreria per la costruzione dell'interfaccia utente tramite componenti riutilizzabili e gestione dello stato |
 | Linguaggio | TypeScript | 7.0.2 | Superset tipizzato di JavaScript; controllo statico dei tipi per un codice più sicuro e manutenibile |
 | Stile | Tailwind CSS | 4.3.3 | Font Bricolage Grotesque, tema chiaro |
-| Database | PostgreSQL | 17 | Docker in locale; Supabase (cloud) previsto per la pubblicazione |
+| Database | PostgreSQL | 17 | Docker in locale; Neon (cloud) previsto per la pubblicazione |
 | ORM | Prisma | 7.10.1 | Con driver `pg` 8.23.1 e `@prisma/adapter-pg` 7.10.1 |
 | Validazione | Zod | 4.6.7 | I dati arrivati dal browser si ricontrollano sempre sul server |
 | Accesso | Scritto nel progetto | — | Cookie firmato (HMAC-SHA256) e password con scrypt, entrambi di Node.js: nessuna libreria in più |
@@ -70,7 +70,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | | Sviluppo | Produzione |
 |---|---|---|
 | Ramo Git | `dev` | `main` |
-| Database | PostgreSQL in Docker sul tuo PC | Supabase (cloud) *— da collegare* |
+| Database | PostgreSQL in Docker sul tuo PC | Neon (cloud) *— da collegare* |
 | App | `npm run dev` su http://localhost:3000 | Vercel *— da collegare*; sul PC `npm run build` e `npm start` |
 | Variabili d'ambiente | file `.env` | variabili di Vercel, oppure della shell se provi la build sul PC |
 | `AUTH_SECRET` | uno locale | **un altro**, diverso, solo in produzione |
@@ -156,7 +156,7 @@ npm.cmd start             # avvia su http://localhost:3000
 
 Le variabili della shell valgono solo per quella finestra e vincono sul file `.env`, quindi la build di produzione non usa per sbaglio il database locale. Chiusa la finestra, spariscono. **Non scrivere le credenziali di produzione nel `.env`.**
 
-**Su Vercel** (quando sarà collegato) si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Supabase, *transaction pooler*) e `AUTH_SECRET`. Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` che punta alla connessione diretta di Supabase, prima di pubblicare una modifica che cambia lo schema.
+**Su Vercel** (quando sarà collegato) si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo) e `AUTH_SECRET`. Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema.
 
 ## Script disponibili
 
@@ -348,6 +348,21 @@ Se un giorno questi punti ti pesano, basta cambiare le due variabili con quelle 
 
 ## Pubblicazione online (ultimo passo)
 
-1. **Supabase** per il database. Servono due connessioni: quella *transaction pooler* (porta 6543) per l'app e quella diretta o *session pooler* (porta 5432) per le migrazioni. Disattivare l'API REST automatica o attivare la Row Level Security, perché l'accesso passa solo dal backend.
-2. **Vercel** per l'app, collegato al ramo `main`. Variabili d'ambiente: `DATABASE_URL`, un `AUTH_SECRET` **nuovo**, diverso da quello locale, e le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`). Senza queste la registrazione e il recupero restano spenti.
-3. Le credenziali di Supabase vanno solo nelle variabili di Vercel, mai nel codice e mai nel `.env`.
+**Perché Neon e non Supabase.** L'app usa funzioni di PostgreSQL (blocchi `pg_advisory_xact_lock`, vincoli `CHECK`, chiavi esterne composte), quindi serve un database Postgres. Dalle pagine dei piani gratuiti: Neon dà 1 GB per progetto, si sospende dopo 5 minuti di inattività e riparte alla prima query, senza carta; Supabase dà 500 MB, **mette in pausa il progetto dopo una settimana di inattività** e non include i backup automatici. Non ho verificato i backup di Neon.
+
+1. **Neon** per il database: progetto con Postgres 17 (come il Docker locale) in una regione europea. Servono due stringhe di connessione: quella **con pooler** (`-pooler` nell'indirizzo) per l'app e quella **diretta** per le migrazioni e per portarci i dati.
+2. **I dati**: si porta una copia del database locale con solo il proprio account (vedi sotto), non quello di tutti i giorni.
+3. **Vercel** per l'app, collegato al ramo `main`, piano Hobby (gratuito, solo uso personale e non commerciale). Variabili d'ambiente **solo per Production**: `DATABASE_URL` (la stringa con pooler), un `AUTH_SECRET` **nuovo**, diverso da quello locale (almeno 32 caratteri), e le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`). Senza queste la registrazione e il recupero restano spenti.
+4. **Regione delle funzioni**: per i nuovi progetti Vercel usa Washington (`iad1`); su Hobby se ne sceglie una sola, e conviene quella più vicina al database (in *Settings → Functions*, oppure `regions` in `vercel.json`).
+5. **Il ramo `dev` resta spento online**: in *Settings → Build and Deployment → Ignored Build Step* si sceglie "Only build production". Una build annullata conta comunque tra i deploy giornalieri (100 su Hobby).
+6. Le credenziali di Neon vanno solo nelle variabili di Vercel e nei comandi che lanci tu, mai nel codice e mai nel `.env`.
+
+**Portare online il database con il solo account `emanuele`** (gli account di prova non servono):
+
+1. Backup del database di tutti i giorni (`gympulse`) con `pg_dump`.
+2. Copia in un database nuovo, `gympulse_produzione`.
+3. Sulla copia si lancia lo script che toglie gli altri account, i codici email e le registrazioni in attesa. Si ferma se l'account non c'è e se lo si lancia per sbaglio su `gympulse`.
+4. `pg_dump` della copia e ripristino su Neon con la stringa diretta. Le migrazioni già applicate viaggiano nel dump (la tabella `_prisma_migrations` è una tabella normale), quindi `db:deploy` su Neon deve dire che non c'è niente da applicare.
+5. I file di dump contengono l'hash della password e l'email: restano fuori dal repository e si cancellano a fine lavoro.
+
+Provato su una copia: dopo la pulizia restano solo i dati dell'account, nessuna riga di altri account, e il dump si ripristina in un database vuoto. Non provato: la connessione a Neon vera, e il comportamento di `@prisma/adapter-pg` e dei blocchi `pg_advisory_xact_lock` con il pooler di Neon (la pagina di Neon su Prisma non parla di prepared statements né di PgBouncer).
