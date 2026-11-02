@@ -2,9 +2,9 @@ import nodemailer from 'nodemailer'
 import { normalizzaEmail } from './indirizzo-email'
 
 // Invio delle email. Il servizio si sceglie con le variabili d'ambiente; il resto dell'app chiama solo inviaEmail().
-// Si parla con un server SMTP qualunque: il caso gratuito è un account Gmail (meglio uno creato apposta per l'app).
+// Si parla con un server SMTP qualunque: il caso gratuito è un account Gmail, anche quello personale.
 //
-//   SMTP_UTENTE      l'indirizzo da cui partono i messaggi, per esempio gympulse.app@gmail.com
+//   SMTP_UTENTE      l'indirizzo da cui partono i messaggi, per esempio tuonome@gmail.com
 //   SMTP_PASSWORD    con Gmail: la "password per le app" di Google (16 lettere), NON la password dell'account
 //   SMTP_HOST        facoltativa, di norma smtp.gmail.com
 //   SMTP_PORTA       facoltativa, 587 (di norma) oppure 465

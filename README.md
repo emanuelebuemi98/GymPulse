@@ -311,14 +311,21 @@ Due tabelle servono solo ai codici per email e non hanno dati della scheda:
 
 L'invio è in `src/lib/email.ts` e parla con un server SMTP qualunque tramite Nodemailer. Il caso a costo zero è un **account Gmail**; per le email i servizi gratuiti più noti richiedono un dominio proprio (a pagamento), un account Gmail no.
 
-**Usa un account Gmail creato apposta per l'app, non il tuo personale.** La password per le app dà accesso all'account: se si perde, vuoi che sia una casella vuota e non la tua posta vera.
+Si può usare il **proprio Gmail personale**: non serve crearne uno apposta. Cosa comporta:
 
-1. Crea l'account Gmail (per esempio `gympulse.app@gmail.com`) e attiva la **verifica in due passaggi**: senza, Google non offre le password per le app.
-2. Nelle impostazioni dell'account Google crea una **password per le app**: sono 16 lettere. Google la mostra **una sola volta**; se la perdi se ne crea un'altra, e si revoca quando cambi la password dell'account.
+- **Chi si registra vede il tuo indirizzo** come mittente (`GymPulse <tuonome@gmail.com>`), e se risponde alla email la risposta arriva a te.
+- **Ogni codice mandato finisce nella tua Posta inviata.**
+- **La password per le app non è la password dell'account, ma dà accesso alla tua posta** (Google la accetta per leggere e inviare con programmi esterni). Va trattata come un segreto: se esce, la si revoca dalla pagina di Google e se ne crea un'altra.
+- **Il limite di Google (500 email al giorno) è lo stesso della tua posta di tutti i giorni**: l'app si ferma a 100 al giorno (`EMAIL_LIMITE_GIORNALIERO`) proprio per non arrivarci.
+
+Se un giorno questi punti ti pesano, basta cambiare le due variabili con quelle di un altro account: il codice non cambia.
+
+1. Nelle impostazioni del tuo account Google attiva la **verifica in due passaggi**: senza, Google non offre le password per le app.
+2. Sempre lì crea una **password per le app**: sono 16 lettere. Google la mostra **una sola volta**; se la perdi se ne crea un'altra, e si revoca quando cambi la password dell'account.
 3. Imposta queste variabili. In locale nel `.env`, online **solo nelle variabili di Vercel**:
 
    ```env
-   SMTP_UTENTE="gympulse.app@gmail.com"      # l'indirizzo da cui partono i messaggi
+   SMTP_UTENTE="tuonome@gmail.com"           # il tuo indirizzo Gmail: da qui partono i messaggi
    SMTP_PASSWORD="abcd efgh ijkl mnop"       # la password per le app (gli spazi si possono lasciare); NON la password dell'account
    SMTP_HOST="smtp.gmail.com"                # facoltativa: è già il valore di partenza
    SMTP_PORTA="587"                          # facoltativa: 587 (di partenza) oppure 465
@@ -333,7 +340,7 @@ L'invio è in `src/lib/email.ts` e parla con un server SMTP qualunque tramite No
 - *Letto:* Google dichiara un massimo di 500 email al giorno per account e, se si supera, blocca l'invio per 1-24 ore. Per questo il tetto dell'app è a 100.
 - *Letto:* Google dice che le password per le app "non sono consigliate e non servono nella maggior parte dei casi", ma resta il modo per far inviare a un'app una mail da Gmail con SMTP.
 - *Non so:* se il limite di 500 vale allo stesso modo via SMTP (la pagina non lo dice).
-- *Non so:* se Google blocchi o limiti un account nuovo che manda codici di accesso ad altri indirizzi, e se i messaggi finiscano nello spam del destinatario. I messaggi sono di solo testo, senza link e col solo codice, per ridurre il rischio, ma la consegna non l'ho potuta controllare.
+- *Non so:* se Google blocchi o limiti un account che manda codici di accesso ad altri indirizzi, e se i messaggi finiscano nello spam del destinatario. Con il tuo account personale c'è una differenza in più: se i messaggi venissero segnalati come spam, ne risentirebbe anche la tua posta di tutti i giorni. I messaggi sono di solo testo, senza link e col solo codice, per ridurre il rischio, ma la consegna non l'ho potuta controllare.
 - *Mai provato con Gmail vero.* L'invio è stato provato con un trasporto finto (configurazione, mittente, destinatario, gestione degli errori) e con la modalità `console`. Non ho spedito nessuna email reale: il primo invio vero è il primo controllo da fare, mandandolo a te.
 - *Il segreto.* `SMTP_PASSWORD` non va nel codice né in Git. Se sospetti che sia uscita, revocala dalla pagina delle password per le app di Google e creane un'altra.
 
