@@ -11,3 +11,9 @@ dist
 src/generated
 next-env.d.ts
 .DS_Store
+
+# Backup e dump del database: contengono hash delle password ed email, non vanno mai su Git.
+# (La regola /*.sql vale solo nella cartella principale: le migrazioni di prisma/migrations restano tracciate.)
+/*.sql
+backup-*.sql
+*.dump
