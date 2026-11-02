@@ -30,8 +30,8 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Progressi: panoramica** | Sedute per settimana (le settimane senza sedute ci sono, a zero), **kg per gruppo muscolare** di una settimana, sedute per giornata e gli ultimi record. |
 | **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, peso totale per seduta e ripetizioni totali per seduta (nelle sedute con ripetizioni non registrate un avviso lo dice). Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri, e quello del peso totale mostra anche la somma. |
 | **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per gruppo muscolare (PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE; l'addome non c'è) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su un gruppo (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza gruppo (arrivati da un CSV) non entrano nei gruppi: i loro kg compaiono a parte, sotto il grafico. |
-| **Dati dell'orologio** | Per ogni seduta, in modo facoltativo: durata, calorie, battiti medi e massimi. Si scrivono a mano oppure si legge un file **TCX** esportato dall'app dell'orologio: i campi si compilano da soli e restano modificabili. Compaiono nel dettaglio e nell'elenco dello storico. Vedi "Smartwatch" più sotto per cosa funziona e cosa no. |
-| **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola, con anche i dati dell'orologio) e lo reimporti. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
+| **Durata della seduta** | Per ogni seduta puoi scrivere, se vuoi, quanti minuti è durata: compare nel dettaglio e nell'elenco dello storico. Non c'è nessun collegamento con orologi o altre app. |
+| **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola) e lo reimporti. I file esportati quando c'erano ancora i dati dell'orologio si importano lo stesso: le colonne dei battiti e delle calorie vengono ignorate. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
 
 ### In programma
 
@@ -191,10 +191,12 @@ GymPulse/
 │   │   ├── 20261030170000_utente_con_id_numerico/    # id numerici e nome completo
 │   │   ├── 20261031100000_tabelle_riordinate/        # id come prima colonna, colonne superflue tolte
 │   │   ├── 20261031110000_senza_peso_corporeo/       # via la colonna del peso corporeo
-│   │   ├── 20261031120000_dati_orologio/             # battiti medi e massimi e calorie dell'orologio
+│   │   ├── 20261031120000_dati_orologio/             # battiti medi e massimi e calorie dell'orologio (poi tolti)
 │   │   ├── 20261031130000_codice_recupero/           # primo tentativo con il cellulare (sostituito dall'email)
 │   │   ├── 20261031150000_email_al_posto_del_telefono/ # email dell'utente, codici per email, registrazioni in attesa
 │   │   ├── 20261101100000_giornate_archiviabili/     # una giornata tolta con sedute resta per lo storico
+│   │   ├── 20261101120000_muscoli_standard/          # un solo gruppo muscolare per esercizio, tra i sette standard
+│   │   ├── 20261102100000_senza_dati_orologio/       # via i battiti e le calorie dell'orologio
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account o cambia la password
@@ -263,7 +265,7 @@ Dentro `src/lib/` (33 file):
 | Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account) |
 | Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (codici e registrazioni in attesa nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi) |
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
-| Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `orologio.ts` (limiti di battiti e calorie), `tcx.ts` (legge i file TCX, nel browser), `numeri.ts`, `url.ts` |
+| Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, peso totale, carico, record), `panoramica.ts` (sedute per settimana, sedute per giornata, kg per gruppo muscolare), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
 | Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `muscoli.ts` (le sette categorie), `bozza.ts` (la sessione in corso nel browser) |
 
@@ -279,7 +281,7 @@ In ogni tabella l'`id` è la prima colonna.
 | `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | chiave primaria composta (id, userId); coppia unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `muscoli` (una delle sette categorie standard, es. `PETTO`) | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
-| `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali`, `fcMediaBpm`, `fcMassimaBpm`, `kcalOrologio` | numero progressivo |
+| `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali` | numero progressivo |
 | `SerieEseguita` | `id`, `userId`, `sessioneId`, `esercizioId`, `ordine`, `pesoKg`, `ripetizioni` | testo casuale |
 
 Due tabelle servono solo ai codici per email e non hanno dati della scheda:
@@ -297,7 +299,6 @@ Due tabelle servono solo ai codici per email e non hanno dati della scheda:
 - **Più account nello stesso browser.** Un browser ha un solo cookie di accesso per tutte le sue schede: se in una scheda si entra con un altro account, una scheda rimasta aperta sul primo scriverebbe nel secondo (era un difetto vero: la scheda di una persona finiva in quella di un'altra). Ora ogni pagina che scrive manda l'id dell'account per cui è stata disegnata, e il server **rifiuta** se non coincide con quello del cookie. L'id mandato dalla pagina serve solo a rifiutare: l'account su cui si scrive resta sempre quello del cookie. In pratica, in un browser si usa un account alla volta; per due account insieme servono due browser o una finestra in incognito.
 - **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
 - **CSV**: ognuno scarica solo le proprie sedute. L'importazione controlla ogni riga (data, peso, ripetizioni, durata, note), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file esportato i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
-- **File TCX**: si leggono nel browser e al server arrivano solo quattro numeri, che il server ricontrolla (battiti tra 30 e 250, calorie fino a 10.000, massima non sotto la media). I file con definizioni di entità (`<!DOCTYPE`, `<!ENTITY`) si rifiutano, e oltre 25 milioni di caratteri non si leggono.
 - **Registrazione aperta a chiunque** conosca l'indirizzo, ma con l'email obbligatoria e confermata con un codice. Ci sono limiti per indirizzo di rete (3 account all'ora, 10 accessi ogni 15 minuti, 5 email di registrazione o di recupero all'ora) tenuti **in memoria**: su Vercel valgono per ogni istanza e rallentano senza bloccare del tutto.
 - **Limiti delle email nel database** (valgono per tutti i server e non si azzerano riavviando): 1 email al minuto per scopo, 3 all'ora e 10 al giorno per persona, **3 all'ora per ogni casella di destinazione** (ferma chi vuole riempire di messaggi l'indirizzo di un altro; `nome+1@gmail.com`, `n.ome@gmail.com` e `nome@googlemail.com` contano come la stessa casella) e un **tetto globale di 100 email in 24 ore** (cambia con `EMAIL_LIMITE_GIORNALIERO`). Le email sono gratis, ma il tetto protegge l'account che le spedisce: Google dichiara un massimo di 500 email al giorno e blocca l'invio per 1-24 ore se lo si supera. Se il tetto scatta, registrazione e recupero si fermano.
 - **Codici per email**: 6 cifre, valgono 10 minuti, 5 tentativi, uso unico, e un codice nuovo sostituisce il precedente. Nel database c'è solo un HMAC, legato a persona e scopo. Un codice di recupero vale solo se è stato mandato all'indirizzo che l'account ha *in quel momento*: cambiare l'email rende inutili i codici già mandati.
@@ -305,19 +306,6 @@ Due tabelle servono solo ai codici per email e non hanno dati della scheda:
 - **L'email apre la porta all'account**: chi ha accesso alla casella può cambiare la password. Per questo collegarla o cambiarla chiede la password (togliere non si può), e il recupero risponde in modo diverso a "non esiste o senza email" solo per dire subito a chi non ne ha una che da qui non può recuperare nulla.
 - **Il messaggio** è solo testo, senza link: non c'è niente da cliccare e niente da falsificare. Il codice non è nell'oggetto, che si vede anche a schermo bloccato.
 - **`.env`** escluso da Git.
-
-## Smartwatch: cosa funziona e cosa no
-
-Un'app web non può leggere i dati dell'orologio da sola: Apple Salute, Google Health Connect e simili sono accessibili solo da app installate sul telefono. Quindi **l'orologio non si collega all'app: i dati si portano dentro con un file o a mano**.
-
-| Strada | Stato |
-|---|---|
-| **Scrivere a mano** durata, calorie e battiti letti dall'orologio | Funziona con qualunque orologio |
-| **File TCX** esportato dall'app dell'orologio | Fatto. Il TCX è un formato pubblico di Garmin (Garmin Connect lo esporta); altre app potrebbero offrirlo, ma **non ho verificato quali**. Si legge la durata, le calorie, i battiti medi e massimi |
-| **Apple Watch** | Apple Salute esporta un `export.xml` completo, ma non un TCX del singolo allenamento: per averlo serve un'app di terze parti che converta gli allenamenti. In alternativa, si scrivono i numeri a mano. **Non ho scritto il lettore di `export.xml`**: non ho potuto controllarne il formato su un file reale, e un lettore fatto a memoria rischia di sbagliare in silenzio |
-| **Collegamento diretto** (Apple Salute, Health Connect) | Non si può fare da una web app: servirebbe un'app nativa. Non è in programma |
-
-Come si legge un TCX: la durata è la somma dei giri; le calorie la somma delle calorie dei giri; i battiti medi la media dei giri pesata sulla durata (se manca, la media dei punti con battito); i battiti massimi il valore più alto. Un file con più attività si rifiuta, perché non si saprebbe quale scegliere. Se l'allenamento nel file è di un giorno diverso dalla sessione, l'app lo segnala senza cambiare la data.
 
 ## Email vere con Gmail
 
