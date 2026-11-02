@@ -21,19 +21,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: sessione ? `Seduta del ${formatData(sessione.data)}` : 'Seduta non trovata' }
 }
 
-// Un dato dell'orologio: il valore in grande, l'unità e il nome sotto. Se manca, un trattino.
-function DatoOrologio({ etichetta, valore, unita }: { etichetta: string; valore: number | null; unita: string }) {
-  return (
-    <div>
-      <dt className="text-xs text-muto">{etichetta}</dt>
-      <dd className="mt-0.5">
-        <span className="text-2xl font-extrabold">{valore === null ? '—' : formatNumero(valore, 0)}</span>
-        {valore !== null && <span className="ml-1 text-xs text-muto">{unita}</span>}
-      </dd>
-    </div>
-  )
-}
-
 export default async function DettaglioSessionePage({ params }: Props) {
   const userId = await richiediUtente()
   const sessioneId = idDaParametro((await params).sessioneId)
@@ -58,17 +45,6 @@ export default async function DettaglioSessionePage({ params }: Props) {
           </div>
         )}
       </header>
-
-      {(sessione.fcMediaBpm !== null || sessione.fcMassimaBpm !== null || sessione.kcalOrologio !== null) && (
-        <section className={`${stileCarta} p-4`}>
-          <h2 className="text-sm font-semibold text-muto">Dall&apos;orologio</h2>
-          <dl className="mt-2 grid grid-cols-3 gap-3 text-center">
-            <DatoOrologio etichetta="Battiti medi" valore={sessione.fcMediaBpm} unita="bpm" />
-            <DatoOrologio etichetta="Battiti max" valore={sessione.fcMassimaBpm} unita="bpm" />
-            <DatoOrologio etichetta="Calorie" valore={sessione.kcalOrologio} unita="kcal" />
-          </dl>
-        </section>
-      )}
 
       {sessione.note && (
         <section className={`${stileCarta} p-4`}>

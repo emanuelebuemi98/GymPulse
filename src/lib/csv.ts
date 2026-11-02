@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { dataIso } from './formato'
-import { controllaBattiti } from './orologio'
-import { durataSchema, fcMassimaSchema, fcMediaSchema, kcalSchema, noteSchema, serieSchema } from './sessione-schema'
+import { durataSchema, noteSchema, serieSchema } from './sessione-schema'
 
 // Esportazione e importazione delle sedute in CSV: una riga per ogni serie. Il file si apre in Excel (separatore
 // punto e virgola, decimali con la virgola, UTF-8 con BOM) e si legge anche con la virgola o il punto, se è stato
@@ -21,22 +20,17 @@ const COLONNE = [
   'peso_kg',
   'ripetizioni',
   'durata_min',
-  'fc_media',
-  'fc_max',
-  'kcal_orologio',
   'note',
   'dati_iniziali',
 ] as const
-// Le altre colonne si possono omettere: un file scritto a mano può avere solo queste.
+// Le altre colonne si possono omettere: un file scritto a mano può avere solo queste. Le colonne che non conosce, per
+// esempio quelle dei battiti e delle calorie dei file esportati in passato, le ignora.
 const OBBLIGATORIE = ['data', 'giornata', 'esercizio', 'peso_kg', 'ripetizioni'] as const
 
 export type SedutaEsportata = {
   data: Date
   giornoId: string
   durataMinuti: number | null
-  fcMediaBpm: number | null
-  fcMassimaBpm: number | null
-  kcalOrologio: number | null
   note: string | null
   datiIniziali: boolean
   serie: { esercizio: string; pesoKg: number | null; ripetizioni: number }[]
@@ -78,9 +72,6 @@ export function creaCsv(sedute: SedutaEsportata[]): string {
         serie.pesoKg === null ? '' : String(serie.pesoKg).replace('.', ','),
         String(serie.ripetizioni),
         seduta.durataMinuti === null ? '' : String(seduta.durataMinuti),
-        seduta.fcMediaBpm === null ? '' : String(seduta.fcMediaBpm),
-        seduta.fcMassimaBpm === null ? '' : String(seduta.fcMassimaBpm),
-        seduta.kcalOrologio === null ? '' : String(seduta.kcalOrologio),
         seduta.note === null ? '' : proteggi(seduta.note),
         seduta.datiIniziali ? 'si' : 'no',
       ])
@@ -221,14 +212,6 @@ export function leggiCsv(testo: string, ora = new Date()): EsitoCsv {
 
     const durata = interoFacoltativo(cella('durata_min'), 'la durata', durataSchema)
     if (!durata.ok) return errore(durata.errore)
-    const fcMedia = interoFacoltativo(cella('fc_media'), 'la frequenza media', fcMediaSchema)
-    if (!fcMedia.ok) return errore(fcMedia.errore)
-    const fcMassima = interoFacoltativo(cella('fc_max'), 'la frequenza massima', fcMassimaSchema)
-    if (!fcMassima.ok) return errore(fcMassima.errore)
-    const kcal = interoFacoltativo(cella('kcal_orologio'), 'le calorie', kcalSchema)
-    if (!kcal.ok) return errore(kcal.errore)
-    const incoerenza = controllaBattiti(fcMedia.valore, fcMassima.valore)
-    if (incoerenza) return errore(incoerenza.toLowerCase())
 
     const nota = noteSchema.safeParse(cella('note') === '' ? null : scopri(cella('note')))
     if (!nota.success) return errore(nota.error.issues[0].message.toLowerCase())
@@ -245,9 +228,6 @@ export function leggiCsv(testo: string, ora = new Date()): EsitoCsv {
       data,
       giornoId,
       durataMinuti: durata.valore,
-      fcMediaBpm: fcMedia.valore,
-      fcMassimaBpm: fcMassima.valore,
-      kcalOrologio: kcal.valore,
       note: nota.data,
       datiIniziali: ['si', 'sì', '1', 'true'].includes(iniziali),
       serie: [],

@@ -45,8 +45,6 @@ export async function elencoSessioni(userId: number) {
     numeroSerie: sessione.serie.length,
     volumeKg: volumeSerie(sessione.serie),
     durataMinuti: sessione.durataMinuti,
-    fcMediaBpm: sessione.fcMediaBpm,
-    kcalOrologio: sessione.kcalOrologio,
     datiIniziali: sessione.datiIniziali,
   }))
 }
@@ -82,9 +80,6 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
     giornoId: sessione.giornoId,
     giornoTitolo: sessione.giorno.titolo,
     durataMinuti: sessione.durataMinuti,
-    fcMediaBpm: sessione.fcMediaBpm,
-    fcMassimaBpm: sessione.fcMassimaBpm,
-    kcalOrologio: sessione.kcalOrologio,
     note: sessione.note,
     datiIniziali: sessione.datiIniziali,
     esercizi: [...gruppi.values()],
@@ -212,9 +207,6 @@ export async function sedutePerCsv(userId: number): Promise<SedutaEsportata[]> {
     data: sessione.data,
     giornoId: sessione.giornoId,
     durataMinuti: sessione.durataMinuti,
-    fcMediaBpm: sessione.fcMediaBpm,
-    fcMassimaBpm: sessione.fcMassimaBpm,
-    kcalOrologio: sessione.kcalOrologio,
     note: sessione.note,
     datiIniziali: sessione.datiIniziali,
     serie: sessione.serie.map((s) => ({ esercizio: s.esercizio.nome, pesoKg: s.pesoKg, ripetizioni: s.ripetizioni })),
