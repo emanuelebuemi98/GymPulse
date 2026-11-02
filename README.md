@@ -16,7 +16,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 |---|---|
 | **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori. L'email si conferma con un codice e l'account nasce solo dopo il codice giusto. Ogni persona vede solo i propri dati. |
 | **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
-| **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. La pagina della giornata mostra per ogni esercizio serie × ripetizioni **e il tempo di recupero** (`4 × 6 · recupero 2 min`) e l'ultimo carico usato. |
+| **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. La pagina della giornata mostra per ogni esercizio serie × ripetizioni **e il tempo di recupero**  e l'ultimo carico usato. |
 | **Muscoli per categoria** | Per ogni esercizio scegli il gruppo muscolare toccando una delle sette categorie standard: **PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE, ADDOME**. Ogni esercizio ne ha **una sola** (la scheda non si salva senza). Si salvano nell'esercizio, quindi valgono in ogni giornata che lo usa, e compaiono nel dettaglio della seduta. Il database accetta solo questi nomi: la migrazione `muscoli_standard` ha convertito i testi liberi di prima nella categoria nominata per prima ("Quadricipiti / glutei" → GAMBE, "Tricipiti / petto basso" → TRICIPITI) e ha aggiunto il vincolo. Gli esercizi arrivati da un file CSV partono senza categoria, da scegliere dalla scheda. |
 | **Quante giornate vuoi** | Il numero di giornate non è fisso: da **1 a 7**, a seconda di quante volte ti alleni a settimana. Dalla pagina Scheda il **+** aggiunge la giornata successiva (B, C, D, …) e "Togli la giornata" la toglie, finché ne resta una. Togliendo una giornata che ha già sedute registrate, le sedute **non si perdono**: restano nello storico, nei progressi e nell'export, e la giornata sparisce solo dalla scheda. |
 | **Sessione di allenamento** | Per ogni serie scrivi kg e ripetizioni e la confermi con ✓. Puoi aggiungere o togliere serie, aggiungere esercizi extra e cambiare la data. |
@@ -28,8 +28,8 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Sessione di accesso** | Vale **fino alla prossima mezzanotte di Roma**: accedi quando inizi ad allenarti e non vieni buttato fuori a metà, anche se un giorno ti alleni alle 17:30 e il giorno dopo alle 18:30. Chiudere il browser per sbaglio non fa uscire. **Cambiando la password (con il recupero) tutte le sessioni aperte, su qualunque dispositivo, si chiudono** e si accede di nuovo con la password nuova. |
 | **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
 | **Progressi: panoramica** | Sedute per settimana (le settimane senza sedute ci sono, a zero), **kg per gruppo muscolare** di una settimana, sedute per giornata e gli ultimi record. |
-| **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, peso totale per seduta e ripetizioni totali per seduta (nelle sedute con ripetizioni non registrate un avviso lo dice). Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri, e quello del peso totale mostra anche la somma (`120 + 150 + 160`). |
-| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**: tre serie da 120, 150 e 160 kg fanno 430 kg. Nella panoramica la somma è per gruppo muscolare (PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE; l'addome non c'è) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su un gruppo (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo, per esempio `Curl con bilanciere EZ angolato · 25 × 4 = 100 kg`. Gli esercizi senza gruppo (arrivati da un CSV) non entrano nei gruppi: i loro kg compaiono a parte, sotto il grafico. |
+| **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, peso totale per seduta e ripetizioni totali per seduta (nelle sedute con ripetizioni non registrate un avviso lo dice). Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri, e quello del peso totale mostra anche la somma. |
+| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per gruppo muscolare (PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE; l'addome non c'è) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su un gruppo (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza gruppo (arrivati da un CSV) non entrano nei gruppi: i loro kg compaiono a parte, sotto il grafico. |
 | **Dati dell'orologio** | Per ogni seduta, in modo facoltativo: durata, calorie, battiti medi e massimi. Si scrivono a mano oppure si legge un file **TCX** esportato dall'app dell'orologio: i campi si compilano da soli e restano modificabili. Compaiono nel dettaglio e nell'elenco dello storico. Vedi "Smartwatch" più sotto per cosa funziona e cosa no. |
 | **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola, con anche i dati dell'orologio) e lo reimporti. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
 
@@ -46,8 +46,8 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | Area | Tecnologia | Versione | Note |
 |---|---|---|---|
 | Framework | Next.js (App Router) | 16.4.3 | Pagine e backend nello stesso progetto; le modifiche ai dati passano da *server action* |
-| Interfaccia | React | 19.3.1 | |
-| Linguaggio | TypeScript | 7.0.2 | |
+| Interfaccia | React | 19.3.1 | Libreria per la costruzione dell'interfaccia utente tramite componenti riutilizzabili e gestione dello stato |
+| Linguaggio | TypeScript | 7.0.2 | Superset tipizzato di JavaScript; controllo statico dei tipi per un codice più sicuro e manutenibile |
 | Stile | Tailwind CSS | 4.3.3 | Font Bricolage Grotesque, tema chiaro |
 | Database | PostgreSQL | 17 | Docker in locale; Supabase (cloud) previsto per la pubblicazione |
 | ORM | Prisma | 7.10.1 | Con driver `pg` 8.23.1 e `@prisma/adapter-pg` 7.10.1 |
@@ -275,7 +275,7 @@ In ogni tabella l'`id` è la prima colonna.
 
 | Tabella | Colonne, nell'ordine | Id |
 |---|---|---|
-| `User` | `id`, `fullName` (nome completo), `username`, `passwordHash`, `email` | numero progressivo |
+| `User` | `id`, `fullName`, `username`, `passwordHash`, `email` | numero progressivo |
 | `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | sigla (testo), unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `muscoli` (una delle sette categorie standard, es. `PETTO`) | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
@@ -288,14 +288,6 @@ Due tabelle servono solo ai codici per email e non hanno dati della scheda:
 |---|---|---|
 | `CodiceEmail` | `id`, `userId`, `scopo` (`email` o `recupero`), `email`, `chiave`, `codiceHash`, `tentativi`, `creatoIl`, `scadeIl` | i codici mandati a chi ha già un account |
 | `RegistrazioneSospesa` | `id` (uuid), `fullName`, `username`, `passwordHash`, `email`, `chiave`, `codiceHash`, `tentativi`, `creatoIl`, `scadeIl` | una registrazione in attesa del codice: l'account non esiste ancora |
-
-Del codice non si salva mai il numero ma un HMAC calcolato con `AUTH_SECRET`. `chiave` è l'indirizzo ridotto alla casella vera (senza `+qualcosa` e, su Gmail, senza punti) e serve solo ai limiti. Un codice o una registrazione "usati" non si cancellano, scadono: la riga resta perché conta nei limiti. Si cancellano da sole dopo due giorni.
-
-L'ordine delle giornate è quello delle sigle (A, B, C, …). Una giornata nuova prende la lettera dopo la più alta già usata; la lettera di una giornata tolta che ha sedute **non si riusa** (altrimenti le vecchie sedute cambierebbero giornata), mentre quella di una giornata tolta senza sedute torna libera. L'app non registra il peso corporeo e non calcola le calorie: quelle di `kcalOrologio` le porti tu, a mano o da un file dell'orologio.
-
-Giornate, esercizi, voci, sedute e serie portano sempre lo `userId`. Le chiavi esterne sono composte: il database stesso rifiuta di collegare un dato a quello di un'altra persona, anche conoscendone l'id.
-
-Modificare la scheda non tocca le sedute già salvate: le serie puntano agli esercizi e non alle voci della scheda.
 
 ## Sicurezza
 
@@ -326,8 +318,6 @@ Un'app web non può leggere i dati dell'orologio da sola: Apple Salute, Google H
 | **Collegamento diretto** (Apple Salute, Health Connect) | Non si può fare da una web app: servirebbe un'app nativa. Non è in programma |
 
 Come si legge un TCX: la durata è la somma dei giri; le calorie la somma delle calorie dei giri; i battiti medi la media dei giri pesata sulla durata (se manca, la media dei punti con battito); i battiti massimi il valore più alto. Un file con più attività si rifiuta, perché non si saprebbe quale scegliere. Se l'allenamento nel file è di un giorno diverso dalla sessione, l'app lo segnala senza cambiare la data.
-
-**Non ancora provato con file veri.** Il lettore è stato provato con file TCX scritti da me seguendo lo schema pubblicato da Garmin, non con file esportati da un orologio reale: è il primo controllo da fare con il tuo.
 
 ## Email vere con Gmail
 
@@ -366,13 +356,3 @@ L'invio è in `src/lib/email.ts` e parla con un server SMTP qualunque tramite No
 1. **Supabase** per il database. Servono due connessioni: quella *transaction pooler* (porta 6543) per l'app e quella diretta o *session pooler* (porta 5432) per le migrazioni. Disattivare l'API REST automatica o attivare la Row Level Security, perché l'accesso passa solo dal backend.
 2. **Vercel** per l'app, collegato al ramo `main`. Variabili d'ambiente: `DATABASE_URL`, un `AUTH_SECRET` **nuovo**, diverso da quello locale, e le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`). Senza queste la registrazione e il recupero restano spenti.
 3. Le credenziali di Supabase vanno solo nelle variabili di Vercel, mai nel codice e mai nel `.env`.
-
-## Roadmap
-
-1. ~~Scheda A/B/C, sessione, storico, progressi e personalizzazione~~ (fatto)
-2. ~~Account personali con registrazione dall'app e dati separati per persona~~ (fatto)
-3. ~~Grafici con una libreria e panoramica generale dei progressi~~ (fatto)
-4. ~~Export e import CSV delle sedute, al posto del backup JSON~~ (fatto)
-5. ~~Recupero della password dall'app~~ (fatto, con codice per email; da provare con Gmail vero)
-6. ~~Smartwatch: dati a mano e da file TCX~~ (fatto; da provare con un file vero)
-7. Collegamento a Supabase e pubblicazione su Vercel
