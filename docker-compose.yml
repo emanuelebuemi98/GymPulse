@@ -4,7 +4,7 @@ services:
   db:
     image: postgres:17
     container_name: gympulse-db
-    restart: unless-stopped
+    restart: no
     environment:
       POSTGRES_USER: gympulse
       POSTGRES_PASSWORD: gympulse
