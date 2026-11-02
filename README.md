@@ -276,7 +276,7 @@ In ogni tabella l'`id` è la prima colonna.
 | Tabella | Colonne, nell'ordine | Id |
 |---|---|---|
 | `User` | `id`, `fullName`, `username`, `passwordHash`, `email` | numero progressivo |
-| `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | sigla (testo), unica per persona |
+| `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | chiave primaria composta (id, userId); coppia unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `muscoli` (una delle sette categorie standard, es. `PETTO`) | numero progressivo |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
 | `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali`, `fcMediaBpm`, `fcMassimaBpm`, `kcalOrologio` | numero progressivo |
@@ -304,7 +304,7 @@ Due tabelle servono solo ai codici per email e non hanno dati della scheda:
 - **Gli indirizzi sono controllati con rigore** (`lib/indirizzo-email.ts`): niente spazi, virgole, virgolette, a capo o più indirizzi. L'indirizzo finisce in un'intestazione del messaggio, quindi un valore con un a capo potrebbe aggiungere destinatari. Un indirizzo insolito ma valido può essere rifiutato: meglio questo che spedire a qualcosa che non si sa leggere.
 - **L'email apre la porta all'account**: chi ha accesso alla casella può cambiare la password. Per questo collegarla o cambiarla chiede la password (togliere non si può), e il recupero risponde in modo diverso a "non esiste o senza email" solo per dire subito a chi non ne ha una che da qui non può recuperare nulla.
 - **Il messaggio** è solo testo, senza link: non c'è niente da cliccare e niente da falsificare. Il codice non è nell'oggetto, che si vede anche a schermo bloccato.
-- **`.env`** escluso da Git; in Git va solo `.env.example`.
+- **`.env`** escluso da Git.
 
 ## Smartwatch: cosa funziona e cosa no
 
