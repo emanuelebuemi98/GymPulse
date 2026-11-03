@@ -17,7 +17,8 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori. L'email si conferma con un codice e l'account nasce solo dopo il codice giusto. Ogni persona vede solo i propri dati. |
 | **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
 | **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. La pagina della giornata mostra per ogni esercizio serie × ripetizioni **e il tempo di recupero**  e l'ultimo carico usato. |
-| **Muscoli per categoria** | Per ogni esercizio scegli il gruppo muscolare toccando una delle sette categorie standard: **PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE, ADDOME**. Ogni esercizio ne ha **una sola** (la scheda non si salva senza). Si salvano nell'esercizio, quindi valgono in ogni giornata che lo usa, e compaiono nel dettaglio della seduta. Il database accetta solo questi nomi: la migrazione `muscoli_standard` ha convertito i testi liberi di prima nella categoria nominata per prima ("Quadricipiti / glutei" → GAMBE, "Tricipiti / petto basso" → TRICIPITI) e ha aggiunto il vincolo. Gli esercizi arrivati da un file CSV partono senza categoria, da scegliere dalla scheda. |
+| **Catalogo degli esercizi** | Gli esercizi **non si scrivono più a mano**: si scelgono da un catalogo di **254 esercizi**, diviso in dieci categorie (**Petto, Dorsali, Spalle, Braccia, Gambe, Addome, Olimpico, Corpo intero, Cardio, Altri**). Nell'elenco si cerca per nome (italiano, inglese o altri nomi, senza badare agli accenti) e si filtra per categoria. Il nome italiano è in evidenza e l'inglese, più piccolo, sta sotto. La categoria è quella del catalogo e non si cambia. Il catalogo è nel database (tabella `CatalogoEsercizio`) e si carica dal file `prisma/dati/catalogo-esercizi.json` con `npm run db:catalogo`: per aggiungere un esercizio si aggiunge una voce al file e si rilancia il comando. |
+| **Come si fa** | Sotto ogni esercizio, nella scheda e nella sessione, il pulsante **Come si fa** apre i passi dell'esecuzione e le accortezze da avere. I testi li dà il database a richiesta (non viaggiano con la pagina). Sono scritti in italiano, con parole nostre, a partire da pagine italiane lette, da un dataset pubblico inglese tradotto (free-exercise-db, licenza Unlicense) e, per **34 esercizi su 254**, dalla sola conoscenza generale perché non si è trovata una fonte leggibile. **Non sono consigli di un istruttore**: per i movimenti tecnici e i carichi pesanti c'è sempre l'invito a impararli con un istruttore. Le foto degli esercizi non ci sono ancora. |
 | **Quante giornate vuoi** | Il numero di giornate non è fisso: da **1 a 7**, a seconda di quante volte ti alleni a settimana. Dalla pagina Scheda il **+** aggiunge la giornata successiva (B, C, D, …) e "Togli la giornata" la toglie, finché ne resta una. Togliendo una giornata che ha già sedute registrate, le sedute **non si perdono**: restano nello storico, nei progressi e nell'export, e la giornata sparisce solo dalla scheda. |
 | **Sessione di allenamento** | Per ogni serie scrivi kg e ripetizioni e la confermi con ✓. Puoi aggiungere o togliere serie, aggiungere esercizi extra e cambiare la data. |
 | **Valori dell'ultima volta** | Nei campi vedi in grigio i kg e le ripetizioni dell'ultima seduta. Contano solo dopo la conferma: se confermi una serie vuota vale il suggerimento. |
@@ -27,9 +28,9 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Bozza che non si perde** | Se chiudi la pagina o il browser, o il telefono si spegne, a metà allenamento, le serie già confermate restano nel browser per 12 ore, **anche se nel frattempo l'accesso è scaduto**. Nella home compare "Riprendi la sessione": tocchi, accedi di nuovo se serve, e ritrovi tutto com'era. Ogni account ha la sua bozza, anche sullo stesso browser. |
 | **Sessione di accesso** | Vale **fino alla prossima mezzanotte di Roma**: accedi quando inizi ad allenarti e non vieni buttato fuori a metà, anche se un giorno ti alleni alle 17:30 e il giorno dopo alle 18:30. Chiudere il browser per sbaglio non fa uscire. **Cambiando la password (con il recupero) tutte le sessioni aperte, su qualunque dispositivo, si chiudono** e si accede di nuovo con la password nuova. |
 | **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
-| **Progressi: panoramica** | Sedute per settimana (le settimane senza sedute ci sono, a zero), **kg per gruppo muscolare** di una settimana, sedute per giornata e gli ultimi record. |
+| **Progressi: panoramica** | Sedute per settimana (le settimane senza sedute ci sono, a zero), **kg per categoria** di una settimana, sedute per giornata e gli ultimi record. |
 | **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, peso totale per seduta e ripetizioni totali per seduta (nelle sedute con ripetizioni non registrate un avviso lo dice). Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri, e quello del peso totale mostra anche la somma. |
-| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per gruppo muscolare (PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE; l'addome non c'è) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su un gruppo (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza gruppo (arrivati da un CSV) non entrano nei gruppi: i loro kg compaiono a parte, sotto il grafico. |
+| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per categoria (le otto con kg: Petto, Dorsali, Spalle, Braccia, Gambe, Olimpico, Corpo intero, Altri; Addome e Cardio non ci sono) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su una categoria (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza categoria (di prima del catalogo) non entrano nelle categorie: i loro kg compaiono a parte, sotto il grafico. |
 | **Durata della seduta** | Per ogni seduta puoi scrivere, se vuoi, quanti minuti è durata: compare nel dettaglio e nell'elenco dello storico. Non c'è nessun collegamento con orologi o altre app. |
 | **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola) e lo reimporti. I file esportati quando c'erano ancora i dati dell'orologio si importano lo stesso: le colonne dei battiti e delle calorie vengono ignorate. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
 
@@ -172,9 +173,10 @@ Tutti i comandi si lanciano dalla cartella del progetto. Su PowerShell, se `npm`
 | `npm run db:deploy` | Applica al database le migrazioni già scritte | applica al database locale | **l'unico per la produzione**: non crea nulla, applica solo |
 | `npm run db:migrate` | Crea una nuova migrazione dallo schema e la applica | **solo qui**, quando modifichi `schema.prisma` | **mai** in produzione |
 | `npm run db:utente` | Crea un account o ne cambia la password | per l'account di prova | per recuperare una password in produzione, con le variabili di produzione |
+| `npm run db:catalogo` | Carica il catalogo degli esercizi (`prisma/dati/catalogo-esercizi.json`) e collega agli esercizi delle persone quelli con lo stesso nome. Con `PROVA=1` non scrive niente e mostra cosa cambierebbe | dopo ogni migrazione che tocca il catalogo, e quando se ne modifica il file | con le variabili di produzione, dopo il backup |
 | `npm run db:studio` | Apre Prisma Studio per vedere e modificare le righe | database locale | **con cautela**: modifica dati veri |
 
-Sono tutti i comandi esistenti: gli script in `package.json` sono 9 (`dev`, `build`, `start`, `typecheck`, `postinstall`, `db:migrate`, `db:deploy`, `db:studio`, `db:utente`). `postinstall` parte da solo dopo `npm install` e non va lanciato a mano.
+Sono tutti i comandi esistenti: gli script in `package.json` sono 10 (`dev`, `build`, `start`, `typecheck`, `postinstall`, `db:migrate`, `db:deploy`, `db:studio`, `db:utente`, `db:catalogo`). `postinstall` parte da solo dopo `npm install` e non va lanciato a mano.
 
 ## Struttura delle cartelle
 
@@ -195,7 +197,8 @@ GymPulse/
 │   │   ├── 20261031130000_codice_recupero/           # primo tentativo con il cellulare (sostituito dall'email)
 │   │   ├── 20261031150000_email_al_posto_del_telefono/ # email dell'utente, codici per email, registrazioni in attesa
 │   │   ├── 20261101100000_giornate_archiviabili/     # una giornata tolta con sedute resta per lo storico
-│   │   ├── 20261101120000_muscoli_standard/          # un solo gruppo muscolare per esercizio, tra i sette standard
+│   │   ├── 20261101120000_muscoli_standard/          # un solo gruppo muscolare per esercizio (poi sostituito dal catalogo)
+│   │   ├── 20261103190000_catalogo_esercizi/         # catalogo degli esercizi e dieci categorie al posto dei sette gruppi
 │   │   ├── 20261102100000_senza_dati_orologio/       # via i battiti e le calorie dell'orologio
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
@@ -264,10 +267,10 @@ Dentro `src/lib/` (33 file):
 |---|---|
 | Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account) |
 | Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (codici e registrazioni in attesa nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi) |
-| Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (trova o crea un esercizio), `voci.ts` (da riga del database a esercizio) |
+| Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, peso totale, carico, record), `panoramica.ts` (sedute per settimana, sedute per giornata, kg per gruppo muscolare), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
-| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `muscoli.ts` (le sette categorie), `bozza.ts` (la sessione in corso nel browser) |
+| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le dieci categorie), `bozza.ts` (la sessione in corso nel browser) |
 
 ## Modello dei dati
 
@@ -279,7 +282,8 @@ In ogni tabella l'`id` è la prima colonna.
 |---|---|---|
 | `User` | `id`, `fullName`, `username`, `passwordHash`, `email` | numero progressivo |
 | `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | chiave primaria composta (id, userId); coppia unica per persona |
-| `Esercizio` | `id`, `userId`, `nome`, `muscoli` (una delle sette categorie standard, es. `PETTO`) | numero progressivo |
+| `Esercizio` | `id`, `userId`, `nome`, `categoria` (una delle dieci chiavi, es. `petto`, oppure vuota), `catalogoId` (la voce del catalogo, vuoto per gli esercizi personali di prima) | numero progressivo |
+| `CatalogoEsercizio` | `id`, `slug`, `nomeIt`, `nomeEn`, `categoria`, `attrezzatura`, `muscoloPrincipale`, `muscoliSecondari`, `tipoMovimento`, `immagine`, `esecuzione`, `accortezze`, `alias` | numero progressivo; uguale per tutti, non modificabile dall'app |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
 | `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali` | numero progressivo |
 | `SerieEseguita` | `id`, `userId`, `sessioneId`, `esercizioId`, `ordine`, `pesoKg`, `ripetizioni` | testo casuale |
