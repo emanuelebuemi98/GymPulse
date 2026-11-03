@@ -1,5 +1,5 @@
 import { dataIso, formatNumero } from './formato'
-import { GRUPPI_MUSCOLARI, gruppoDa, type GruppoMuscolare } from './muscoli'
+import { CATEGORIE, CATEGORIE_SENZA_KG, categoriaDa, type Categoria } from './categorie'
 import { descriviSomma } from './progressi'
 
 // Riepiloghi per la panoramica dei progressi: sedute raggruppate per settimana e per giornata della scheda, e kg per
@@ -76,24 +76,26 @@ export function perGiornata(sedute: Pick<SedutaSintesi, 'giornoId' | 'giornoTito
   return [...giornate.values()].sort((a, b) => a.id.localeCompare(b.id, 'it'))
 }
 
-// I gruppi del grafico dei kg per settimana, nell'ordine standard. L'addome è escluso.
-export const GRUPPI_NEL_GRAFICO: readonly GruppoMuscolare[] = GRUPPI_MUSCOLARI.filter((gruppo) => gruppo !== 'ADDOME')
+// Le categorie del grafico dei kg per settimana, nell'ordine standard. Addome e cardio non ci sono: non hanno kg da sommare.
+export const GRUPPI_NEL_GRAFICO: readonly Categoria[] = CATEGORIE.map((c) => c.chiave).filter(
+  (chiave) => !CATEGORIE_SENZA_KG.includes(chiave),
+)
 
 export type SerieConGruppo = {
   data: Date
   esercizioId: number
   esercizio: string
-  muscoli: string
+  categoria: string
   pesoKg: number | null
 }
 // calcolo: come si arriva ai kg dell'esercizio, già scritto per il suggerimento ("25 × 4 = 100 kg").
 export type EsercizioPeso = { esercizioId: number; nome: string; pesoKg: number; calcolo: string }
-export type PesoGruppo = { gruppo: GruppoMuscolare; pesoKg: number; esercizi: EsercizioPeso[] }
+export type PesoGruppo = { gruppo: Categoria; pesoKg: number; esercizi: EsercizioPeso[] }
 
-// I kg di ogni serie della settimana che comincia nel lunedì `inizio`, sommati per gruppo muscolare (senza moltiplicare
-// per le ripetizioni) e, dentro ogni gruppo, per esercizio. Tutti i gruppi del grafico ci sono, anche a zero: si vede
-// cosa non è stato allenato. `senzaGruppo` sono i kg degli esercizi che non hanno ancora un gruppo, per esempio quelli
-// arrivati da un CSV: non si sa dove metterli, quindi si dicono a parte.
+// I kg di ogni serie della settimana che comincia nel lunedì `inizio`, sommati per categoria (senza moltiplicare per le
+// ripetizioni) e, dentro ogni categoria, per esercizio. Tutte le categorie del grafico ci sono, anche a zero: si vede cosa
+// non è stato allenato. `senzaGruppo` sono i kg degli esercizi che non hanno ancora una categoria, per esempio quelli
+// arrivati da un CSV: non si sa dove metterli, quindi si dicono a parte. I kg di addome e cardio non si contano.
 export function pesoPerGruppo(
   serie: SerieConGruppo[],
   inizio: string,
@@ -103,16 +105,16 @@ export function pesoPerGruppo(
     .filter((s) => lunediDi(dataIso(s.data)) === inizio)
     .sort((a, b) => a.data.getTime() - b.data.getTime())
 
-  const perGruppo = new Map<GruppoMuscolare, Map<number, { nome: string; pesi: number[] }>>()
+  const perGruppo = new Map<Categoria, Map<number, { nome: string; pesi: number[] }>>()
   let senzaGruppo = 0
 
   for (const s of dellaSettimana) {
-    const gruppo = gruppoDa(s.muscoli)
+    const gruppo = categoriaDa(s.categoria)
     if (gruppo === null) {
       senzaGruppo += s.pesoKg ?? 0
       continue
     }
-    if (s.pesoKg === null) continue
+    if (s.pesoKg === null || !GRUPPI_NEL_GRAFICO.includes(gruppo)) continue
     const esercizi = perGruppo.get(gruppo) ?? new Map<number, { nome: string; pesi: number[] }>()
     const voce = esercizi.get(s.esercizioId) ?? { nome: s.esercizio, pesi: [] }
     voce.pesi.push(s.pesoKg)

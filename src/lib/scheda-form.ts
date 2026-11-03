@@ -1,16 +1,21 @@
-import { gruppoDa, type GruppoMuscolare } from './muscoli'
 import type { Esercizio } from './scheda-tipi'
 import { parseIntero, parseNumero } from './numeri'
+import type { VoceElenco } from './tipi'
 import { RECUPERO_PREDEFINITO } from './voci'
 
 export type TipoVoce = 'serie' | 'totale' | 'libero'
 
 // Una riga dell'editor della scheda: tutti i numeri sono testo, come nei campi del form.
+// Un esercizio è già della persona (esercizioId) oppure preso dal catalogo e non ancora suo (catalogoId): uno solo dei due.
+// Non si scrivono più a mano.
 export type VoceForm = {
   chiave: string
   esercizioId: number | null
-  nomeNuovo: string
+  catalogoId: number | null
   nome: string
+  nomeEn: string
+  // La categoria dell'esercizio ('petto'), solo da mostrare: la dà il catalogo e non si cambia da qui.
+  categoria: string
   tipo: TipoVoce
   serie: string
   ripMin: string
@@ -21,13 +26,11 @@ export type VoceForm = {
   serieMax: string
   nota: string
   incrementoKg: string
-  // Il gruppo muscolare scelto nell'editor: parte da quello che l'esercizio ha già, e ne serve uno per salvare.
-  muscoli: GruppoMuscolare | null
 }
 
 export type VocePerInvio = {
   esercizioId: number | null
-  nomeNuovo: string | null
+  catalogoId: number | null
   tipo: TipoVoce
   serie: number | null
   ripMin: number | null
@@ -38,7 +41,6 @@ export type VocePerInvio = {
   serieMax: number | null
   nota: string | null
   incrementoKg: number | null
-  muscoli: GruppoMuscolare
 }
 
 const predefiniti = {
@@ -59,8 +61,10 @@ export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
     ...predefiniti,
     chiave: `e${esercizio.id}`,
     esercizioId: esercizio.id,
-    nomeNuovo: '',
+    catalogoId: null,
     nome: esercizio.nome,
+    nomeEn: esercizio.nomeEn,
+    categoria: esercizio.categoria,
     tipo: o.tipo,
     ...(o.tipo === 'serie'
       ? {
@@ -74,23 +78,20 @@ export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
     ...(o.tipo === 'libero' ? { serieMin: String(o.serieMin), serieMax: String(o.serieMax) } : {}),
     nota: esercizio.nota ?? '',
     incrementoKg: esercizio.incrementoKg ? String(esercizio.incrementoKg) : '',
-    muscoli: gruppoDa(esercizio.muscoli),
   }
 }
 
-// Nuova riga per un esercizio del catalogo (esercizioId, con i muscoli che ha già) oppure con un nome tutto nuovo.
-export function nuovaVoceForm(
-  chiave: string,
-  scelta: { esercizioId: number; nome: string; muscoli: string } | { nomeNuovo: string },
-): VoceForm {
+// Nuova riga per un esercizio scelto dall'elenco (della persona o del catalogo).
+export function nuovaVoceForm(chiave: string, scelta: VoceElenco): VoceForm {
   return {
     ...predefiniti,
     chiave,
-    esercizioId: 'esercizioId' in scelta ? scelta.esercizioId : null,
-    nomeNuovo: 'nomeNuovo' in scelta ? scelta.nomeNuovo : '',
-    nome: 'nome' in scelta ? scelta.nome : scelta.nomeNuovo,
+    esercizioId: scelta.id,
+    catalogoId: scelta.id === null ? scelta.catalogoId : null,
+    nome: scelta.nome,
+    nomeEn: scelta.nomeEn,
+    categoria: scelta.categoria,
     tipo: 'serie',
-    muscoli: 'muscoli' in scelta ? gruppoDa(scelta.muscoli) : null,
   }
 }
 
@@ -115,14 +116,13 @@ export function vocePerInvio(voce: VoceForm): VocePerInvio | { errore: string } 
 
   const tutti = [serie, ripMin, ripMax, recuperoSec, ripTotali, serieMin, serieMax, incrementoKg]
   if (tutti.some((valore) => valore === NON_VALIDO)) return { errore: `Controlla i numeri di ${voce.nome}` }
-  if (voce.muscoli === null) return { errore: `Scegli il gruppo muscolare di ${voce.nome}` }
 
   const numero = (valore: number | null | typeof NON_VALIDO) => (valore === NON_VALIDO ? null : valore)
   const èSerie = voce.tipo === 'serie'
 
   return {
     esercizioId: voce.esercizioId,
-    nomeNuovo: voce.esercizioId === null ? voce.nomeNuovo.trim() : null,
+    catalogoId: voce.catalogoId,
     tipo: voce.tipo,
     serie: èSerie ? numero(serie) : null,
     ripMin: èSerie ? numero(ripMin) : null,
@@ -133,6 +133,5 @@ export function vocePerInvio(voce: VoceForm): VocePerInvio | { errore: string } 
     serieMax: voce.tipo === 'libero' ? numero(serieMax) : null,
     nota: voce.nota.trim() === '' ? null : voce.nota.trim(),
     incrementoKg: numero(incrementoKg),
-    muscoli: voce.muscoli,
   }
 }

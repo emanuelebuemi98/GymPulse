@@ -82,6 +82,7 @@ export default async function SchedaPage({ searchParams }: Props) {
               <span className="w-6 shrink-0 text-sm font-bold text-muto tabular-nums">{indice + 1}</span>
               <span className="min-w-0 flex-1">
                 <span className="block font-bold">{esercizio.nome}</span>
+                {esercizio.nomeEn && <span className="block text-xs text-muto">{esercizio.nomeEn}</span>}
                 <span className="block text-sm text-muto">
                   {descrizioneObiettivo(esercizio.obiettivo)}
                   {recupero && ` · ${recupero}`}

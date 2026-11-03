@@ -10,7 +10,9 @@ export type Obiettivo =
 export type Esercizio = {
   id: number
   nome: string
-  muscoli: string
+  // Il nome inglese, piccolo sotto il nome, e la categoria ('petto' oppure vuota). Vuoti per gli esercizi personali.
+  nomeEn: string
+  categoria: string
   obiettivo: Obiettivo
   nota?: string
   // Incremento proposto quando il range è completato su tutte le serie.

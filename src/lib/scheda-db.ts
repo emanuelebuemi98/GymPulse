@@ -1,10 +1,13 @@
 import type { Giorno } from './scheda-tipi'
 import { db } from './db'
-import type { VoceCatalogo } from './tipi'
+import type { VoceElenco } from './tipi'
 import { esercizioDaVoce } from './voci'
 
 const includeVoci = {
-  voci: { orderBy: { ordine: 'asc' as const }, include: { esercizio: true } },
+  voci: {
+    orderBy: { ordine: 'asc' as const },
+    include: { esercizio: { include: { catalogo: { select: { nomeEn: true } } } } },
+  },
 }
 
 // Le giornate della scheda di una persona con i loro esercizi, nell'ordine delle sigle (A, B, C, ...). Quelle tolte dalla
@@ -37,10 +40,46 @@ export function contaSeduteGiornata(userId: number, giornoId: string): Promise<n
   return db.sessione.count({ where: { userId, giornoId } })
 }
 
-// Gli esercizi noti a una persona, in ordine alfabetico: quelli della sua scheda e quelli aggiunti a mano.
-export async function leggiCatalogo(userId: number): Promise<VoceCatalogo[]> {
-  const righe = await db.esercizio.findMany({ where: { userId } })
-  return righe
-    .map((riga) => ({ id: riga.id, nome: riga.nome, muscoli: riga.muscoli }))
-    .sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
+// Gli esercizi che una persona può scegliere: i suoi (quelli della scheda, della storia e scritti a mano) e tutti quelli
+// del catalogo che non ha ancora usato. Quelli suoi collegati al catalogo non si ripetono come voce del catalogo.
+// Ordine alfabetico per nome italiano; `catalogoId` vuoto = esercizio personale.
+export async function leggiElenco(userId: number): Promise<VoceElenco[]> {
+  // Dal catalogo si leggono solo i campi dell'elenco: i testi lunghi (esecuzione, accortezze) si chiedono a richiesta.
+  const [propri, catalogo] = await Promise.all([
+    db.esercizio.findMany({
+      where: { userId },
+      include: { catalogo: { select: { nomeEn: true, muscoloPrincipale: true, alias: true } } },
+    }),
+    db.catalogoEsercizio.findMany({
+      select: { id: true, nomeIt: true, nomeEn: true, categoria: true, muscoloPrincipale: true, alias: true },
+    }),
+  ])
+  const giaUsati = new Set(propri.flatMap((riga) => (riga.catalogoId === null ? [] : [riga.catalogoId])))
+  const nomiPropri = new Set(propri.map((riga) => riga.nome.toLowerCase()))
+
+  const elenco: VoceElenco[] = [
+    ...propri.map((riga) => ({
+      chiave: `e${riga.id}`,
+      id: riga.id,
+      catalogoId: riga.catalogoId,
+      nome: riga.nome,
+      nomeEn: riga.catalogo?.nomeEn ?? '',
+      categoria: riga.categoria,
+      muscolo: riga.catalogo?.muscoloPrincipale ?? '',
+      alias: riga.catalogo?.alias ?? '',
+    })),
+    ...catalogo
+      .filter((riga) => !giaUsati.has(riga.id) && !nomiPropri.has(riga.nomeIt.toLowerCase()))
+      .map((riga) => ({
+        chiave: `c${riga.id}`,
+        id: null,
+        catalogoId: riga.id,
+        nome: riga.nomeIt,
+        nomeEn: riga.nomeEn,
+        categoria: riga.categoria,
+        muscolo: riga.muscoloPrincipale,
+        alias: riga.alias ?? '',
+      })),
+  ]
+  return elenco.sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
 }

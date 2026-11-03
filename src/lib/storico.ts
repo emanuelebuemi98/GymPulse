@@ -49,7 +49,7 @@ export async function elencoSessioni(userId: number) {
   }))
 }
 
-type GruppoEsercizio = { id: number; nome: string; muscoli: string; serie: SerieRegistrata[] }
+type GruppoEsercizio = { id: number; nome: string; nomeEn: string; categoria: string; serie: SerieRegistrata[] }
 
 // Dettaglio di un allenamento, con gli esercizi nell'ordine in cui sono stati fatti.
 export async function dettaglioSessione(userId: number, sessioneId: number) {
@@ -57,7 +57,10 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
     where: { id: sessioneId, userId },
     include: {
       giorno: true,
-      serie: { orderBy: { ordine: 'asc' }, include: { esercizio: true } },
+      serie: {
+        orderBy: { ordine: 'asc' },
+        include: { esercizio: { include: { catalogo: { select: { nomeEn: true } } } } },
+      },
     },
   })
   if (!sessione) return null
@@ -67,7 +70,8 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
     const gruppo = gruppi.get(riga.esercizioId) ?? {
       id: riga.esercizioId,
       nome: riga.esercizio.nome,
-      muscoli: riga.esercizio.muscoli,
+      nomeEn: riga.esercizio.catalogo?.nomeEn ?? '',
+      categoria: riga.esercizio.categoria,
       serie: [],
     }
     gruppo.serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni })
@@ -166,7 +170,7 @@ export async function serieConGruppo(userId: number): Promise<SerieConGruppo[]> 
     select: {
       esercizioId: true,
       pesoKg: true,
-      esercizio: { select: { nome: true, muscoli: true } },
+      esercizio: { select: { nome: true, categoria: true } },
       sessione: { select: { data: true } },
     },
     orderBy: [{ sessione: { data: 'asc' } }, { ordine: 'asc' }],
@@ -175,7 +179,7 @@ export async function serieConGruppo(userId: number): Promise<SerieConGruppo[]> 
     data: riga.sessione.data,
     esercizioId: riga.esercizioId,
     esercizio: riga.esercizio.nome,
-    muscoli: riga.esercizio.muscoli,
+    categoria: riga.esercizio.categoria,
     pesoKg: riga.pesoKg,
   }))
 }

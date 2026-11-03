@@ -11,12 +11,14 @@ import {
   type TipoVoce,
   type VoceForm,
 } from '@/lib/scheda-form'
-import { GRUPPI_MUSCOLARI } from '@/lib/muscoli'
-import type { VoceCatalogo } from '@/lib/tipi'
-import { IconaCestino, IconaGiu, IconaPiu, IconaSu } from './icone'
+import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
+import type { VoceElenco } from '@/lib/tipi'
+import { ElencoEsercizi } from './ElencoEsercizi'
+import { IconaCestino, IconaGiu, IconaSu } from './icone'
+import { IstruzioniEsercizio } from './IstruzioniEsercizio'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
-type Props = { utenteId: number; giorno: Giorno; catalogo: VoceCatalogo[] }
+type Props = { utenteId: number; giorno: Giorno; elenco: VoceElenco[] }
 
 const etichetteTipo: Record<TipoVoce, string> = {
   serie: 'Serie × ripetizioni',
@@ -24,17 +26,21 @@ const etichetteTipo: Record<TipoVoce, string> = {
   libero: 'Serie a scelta',
 }
 
-export function EditorScheda({ utenteId, giorno, catalogo }: Props) {
+export function EditorScheda({ utenteId, giorno, elenco }: Props) {
   const router = useRouter()
   const [titolo, setTitolo] = useState(giorno.titolo)
   const [voci, setVoci] = useState<VoceForm[]>(() => giorno.esercizi.map(voceFormDaEsercizio))
-  const [aggiunta, setAggiunta] = useState<number | null>(null)
-  const [nomeLibero, setNomeLibero] = useState('')
+  const [sceltaAperta, setSceltaAperta] = useState(false)
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
-  const [contatore, setContatore] = useState(0)
 
-  const disponibili = catalogo.filter((voce) => !voci.some((v) => v.esercizioId === voce.id))
+  // Gli esercizi già in questa giornata non si propongono di nuovo.
+  const esclusi = new Set(
+    voci.flatMap((v) => [
+      ...(v.esercizioId !== null ? [`e${v.esercizioId}`] : []),
+      ...(v.catalogoId !== null ? [`c${v.catalogoId}`] : []),
+    ]),
+  )
 
   function modifica(chiave: string, patch: Partial<VoceForm>) {
     setVoci((prec) => prec.map((v) => (v.chiave === chiave ? { ...v, ...patch } : v)))
@@ -50,34 +56,9 @@ export function EditorScheda({ utenteId, giorno, catalogo }: Props) {
     })
   }
 
-  function aggiungiDalCatalogo() {
-    const scelto = aggiunta === null ? undefined : catalogo.find((voce) => voce.id === aggiunta)
-    if (!scelto) return
-    setVoci((prec) => [
-      ...prec,
-      nuovaVoceForm(`catalogo-${scelto.id}`, { esercizioId: scelto.id, nome: scelto.nome, muscoli: scelto.muscoli }),
-    ])
-    setAggiunta(null)
-  }
-
-  function aggiungiLibero() {
-    const nome = nomeLibero.trim()
-    if (nome === '') return
-    if (voci.some((v) => v.nome.toLowerCase() === nome.toLowerCase())) {
-      setErrore(`${nome} è già in questa giornata`)
-      return
-    }
+  function aggiungiDallElenco(scelto: VoceElenco) {
+    setVoci((prec) => [...prec, nuovaVoceForm(`elenco-${scelto.chiave}`, scelto)])
     setErrore(null)
-    const esistente = catalogo.find((voce) => voce.nome.toLowerCase() === nome.toLowerCase())
-    setContatore((n) => n + 1)
-    setVoci((prec) => [
-      ...prec,
-      nuovaVoceForm(
-        `nuovo-${contatore}`,
-        esistente ? { esercizioId: esistente.id, nome: esistente.nome, muscoli: esistente.muscoli } : { nomeNuovo: nome },
-      ),
-    ])
-    setNomeLibero('')
   }
 
   function salva() {
@@ -114,7 +95,10 @@ export function EditorScheda({ utenteId, giorno, catalogo }: Props) {
         {voci.map((voce, indice) => (
           <li key={voce.chiave} className={`${stileCarta} space-y-3 p-4`}>
             <div className="flex items-start justify-between gap-2">
-              <h2 className="min-w-0 text-lg font-extrabold leading-tight">{voce.nome}</h2>
+              <div className="min-w-0">
+                <h2 className="text-lg font-extrabold leading-tight">{voce.nome}</h2>
+                {voce.nomeEn !== '' && <p className="text-xs text-muto">{voce.nomeEn}</p>}
+              </div>
               <div className="flex shrink-0 gap-1.5">
                 <button type="button" aria-label={`Sposta su ${voce.nome}`} disabled={indice === 0} onClick={() => sposta(indice, -1)} className={`${stileBottoneChiaro} size-10 !p-0`}>
                   <IconaSu className="size-4" />
@@ -133,28 +117,14 @@ export function EditorScheda({ utenteId, giorno, catalogo }: Props) {
               </div>
             </div>
 
-            <fieldset className="space-y-1.5">
-              <legend className="text-sm text-muto">Gruppo muscolare</legend>
-              <div className="flex flex-wrap gap-1.5">
-                {GRUPPI_MUSCOLARI.map((gruppo) => {
-                  const scelto = voce.muscoli === gruppo
-                  return (
-                    <button
-                      key={gruppo}
-                      type="button"
-                      aria-pressed={scelto}
-                      onClick={() => modifica(voce.chiave, { muscoli: gruppo })}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-                        scelto ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta text-muto'
-                      }`}
-                    >
-                      {gruppo}
-                    </button>
-                  )
-                })}
-              </div>
-              {voce.muscoli === null && <p className="text-xs text-muto">Scegline uno.</p>}
-            </fieldset>
+            {/* La categoria è quella del catalogo: si mostra, non si cambia. */}
+            {categoriaDa(voce.categoria) && (
+              <p className="text-sm text-muto">
+                Categoria: <span className="font-semibold text-testo">{etichettaCategoria(categoriaDa(voce.categoria)!)}</span>
+              </p>
+            )}
+
+            <IstruzioniEsercizio catalogoId={voce.catalogoId} esercizioId={voce.esercizioId} nome={voce.nome} />
 
             <label className="block space-y-1 text-sm text-muto">
               <span>Tipo di obiettivo</span>
@@ -204,37 +174,11 @@ export function EditorScheda({ utenteId, giorno, catalogo }: Props) {
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Aggiungi esercizio</h2>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <select value={aggiunta ?? ''} onChange={(e) => setAggiunta(e.target.value === '' ? null : Number(e.target.value))} className={`${stileTesto} text-left`}>
-            <option value="">Dalle routine…</option>
-            {disponibili.map((voce) => (
-              <option key={voce.id} value={voce.id}>
-                {voce.nome}
-              </option>
-            ))}
-          </select>
-          <button type="button" aria-label="Aggiungi l'esercizio scelto" disabled={aggiunta === null} onClick={aggiungiDalCatalogo} className={`${stileBottoneChiaro} px-4`}>
-            <IconaPiu className="size-5" />
-          </button>
-        </div>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <input
-            value={nomeLibero}
-            onChange={(e) => setNomeLibero(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                aggiungiLibero()
-              }
-            }}
-            maxLength={60}
-            placeholder="Altro esercizio"
-            className={`${stileTesto} text-left`}
-          />
-          <button type="button" aria-label="Aggiungi l'esercizio scritto" disabled={nomeLibero.trim() === ''} onClick={aggiungiLibero} className={`${stileBottoneChiaro} px-4`}>
-            <IconaPiu className="size-5" />
-          </button>
-        </div>
+        <button type="button" aria-expanded={sceltaAperta} onClick={() => setSceltaAperta((aperta) => !aperta)} className={stileBottoneChiaro}>
+          {sceltaAperta ? 'Chiudi l’elenco' : 'Scegli dall’elenco'}
+        </button>
+        {sceltaAperta && <ElencoEsercizi elenco={elenco} esclusi={esclusi} alScelto={aggiungiDallElenco} />}
+        <p className="text-xs text-muto">Gli esercizi si scelgono solo dall&apos;elenco: se ne manca uno, va aggiunto al catalogo.</p>
       </section>
 
       {errore && (

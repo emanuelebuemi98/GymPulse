@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { EditorScheda } from '@/components/EditorScheda'
-import { leggiCatalogo, leggiGiorno } from '@/lib/scheda-db'
+import { leggiElenco, leggiGiorno } from '@/lib/scheda-db'
 import { primoParametro } from '@/lib/url'
 import { richiediUtente } from '@/lib/accesso'
 
@@ -15,9 +15,9 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function ModificaSchedaPage({ searchParams }: Props) {
   const userId = await richiediUtente()
   const id = primoParametro((await searchParams).r)
-  const [giorno, catalogo] = await Promise.all([id ? leggiGiorno(userId, id) : null, leggiCatalogo(userId)])
+  const [giorno, elenco] = await Promise.all([id ? leggiGiorno(userId, id) : null, leggiElenco(userId)])
   if (!giorno) notFound()
 
   // `key` riporta l'editor allo stato salvato quando si cambia giornata.
-  return <EditorScheda key={giorno.id} utenteId={userId} giorno={giorno} catalogo={catalogo} />
+  return <EditorScheda key={giorno.id} utenteId={userId} giorno={giorno} elenco={elenco} />
 }

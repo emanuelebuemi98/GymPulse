@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaSessione } from '@/app/actions'
 import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
@@ -9,17 +9,24 @@ import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
 import { formatDataNumerica, formatNumero } from '@/lib/formato'
 import { parseIntero, parseNumero } from '@/lib/numeri'
 import { suggerimentoSerie, suggerisciCarichi, type SuggerimentoCarico } from '@/lib/progressi'
-import type { UltimeVolte, VoceCatalogo } from '@/lib/tipi'
+import type { UltimeVolte, VoceElenco } from '@/lib/tipi'
+import { ElencoEsercizi } from './ElencoEsercizi'
 import { IconaCestino, IconaMeno, IconaPiu, IconaSpunta } from './icone'
+import { IstruzioniEsercizio } from './IstruzioniEsercizio'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
 type RigaSerie = { pesoKg: string; ripetizioni: string; confermata: boolean }
 
+// Un esercizio è già della persona (esercizioId) oppure preso dal catalogo e non ancora suo (catalogoId): uno solo dei due.
+// nomeEn serve alla riga piccola sotto il nome. Una bozza salvata prima del catalogo non ha catalogoId e nomeEn, e può avere
+// ancora un esercizio scritto a mano (esercizioId vuoto): in quel caso l'esercizio si ritrova per nome all'apertura.
 type EsSessione = {
   chiave: string
-  esercizioId: number | null // null = esercizio nuovo, creato al salvataggio
-  nomeNuovo: string
+  esercizioId: number | null
+  catalogoId?: number | null
+  nomeNuovo?: string
   nome: string
+  nomeEn?: string
   serie: RigaSerie[]
 }
 
@@ -35,7 +42,7 @@ type Props = {
   utenteId: number // la bozza nel browser è di questa persona: due account sullo stesso browser non se la vedono
   giorno: Giorno
   ultime: UltimeVolte
-  catalogo: VoceCatalogo[]
+  elenco: VoceElenco[]
   oggi: string
 }
 
@@ -45,8 +52,9 @@ function esercizioIniziale(esercizio: Esercizio): EsSessione {
   return {
     chiave: `e${esercizio.id}`,
     esercizioId: esercizio.id,
-    nomeNuovo: '',
+    catalogoId: null,
     nome: esercizio.nome,
+    nomeEn: esercizio.nomeEn,
     serie: Array.from({ length: serieIniziali(esercizio.obiettivo) }, rigaVuota),
   }
 }
@@ -58,7 +66,7 @@ function testoSuggerimento(s: SuggerimentoCarico): string {
     : `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripMax} rip in ogni serie per salire`
 }
 
-export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props) {
+export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) {
   const router = useRouter()
   const definizioni = new Map(giorno.esercizi.map((e) => [e.id, e]))
   const suggerimentiCarico = suggerisciCarichi(giorno.esercizi, ultime)
@@ -70,25 +78,51 @@ export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props
   const [errore, setErrore] = useState<string | null>(null)
   const [scaduta, setScaduta] = useState(false)
   const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
-  const [aggiunta, setAggiunta] = useState<number | null>(null)
-  const [nomeLibero, setNomeLibero] = useState('')
+  const [sceltaAperta, setSceltaAperta] = useState(false)
   const [timer, setTimer] = useState<{ fine: number; totale: number } | null>(null)
   const [restano, setRestano] = useState(0)
   const [bozzaPronta, setBozzaPronta] = useState(false)
   const [inCorso, startTransition] = useTransition()
-  const contatore = useRef(0)
 
   // All'apertura riprende la bozza di questa giornata, se c'è: si legge qui e non nello stato iniziale
   // perché il server non ha il localStorage e le due versioni della pagina non coinciderebbero.
   useEffect(() => {
     const bozza = leggiBozza<Bozza>(utenteId, giorno.id)
     if (bozza) {
-      setEsercizi(bozza.esercizi)
+      // Una bozza di prima del catalogo può avere esercizi scritti a mano, che ora non si salvano più: si cercano per nome
+      // nell'elenco (suoi o del catalogo). Quelli che non si trovano si tolgono, e la persona viene avvisata.
+      const perNome = new Map(elenco.map((voce) => [voce.nome.toLowerCase(), voce]))
+      const persi: string[] = []
+      const riportati = bozza.esercizi.flatMap((es): EsSessione[] => {
+        if (es.esercizioId !== null || (es.catalogoId ?? null) !== null) return [es]
+        const trovato = perNome.get(es.nome.toLowerCase())
+        if (!trovato) {
+          if (es.serie.some((s) => s.confermata)) persi.push(es.nome)
+          return []
+        }
+        return [
+          {
+            ...es,
+            esercizioId: trovato.id,
+            catalogoId: trovato.id === null ? trovato.catalogoId : null,
+            nome: trovato.nome,
+            nomeEn: trovato.nomeEn,
+          },
+        ]
+      })
+      setEsercizi(riportati)
       setData(bozza.data)
       setNote(bozza.note)
       setDurata(bozza.durata)
+      if (persi.length > 0) {
+        setErrore(
+          `Questi esercizi erano scritti a mano e non si trovano più nell'elenco, quindi li ho tolti dalla bozza: ${persi.join(', ')}. Se avevi serie confermate, aggiungi l'esercizio giusto dall'elenco e riscrivile.`,
+        )
+      }
     }
     setBozzaPronta(true)
+    // La bozza si legge una volta sola all'apertura: l'elenco non cambia mentre si allena.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [utenteId, giorno.id])
 
   useEffect(() => {
@@ -203,44 +237,19 @@ export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props
     setEsercizi((prec) => prec.filter((corrente) => corrente.chiave !== es.chiave))
   }
 
-  function aggiungiDalCatalogo() {
-    const scelto = aggiunta === null ? undefined : catalogo.find((voce) => voce.id === aggiunta)
-    if (!scelto) return
+  function aggiungiDallElenco(scelto: VoceElenco) {
     setEsercizi((prec) => [
       ...prec,
       {
-        chiave: `catalogo-${scelto.id}`,
+        chiave: `elenco-${scelto.chiave}`,
         esercizioId: scelto.id,
-        nomeNuovo: '',
+        catalogoId: scelto.id === null ? scelto.catalogoId : null,
         nome: scelto.nome,
+        nomeEn: scelto.nomeEn,
         serie: Array.from({ length: 3 }, rigaVuota),
       },
     ])
-    setAggiunta(null)
-  }
-
-  function aggiungiLibero() {
-    const nome = nomeLibero.trim()
-    if (nome === '') return
-    const esistente = catalogo.find((voce) => voce.nome.toLowerCase() === nome.toLowerCase())
-    const giaPresente = esercizi.some((es) => es.nome.toLowerCase() === nome.toLowerCase())
-    if (giaPresente) {
-      setErrore(`${nome} è già in questa sessione`)
-      return
-    }
     setErrore(null)
-    contatore.current += 1
-    setEsercizi((prec) => [
-      ...prec,
-      {
-        chiave: `nuovo-${Date.now()}-${contatore.current}`,
-        esercizioId: esistente ? esistente.id : null,
-        nomeNuovo: esistente ? '' : nome,
-        nome: esistente ? esistente.nome : nome,
-        serie: Array.from({ length: 3 }, rigaVuota),
-      },
-    ])
-    setNomeLibero('')
   }
 
   function annulla() {
@@ -258,7 +267,7 @@ export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props
 
     const invio = esercizi.map((es) => ({
       esercizioId: es.esercizioId,
-      nomeNuovo: es.esercizioId === null ? es.nomeNuovo : null,
+      catalogoId: es.esercizioId === null ? (es.catalogoId ?? null) : null,
       serie: es.serie
         .filter((riga) => riga.confermata)
         .map((riga) => ({ pesoKg: parseNumero(riga.pesoKg), ripetizioni: parseIntero(riga.ripetizioni) })),
@@ -291,7 +300,13 @@ export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props
     })
   }
 
-  const disponibili = catalogo.filter((voce) => !esercizi.some((es) => es.esercizioId === voce.id))
+  // Gli esercizi già in questa sessione non si propongono di nuovo.
+  const esclusi = new Set(
+    esercizi.flatMap((es) => [
+      ...(es.esercizioId !== null ? [`e${es.esercizioId}`] : []),
+      ...((es.catalogoId ?? null) !== null ? [`c${es.catalogoId}`] : []),
+    ]),
+  )
 
   return (
     <div className="space-y-4">
@@ -344,11 +359,15 @@ export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="text-lg font-extrabold leading-tight">{es.nome}</h3>
+                  {es.nomeEn && <p className="text-xs text-muto">{es.nomeEn}</p>}
                   <p className="text-sm text-muto">
                     {definizione ? `Target ${descrizione(definizione)}` : 'Esercizio aggiunto'}
                     {ultima && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
                   </p>
                   {carico && <p className="mt-1 text-sm font-semibold text-accento">{testoSuggerimento(carico)}</p>}
+                  <div className="mt-1">
+                    <IstruzioniEsercizio catalogoId={es.catalogoId ?? null} esercizioId={es.esercizioId} nome={es.nome} />
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -414,41 +433,10 @@ export function FormSessione({ utenteId, giorno, ultime, catalogo, oggi }: Props
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Aggiungi esercizio</h2>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <select
-            value={aggiunta ?? ''}
-            onChange={(e) => setAggiunta(e.target.value === '' ? null : Number(e.target.value))}
-            className={`${stileTesto} text-left`}
-          >
-            <option value="">Dalle routine…</option>
-            {disponibili.map((voce) => (
-              <option key={voce.id} value={voce.id}>
-                {voce.nome}
-              </option>
-            ))}
-          </select>
-          <button type="button" aria-label="Aggiungi l'esercizio scelto" disabled={aggiunta === null} onClick={aggiungiDalCatalogo} className={`${stileBottoneChiaro} px-4`}>
-            <IconaPiu className="size-5" />
-          </button>
-        </div>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <input
-            value={nomeLibero}
-            onChange={(e) => setNomeLibero(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                aggiungiLibero()
-              }
-            }}
-            maxLength={60}
-            placeholder="Altro esercizio"
-            className={`${stileTesto} text-left`}
-          />
-          <button type="button" aria-label="Aggiungi l'esercizio scritto" disabled={nomeLibero.trim() === ''} onClick={aggiungiLibero} className={`${stileBottoneChiaro} px-4`}>
-            <IconaPiu className="size-5" />
-          </button>
-        </div>
+        <button type="button" aria-expanded={sceltaAperta} onClick={() => setSceltaAperta((aperta) => !aperta)} className={stileBottoneChiaro}>
+          {sceltaAperta ? 'Chiudi l’elenco' : 'Scegli dall’elenco'}
+        </button>
+        {sceltaAperta && <ElencoEsercizi elenco={elenco} esclusi={esclusi} alScelto={aggiungiDallElenco} />}
       </section>
 
       <section className={`${stileCarta} space-y-3 p-4`}>

@@ -16,14 +16,18 @@ export const serieSchema = z.object({
     .max(999, 'Ripetizioni troppo alte'),
 })
 
-// Un esercizio della scheda o del catalogo (esercizioId) oppure uno nuovo (nomeNuovo): mai entrambi.
+// Un esercizio già della persona (esercizioId) oppure preso dal catalogo (catalogoId): uno solo dei due. Gli esercizi non
+// si scrivono più a mano.
 const esercizioSchema = z
   .object({
     esercizioId: z.number().int().positive().max(2_147_483_647).nullable(),
-    nomeNuovo: z.string().trim().min(1, 'Nome esercizio mancante').max(60, 'Nome esercizio troppo lungo').nullable(),
+    // Se manca vale "nessuno": una pagina rimasta aperta da prima del catalogo non lo manda.
+    catalogoId: z.number().int().positive().max(2_147_483_647).nullable().default(null),
     serie: z.array(serieSchema).max(50, 'Troppe serie per un esercizio'),
   })
-  .refine((e) => (e.esercizioId === null) !== (e.nomeNuovo === null), { message: 'Esercizio non valido' })
+  .refine((e) => (e.esercizioId === null) !== (e.catalogoId === null), {
+    message: 'Scegli ogni esercizio dall’elenco: quelli scritti a mano non si salvano più',
+  })
 
 // Note e durata hanno le stesse regole quando la seduta arriva dal form e quando arriva da un file CSV.
 export const noteSchema = z.string().trim().max(500, 'Le note sono troppo lunghe').nullable()
@@ -58,15 +62,14 @@ export function validaSessione(input: unknown, ora = new Date()): EsitoValidazio
   if (!istante) return { ok: false, errore: 'La data non è valida o è nel futuro' }
 
   const ids = new Set<number>()
-  const nomi = new Set<string>()
+  const delCatalogo = new Set<number>()
   for (const esercizio of dati.esercizi) {
     if (esercizio.esercizioId !== null) {
       if (ids.has(esercizio.esercizioId)) return { ok: false, errore: 'Esercizio ripetuto' }
       ids.add(esercizio.esercizioId)
-    } else {
-      const nome = esercizio.nomeNuovo!.toLowerCase()
-      if (nomi.has(nome)) return { ok: false, errore: 'Esercizio ripetuto' }
-      nomi.add(nome)
+    } else if (esercizio.catalogoId !== null) {
+      if (delCatalogo.has(esercizio.catalogoId)) return { ok: false, errore: 'Esercizio ripetuto' }
+      delCatalogo.add(esercizio.catalogoId)
     }
   }
 

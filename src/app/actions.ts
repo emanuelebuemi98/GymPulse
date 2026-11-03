@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { utenteDellaPagina } from '@/lib/accesso'
-import { trovaOCreaEsercizio } from '@/lib/catalogo'
+import { esercizioDalCatalogo, trovaEsercizioPerNome } from '@/lib/catalogo'
 import { LIMITE_CSV, leggiCsv } from '@/lib/csv'
 import { db } from '@/lib/db'
 import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from '@/lib/giornate'
@@ -37,22 +37,27 @@ export async function salvaSessione(
   if (!esito.ok) return { errore: esito.errore }
 
   const { giornoId, note, durataMinuti } = esito.dati
-  // Gli esercizi senza serie confermate non vengono salvati (e non ne nasce uno nuovo nel catalogo).
+  // Gli esercizi senza serie confermate non vengono salvati (e non ne nasce uno nuovo tra quelli della persona).
   const esercizi = esito.dati.esercizi.filter((esercizio) => esercizio.serie.length > 0)
 
   // Solo una giornata attiva: una tolta dalla scheda (rimasta per lo storico) non riceve sedute nuove.
   const giorno = await db.giornoScheda.findFirst({ where: { userId, id: giornoId, attiva: true }, select: { id: true } })
   if (!giorno) return { errore: 'Questa giornata non è più nella scheda: le serie confermate restano nel telefono, ma non si possono salvare qui' }
 
-  const idCatalogo = esercizi.flatMap((esercizio) => (esercizio.esercizioId !== null ? [esercizio.esercizioId] : []))
-  const trovati = await db.esercizio.count({ where: { userId, id: { in: idCatalogo } } })
-  if (trovati !== idCatalogo.length) return { errore: 'Un esercizio non esiste più' }
+  const idPropri = esercizi.flatMap((esercizio) => (esercizio.esercizioId !== null ? [esercizio.esercizioId] : []))
+  const trovati = await db.esercizio.count({ where: { userId, id: { in: idPropri } } })
+  if (trovati !== idPropri.length) return { errore: 'Un esercizio non esiste più' }
+  const idCatalogo = esercizi.flatMap((esercizio) => (esercizio.catalogoId !== null ? [esercizio.catalogoId] : []))
+  if ((await db.catalogoEsercizio.count({ where: { id: { in: idCatalogo } } })) !== idCatalogo.length) {
+    return { errore: 'Un esercizio del catalogo non esiste più' }
+  }
 
   const id = await db.$transaction(async (tx) => {
     let ordine = 0
     const serie: { esercizioId: number; ordine: number; pesoKg: number | null; ripetizioni: number }[] = []
     for (const esercizio of esercizi) {
-      const esercizioId = esercizio.esercizioId ?? (await trovaOCreaEsercizio(tx, userId, esercizio.nomeNuovo!))
+      // Un esercizio è della persona oppure del catalogo (lo garantisce la validazione): quello del catalogo nasce qui.
+      const esercizioId = esercizio.esercizioId ?? (await esercizioDalCatalogo(tx, userId, esercizio.catalogoId!))
       for (const s of esercizio.serie) {
         serie.push({ esercizioId, ordine: ++ordine, pesoKg: s.pesoKg, ripetizioni: s.ripetizioni })
       }
@@ -89,9 +94,13 @@ export async function salvaScheda(utenteId: number, input: unknown): Promise<{ o
   const giorno = await db.giornoScheda.findFirst({ where: { userId, id: giornoId, attiva: true }, select: { id: true } })
   if (!giorno) return { errore: 'Giornata non trovata' }
 
-  const idCatalogo = voci.flatMap((voce) => (voce.esercizioId !== null ? [voce.esercizioId] : []))
-  const trovati = await db.esercizio.count({ where: { userId, id: { in: idCatalogo } } })
-  if (trovati !== idCatalogo.length) return { errore: 'Un esercizio non esiste più' }
+  const idPropri = voci.flatMap((voce) => (voce.esercizioId !== null ? [voce.esercizioId] : []))
+  const trovati = await db.esercizio.count({ where: { userId, id: { in: idPropri } } })
+  if (trovati !== idPropri.length) return { errore: 'Un esercizio non esiste più' }
+  const idCatalogo = voci.flatMap((voce) => (voce.catalogoId !== null ? [voce.catalogoId] : []))
+  if ((await db.catalogoEsercizio.count({ where: { id: { in: idCatalogo } } })) !== idCatalogo.length) {
+    return { errore: 'Un esercizio del catalogo non esiste più' }
+  }
 
   // La storia non si tocca: le serie già registrate puntano agli esercizi, non alle voci della scheda.
   await db.$transaction(async (tx) => {
@@ -100,10 +109,8 @@ export async function salvaScheda(utenteId: number, input: unknown): Promise<{ o
 
     let ordine = 0
     for (const voce of voci) {
-      const esercizioId = voce.esercizioId ?? (await trovaOCreaEsercizio(tx, userId, voce.nomeNuovo!))
-      // I muscoli sono dell'esercizio e non della voce: valgono in ogni giornata che lo usa. updateMany con lo userId:
-      // non si può toccare l'esercizio di un altro account nemmeno conoscendone l'id.
-      await tx.esercizio.updateMany({ where: { id: esercizioId, userId }, data: { muscoli: voce.muscoli } })
+      // Un esercizio è della persona oppure del catalogo (lo garantisce la validazione): quello del catalogo nasce qui.
+      const esercizioId = voce.esercizioId ?? (await esercizioDalCatalogo(tx, userId, voce.catalogoId!))
       await tx.voceScheda.create({
         data: {
           userId,
@@ -206,7 +213,8 @@ export async function eliminaSessione(utenteId: number, id: unknown): Promise<{ 
 
 // Aggiunge alle sedute DI CHI LA ESEGUE quelle scritte nel file CSV. Non cancella nulla: una seduta con la
 // stessa data e la stessa giornata di una già presente viene saltata, così importare due volte lo stesso file
-// non duplica niente. Gli esercizi si ritrovano per nome (senza badare alle maiuscole) e se non ci sono si creano.
+// non duplica niente. Gli esercizi si ritrovano per nome (senza badare alle maiuscole) tra i tuoi e nel catalogo; se un
+// nome non c'è in nessuno dei due l'importazione si ferma e li elenca, perché gli esercizi non si creano più a mano.
 // Le giornate invece devono esistere già: l'importazione non ne inventa. Contano anche quelle tolte dalla scheda e
 // rimaste per lo storico, perché le sedute di un file esportato un tempo ci appartengono ancora.
 export async function importaCsv(
@@ -238,15 +246,27 @@ export async function importaCsv(
   const nuove = sedute.filter((seduta) => !presenti.has(chiave(seduta.data, seduta.giornoId)))
   if (nuove.length === 0) return { aggiunte: 0, giaPresenti: sedute.length }
 
-  await db.$transaction(
+  // Se mancano esercizi si ferma prima di scrivere: nell'errore ci sono tutti i nomi che non si trovano.
+  let mancanti: string[] = []
+
+  try {
+    await db.$transaction(
     async (tx) => {
-      // Un esercizio si cerca (o si crea) una volta sola, anche se compare in cento sedute.
+      // Un esercizio si cerca una volta sola, anche se compare in cento sedute.
       const esercizi = new Map<string, number>()
+      const nonTrovati = new Map<string, string>()
       for (const seduta of nuove) {
         for (const serie of seduta.serie) {
           const nome = serie.esercizio.toLowerCase()
-          if (!esercizi.has(nome)) esercizi.set(nome, await trovaOCreaEsercizio(tx, userId, serie.esercizio))
+          if (esercizi.has(nome) || nonTrovati.has(nome)) continue
+          const id = await trovaEsercizioPerNome(tx, userId, serie.esercizio)
+          if (id === null) nonTrovati.set(nome, serie.esercizio)
+          else esercizi.set(nome, id)
         }
+      }
+      if (nonTrovati.size > 0) {
+        mancanti = [...nonTrovati.values()]
+        throw new Error('ESERCIZI_MANCANTI')
       }
 
       const create = await tx.sessione.createManyAndReturn({
@@ -278,7 +298,16 @@ export async function importaCsv(
       })
     },
     { timeout: 30_000 },
-  )
+    )
+  } catch (errore) {
+    if (mancanti.length > 0) {
+      const elenco = mancanti.slice(0, 10).map((nome) => `"${nome}"`).join(', ')
+      return {
+        errore: `Questi esercizi non ci sono né tra i tuoi né nel catalogo: ${elenco}${mancanti.length > 10 ? ` e altri ${mancanti.length - 10}` : ''}. Non importo niente: correggi i nomi nel file e riprova.`,
+      }
+    }
+    throw errore
+  }
 
   aggiornaPagine()
   return { aggiunte: nuove.length, giaPresenti: sedute.length - nuove.length }

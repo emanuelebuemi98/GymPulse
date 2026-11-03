@@ -4,7 +4,7 @@ import { FormSessione } from '@/components/FormSessione'
 import { stileCarta } from '@/components/stili'
 import { giornoConsigliato } from '@/lib/allenamento'
 import { dataIso } from '@/lib/formato'
-import { leggiCatalogo, leggiScheda } from '@/lib/scheda-db'
+import { leggiElenco, leggiScheda } from '@/lib/scheda-db'
 import { riepilogoHome, ultimeVolte } from '@/lib/storico'
 import { primoParametro } from '@/lib/url'
 import { richiediUtente } from '@/lib/accesso'
@@ -19,7 +19,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function SessionePage({ searchParams }: Props) {
   const userId = await richiediUtente()
   const richiesto = primoParametro((await searchParams).r)
-  const [giorni, catalogo, { ultima }] = await Promise.all([leggiScheda(userId), leggiCatalogo(userId), riepilogoHome(userId)])
+  const [giorni, elenco, { ultima }] = await Promise.all([leggiScheda(userId), leggiElenco(userId), riepilogoHome(userId)])
 
   if (giorni.length === 0) {
     return (
@@ -33,7 +33,8 @@ export default async function SessionePage({ searchParams }: Props) {
   }
 
   const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)
-  const ultime = await ultimeVolte(userId, catalogo.map((voce) => voce.id))
+  // Le ultime volte servono solo per gli esercizi che la persona ha già (quelli del catalogo non ancora suoi non hanno storia).
+  const ultime = await ultimeVolte(userId, elenco.flatMap((voce) => (voce.id === null ? [] : [voce.id])))
 
   // `key` fa ripartire il form (e la sua bozza) quando si cambia giornata.
   return (
@@ -42,7 +43,7 @@ export default async function SessionePage({ searchParams }: Props) {
       utenteId={userId}
       giorno={giorno}
       ultime={ultime}
-      catalogo={catalogo}
+      elenco={elenco}
       oggi={dataIso(new Date())}
     />
   )

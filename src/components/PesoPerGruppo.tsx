@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { etichettaCategoria } from '@/lib/categorie'
 import { formatNumero } from '@/lib/formato'
 import type { PesoGruppo } from '@/lib/panoramica'
 
@@ -61,7 +62,7 @@ export function PesoPerGruppo({ gruppi }: { gruppi: PesoGruppo[] }) {
               className="block w-full rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-grafico"
             >
               <span className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 font-semibold">{gruppo}</span>
+                <span className="min-w-0 font-semibold">{etichettaCategoria(gruppo)}</span>
                 <span className="shrink-0 text-sm font-extrabold tabular-nums text-testo">{formatNumero(pesoKg)} kg</span>
               </span>
               <span aria-hidden="true" className="mt-1.5 block">
@@ -76,7 +77,7 @@ export function PesoPerGruppo({ gruppi }: { gruppi: PesoGruppo[] }) {
                 className="pointer-events-none absolute inset-x-0 top-full z-10 mt-1 space-y-2 rounded-2xl bg-inchiostro px-3 py-2.5 text-su-inchiostro shadow-lg"
               >
                 {esercizi.length === 0 ? (
-                  <p className="text-sm">Nessun esercizio di {gruppo.toLowerCase()} questa settimana.</p>
+                  <p className="text-sm">Nessun esercizio di {etichettaCategoria(gruppo).toLowerCase()} questa settimana.</p>
                 ) : (
                   esercizi.map((esercizio) => (
                     <p key={esercizio.esercizioId}>

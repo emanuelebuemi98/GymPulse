@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { EliminaSessione } from '@/components/EliminaSessione'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
+import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
 import { formatData, formatDataLunga, formatNumero } from '@/lib/formato'
 import { dettaglioSessione } from '@/lib/storico'
 import { idDaParametro } from '@/lib/url'
@@ -59,7 +60,10 @@ export default async function DettaglioSessionePage({ params }: Props) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-lg font-extrabold leading-tight">{esercizio.nome}</h2>
-                {esercizio.muscoli && <p className="text-sm text-muto">{esercizio.muscoli}</p>}
+                {esercizio.nomeEn && <p className="text-xs text-muto">{esercizio.nomeEn}</p>}
+                {categoriaDa(esercizio.categoria) && (
+                  <p className="text-sm text-muto">{etichettaCategoria(categoriaDa(esercizio.categoria)!)}</p>
+                )}
               </div>
               <Link href={`/progressi?e=${esercizio.id}`} className="shrink-0 text-sm font-semibold text-accento">
                 Andamento

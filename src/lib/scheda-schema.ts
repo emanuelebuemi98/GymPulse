@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { GRUPPI_MUSCOLARI, type GruppoMuscolare } from './muscoli'
 import type { Obiettivo } from './scheda-tipi'
 import { RECUPERO_PREDEFINITO } from './voci'
 
@@ -10,8 +9,11 @@ const intero = (min: number, max: number, messaggio: string) =>
 
 const voceSchema = z
   .object({
+    // Un esercizio è già della persona (esercizioId) oppure preso dal catalogo (catalogoId): uno solo dei due. Non si
+    // scrivono più a mano: se la scheda aperta nel browser è di prima (manda ancora nomeNuovo) il salvataggio si ferma.
     esercizioId: z.number().int().positive().max(2_147_483_647).nullable(),
-    nomeNuovo: z.string().trim().min(1, 'Nome esercizio mancante').max(60, 'Nome esercizio troppo lungo').nullable(),
+    // Se manca vale "nessuno": una pagina rimasta aperta da prima del catalogo non lo manda.
+    catalogoId: z.number().int().positive().max(2_147_483_647).nullable().default(null),
     tipo: z.enum(['serie', 'totale', 'libero']),
     serie: intero(1, 20, 'Le serie devono essere da 1 a 20'),
     ripMin: intero(1, 100, 'Le ripetizioni devono essere da 1 a 100'),
@@ -26,10 +28,10 @@ const voceSchema = z
       .min(0, "L'incremento non può essere negativo")
       .max(50, "L'incremento è troppo alto")
       .nullable(),
-    // Il gruppo muscolare dell'esercizio: ognuno appartiene a una delle sette categorie.
-    muscoli: z.enum(GRUPPI_MUSCOLARI, { error: 'Scegli il gruppo muscolare di ogni esercizio' }),
   })
-  .refine((v) => (v.esercizioId === null) !== (v.nomeNuovo === null), { message: 'Esercizio non valido' })
+  .refine((v) => (v.esercizioId === null) !== (v.catalogoId === null), {
+    message: 'Scegli ogni esercizio dall’elenco: quelli scritti a mano non si salvano più',
+  })
 
 const schedaSchema = z.object({
   giornoId: z.string().min(1, 'Giorno mancante'),
@@ -39,12 +41,10 @@ const schedaSchema = z.object({
 
 export type VoceNormalizzata = {
   esercizioId: number | null
-  nomeNuovo: string | null
+  catalogoId: number | null
   obiettivo: Obiettivo
   nota: string | null
   incrementoKg: number | null
-  // Da salvare in Esercizio.muscoli.
-  muscoli: GruppoMuscolare
 }
 
 export type SchedaNormalizzata = {
@@ -61,17 +61,16 @@ export function validaScheda(input: unknown): EsitoScheda {
 
   const { giornoId, titolo, voci } = parsed.data
   const ids = new Set<number>()
-  const nomi = new Set<string>()
+  const delCatalogo = new Set<number>()
   const normalizzate: VoceNormalizzata[] = []
 
   for (const voce of voci) {
-    const nome = voce.nomeNuovo ?? ''
     if (voce.esercizioId !== null) {
       if (ids.has(voce.esercizioId)) return { ok: false, errore: 'Esercizio ripetuto' }
       ids.add(voce.esercizioId)
-    } else {
-      if (nomi.has(nome.toLowerCase())) return { ok: false, errore: 'Esercizio ripetuto' }
-      nomi.add(nome.toLowerCase())
+    } else if (voce.catalogoId !== null) {
+      if (delCatalogo.has(voce.catalogoId)) return { ok: false, errore: 'Esercizio ripetuto' }
+      delCatalogo.add(voce.catalogoId)
     }
 
     let obiettivo: Obiettivo
@@ -100,11 +99,10 @@ export function validaScheda(input: unknown): EsitoScheda {
 
     normalizzate.push({
       esercizioId: voce.esercizioId,
-      nomeNuovo: voce.nomeNuovo,
+      catalogoId: voce.catalogoId,
       obiettivo,
       nota: voce.nota ? voce.nota : null,
       incrementoKg: voce.incrementoKg ? voce.incrementoKg : null,
-      muscoli: voce.muscoli,
     })
   }
 
