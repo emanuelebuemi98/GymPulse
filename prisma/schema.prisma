@@ -97,21 +97,53 @@ model GiornoScheda {
   @@id([userId, id])
 }
 
-// Esercizi noti a una persona: quelli della sua scheda e quelli che ha aggiunto.
+// Catalogo degli esercizi, uguale per tutti e non modificabile dall'app: si carica con `npm run db:catalogo` dal file
+// prisma/dati/catalogo-esercizi.json. Gli esercizi di una persona (Esercizio) si collegano qui con catalogoId.
+// slug è il nome inglese in minuscolo e con i trattini: è la chiave con cui lo script ritrova una riga già caricata, e
+// anche il nome del file della foto. categoria è una di dieci chiavi (vincolo CatalogoEsercizio_categoria, scritto a mano
+// nella migrazione perché Prisma non lo descrive). immagine è il percorso della foto, vuoto finché non c'è.
+// esecuzione: come si fa l'esercizio, un passo per riga. accortezze: gli errori da evitare e le cautele, una per riga.
+// Si mostrano nella scheda dell'esercizio, dopo averlo scelto. Vuoti finché non sono scritti.
+// alias: altri nomi con cui l'esercizio si chiamava o si chiama (uno per riga), per ritrovarlo quando un file CSV vecchio o
+// un esercizio di una persona usa il nome di prima.
+model CatalogoEsercizio {
+  id                Int         @id @default(autoincrement())
+  slug              String      @unique
+  nomeIt            String      @unique
+  nomeEn            String
+  categoria         String
+  attrezzatura      String
+  muscoloPrincipale String
+  muscoliSecondari  String
+  tipoMovimento     String
+  immagine          String?
+  esecuzione        String?
+  accortezze        String?
+  alias             String?
+  esercizi          Esercizio[]
+
+  @@index([categoria])
+}
+
+// Esercizi noti a una persona: quelli presi dal catalogo e quelli che ha scritto lei.
 // L'unicità (userId, id) serve alle chiavi esterne composte di voci e serie.
-// muscoli: il gruppo muscolare dell'esercizio, uno solo tra PETTO, SPALLE, BICIPITI, TRICIPITI, DORSO, GAMBE, ADDOME.
-// Il database accetta solo questi nomi (vincolo Esercizio_muscoli_standard, scritto a mano nella migrazione perché
-// Prisma non lo descrive) o il testo vuoto, che resta agli esercizi arrivati da un CSV finché non li si apre dalla scheda.
+// categoria: una delle dieci categorie (stesso vincolo del catalogo, Esercizio_categoria), oppure il testo vuoto per gli
+// esercizi arrivati da un CSV, finché non si sceglie la categoria dalla scheda. Quando c'è catalogoId la categoria è
+// quella del catalogo. Un esercizio con catalogoId vuoto è personale.
 model Esercizio {
-  id      Int             @id @default(autoincrement())
-  userId  Int
-  nome    String
-  muscoli String
-  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  voci    VoceScheda[]
-  serie   SerieEseguita[]
+  id          Int                @id @default(autoincrement())
+  userId      Int
+  nome        String
+  categoria   String
+  catalogoId  Int?
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  catalogo    CatalogoEsercizio? @relation(fields: [catalogoId], references: [id], onDelete: SetNull)
+  voci        VoceScheda[]
+  serie       SerieEseguita[]
 
   @@unique([userId, id])
+  @@unique([userId, catalogoId])
+  @@index([catalogoId])
 }
 
 // Un esercizio dentro una giornata, con il suo obiettivo. È la parte modificabile dall'app.
