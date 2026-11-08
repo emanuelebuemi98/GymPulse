@@ -35,18 +35,18 @@ type Props = {
   notaAttenuati?: string // spiegazione dell'asterisco dei dati da verificare, mostrata sotto il grafico
 }
 
-// Colori del tema chiaro: la serie usa lo slot 1 della palette dei grafici (validato sulla superficie della carta,
-// #fffdf7, con scripts/validate_palette.js); griglia e assi sono toni recessivi, il testo usa i colori del testo
-// e non quello della serie. Stesso blu di `--color-grafico` in globals.css, che serve alle barre fatte in HTML.
+// I colori sono quelli del tema (globals.css), letti dal browser con var(): cambiano da soli passando da chiaro a scuro.
+// La serie usa lo stesso blu di `--color-grafico`, quello delle barre fatte in HTML; griglia e assi sono toni recessivi, il
+// testo usa i colori del testo e non quello della serie. Il blu ha un contrasto di almeno 3:1 sulla carta, in entrambi i temi.
 const COLORI = {
-  serie: '#2a78d6',
-  superficie: '#fffdf7',
-  griglia: '#e6dfcc',
-  base: '#c3c2b7',
-  asse: '#52514e',
-  inchiostro: '#17150f',
-  mirino: '#b9b29c',
-  evidenza: 'rgba(23, 21, 15, 0.05)',
+  serie: 'var(--color-grafico)',
+  superficie: 'var(--color-carta)',
+  griglia: 'var(--color-griglia)',
+  base: 'var(--color-linea-base)',
+  asse: 'var(--color-asse)',
+  inchiostro: 'var(--color-testo)',
+  mirino: 'var(--color-mirino)',
+  evidenza: 'color-mix(in srgb, var(--color-testo) 6%, transparent)',
 }
 
 const MARGINI = { top: 22, right: 26, bottom: 0, left: 0 }

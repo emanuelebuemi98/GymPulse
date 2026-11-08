@@ -110,6 +110,44 @@ export const IconaCarica = (p: Props) => (
   </Icona>
 )
 
+export const IconaChiudi = (p: Props) => (
+  <Icona {...p}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </Icona>
+)
+
+export const IconaSinistra = (p: Props) => (
+  <Icona {...p}>
+    <path d="M15 5l-7 7 7 7" />
+  </Icona>
+)
+
+export const IconaDestra = (p: Props) => (
+  <Icona {...p}>
+    <path d="M9 5l7 7-7 7" />
+  </Icona>
+)
+
+export const IconaLente = (p: Props) => (
+  <Icona {...p}>
+    <circle cx="11" cy="11" r="6" />
+    <path d="M20 20l-4.2-4.2M11 8.5v5M8.5 11h5" />
+  </Icona>
+)
+
+export const IconaSole = (p: Props) => (
+  <Icona {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" />
+  </Icona>
+)
+
+export const IconaLuna = (p: Props) => (
+  <Icona {...p}>
+    <path d="M20 14.2A8 8 0 0 1 9.8 4a8 8 0 1 0 10.2 10.2z" />
+  </Icona>
+)
+
 export const IconaScudo = (p: Props) => (
   <Icona {...p}>
     <path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z" />

@@ -6,7 +6,7 @@ type Props = {
 }
 
 const base = 'flex-1 rounded-full px-4 py-2 text-center text-sm font-bold transition'
-const stileAttiva = `${base} bg-carta text-testo shadow-[0_1px_2px_rgba(23,21,15,0.12)]`
+const stileAttiva = `${base} bg-carta text-testo shadow-[0_1px_2px_color-mix(in_srgb,var(--color-testo)_14%,transparent)]`
 const stileInattiva = `${base} text-muto active:bg-carta/60`
 
 // Le due viste della pagina Progressi. Sono link, non stato: ogni vista ha il suo indirizzo e si può ricaricare.

@@ -1,25 +1,33 @@
 @import "tailwindcss";
 
-/* Tema chiaro "carta" con accento terracotta. I colori hanno un nome per ruolo, così si cambiano in un posto solo.
-   Contrasti misurati: testo su carta 17,9:1, muto 6,5:1, accento 5,1:1, verde 6,4:1, errore 6,4:1,
-   valori suggeriti sui campi 4,7:1. */
-@theme {
-  --color-fondo: #f2eee3;
-  --color-carta: #fffdf7;
-  --color-carta-alta: #e9e3d3;
-  --color-bordo: #ddd6c3;
-  --color-testo: #17150f;
-  --color-muto: #625c4c;
-  --color-suggerito: #6f6957;
-  --color-accento: #c8380c;
+/* Tema "Foresta": verde bosco con un punto di lime. I colori hanno un nome per ruolo, così si cambiano in un posto solo.
+   Qui sotto c'è il tema chiaro; più in basso lo stesso elenco di nomi per il tema scuro. Ogni componente usa solo i nomi,
+   mai un colore scritto a mano, quindi basta ridefinire i nomi per cambiare tema.
+   Contrasti misurati (chiaro / scuro): testo su carta 16,4:1 / 14,9:1, muto 6,7:1 / 8,0:1, accento 5,2:1 / 10,6:1,
+   valori suggeriti sui campi 4,9:1 / 7,1:1.
+   `static` fa scrivere tutti i colori nel CSS anche se nessuna classe li usa: i grafici li leggono con var(). */
+@theme static {
+  --color-fondo: #eef2ea;
+  --color-carta: #fbfdf8;
+  --color-carta-alta: #dfe7d6;
+  --color-bordo: #cdd8c1;
+  --color-testo: #12201a;
+  --color-muto: #4d5f52;
+  --color-suggerito: #5b6c60;
+  --color-accento: #1b7a47;
   --color-su-accento: #ffffff;
-  --color-accento-chiaro: #ff7a4d;
-  --color-inchiostro: #17150f;
-  --color-su-inchiostro: #f6f2e6;
-  --color-ok: #1f6b3a;
+  --color-accento-chiaro: #c8f25a;
+  --color-inchiostro: #12281d;
+  --color-su-inchiostro: #eaf4e4;
+  --color-ok: #1b6e3c;
   --color-attenzione: #8a5200;
   --color-errore: #b3261e;
-  --color-grafico: #2a78d6;
+  --color-grafico: #2a6fd0;
+  /* Solo per i grafici: griglia, riga di base, testo degli assi, mirino. */
+  --color-griglia: #dbe4d1;
+  --color-linea-base: #aebba3;
+  --color-asse: #4d5f52;
+  --color-mirino: #8fa085;
 }
 
 @theme inline {
@@ -28,6 +36,78 @@
 
 :root {
   color-scheme: light;
+}
+
+/* Tema scuro. Si attiva in due modi: da solo, se il telefono è in modalità scura e la persona non ha scelto niente, oppure
+   quando il pulsante in alto mette data-theme="dark" sull'elemento html. Un data-theme="light" vince sul telefono scuro. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-fondo: #0a130e;
+  --color-carta: #121f17;
+  --color-carta-alta: #1b2d22;
+  --color-bordo: #27412f;
+  --color-testo: #e8f3e4;
+  --color-muto: #9fb8a6;
+  --color-suggerito: #8aa592;
+  --color-accento: #7fe0a0;
+  --color-su-accento: #07210f;
+  --color-accento-chiaro: #c8f25a;
+  --color-inchiostro: #1c3a29;
+  --color-su-inchiostro: #eaf4e4;
+  --color-ok: #6fdc94;
+  --color-attenzione: #f2b24c;
+  --color-errore: #ff8c85;
+  --color-grafico: #6aa9ff;
+  --color-griglia: #213428;
+  --color-linea-base: #3d5a47;
+  --color-asse: #9fb8a6;
+  --color-mirino: #55755f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-fondo: #0a130e;
+    --color-carta: #121f17;
+    --color-carta-alta: #1b2d22;
+    --color-bordo: #27412f;
+    --color-testo: #e8f3e4;
+    --color-muto: #9fb8a6;
+    --color-suggerito: #8aa592;
+    --color-accento: #7fe0a0;
+    --color-su-accento: #07210f;
+    --color-accento-chiaro: #c8f25a;
+    --color-inchiostro: #1c3a29;
+    --color-su-inchiostro: #eaf4e4;
+    --color-ok: #6fdc94;
+    --color-attenzione: #f2b24c;
+    --color-errore: #ff8c85;
+    --color-grafico: #6aa9ff;
+    --color-griglia: #213428;
+    --color-linea-base: #3d5a47;
+    --color-asse: #9fb8a6;
+    --color-mirino: #55755f;
+  }
+}
+
+/* Il pulsante del tema mostra il sole quando il tema è scuro (tocchi per schiarire) e la luna quando è chiaro. Si decide qui
+   e non nel componente, così la pagina disegnata dal server è uguale a quella del browser e non c'è nessun lampeggio. */
+.tema-sole {
+  display: none;
+}
+:root[data-theme="dark"] .tema-sole {
+  display: block;
+}
+:root[data-theme="dark"] .tema-luna {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tema-sole {
+    display: block;
+  }
+  :root:not([data-theme="light"]) .tema-luna {
+    display: none;
+  }
 }
 
 html {

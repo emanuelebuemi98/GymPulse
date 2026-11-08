@@ -1,5 +1,6 @@
 // Classi condivise, così carte, campi e pulsanti hanno lo stesso aspetto in tutta l'app.
-export const stileCarta = 'rounded-3xl border border-bordo bg-carta shadow-[0_1px_2px_rgba(23,21,15,0.06)]'
+export const stileCarta =
+  'rounded-3xl border border-bordo bg-carta shadow-[0_1px_2px_color-mix(in_srgb,var(--color-testo)_8%,transparent)]'
 
 export const stileInput =
   'w-full min-w-0 rounded-2xl border border-bordo bg-fondo px-3 py-3 text-center text-base font-semibold text-testo placeholder:font-normal placeholder:text-suggerito focus:border-accento focus:outline-none'
