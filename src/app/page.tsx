@@ -8,7 +8,15 @@ import {
   SchermataScheda,
   SchermataSessione,
 } from '@/components/benvenuto/Telefono'
-import { IconaCarica, IconaPlay, IconaScheda, IconaScudo, IconaSpunta, IconaStorico } from '@/components/icone'
+import {
+  IconaCarica,
+  IconaChevronGiu,
+  IconaPlay,
+  IconaScheda,
+  IconaScudo,
+  IconaSpunta,
+  IconaStorico,
+} from '@/components/icone'
 import { SimboloGymPulse } from '@/components/Logo'
 import { stileBottoneChiaro } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
@@ -66,7 +74,7 @@ const funzioni = [
   {
     icona: IconaScheda,
     titolo: 'Catalogo di 240 esercizi',
-    testo: 'In otto categorie: Petto, Dorsali, Spalle, Braccia, Gambe, Addome, Cardio e Riscaldamento.',
+    testo: 'In nove categorie: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio e Riscaldamento.',
   },
   {
     icona: IconaPlay,
@@ -164,16 +172,22 @@ export default async function BenvenutoPage() {
         <h2 id="titolo-funzioni" className="text-2xl font-extrabold tracking-tight">
           Tutto quello che fa
         </h2>
-        <ul className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+        <p className="text-muto">Tocca una voce per leggere come funziona.</p>
+        {/* Ogni voce è un <details>: si apre e si chiude con un tocco, da sola, anche da tastiera. Le voci sono indipendenti,
+            quindi se ne possono tenere aperte più d'una. items-start: aprirne una non allunga quella accanto. */}
+        <ul className="grid items-start gap-3 sm:grid-cols-2">
           {funzioni.map(({ icona: Icona, titolo, testo }) => (
-            <li key={titolo} className="flex gap-3">
-              <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-2xl bg-carta-alta text-accento">
-                <Icona className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <h3 className="font-extrabold">{titolo}</h3>
-                <p className="text-sm text-muto">{testo}</p>
-              </div>
+            <li key={titolo}>
+              <details className="group rounded-2xl border border-bordo bg-carta">
+                <summary className="flex cursor-pointer list-none items-center gap-3 rounded-2xl p-3 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accento [&::-webkit-details-marker]:hidden">
+                  <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-xl bg-carta-alta text-accento">
+                    <Icona className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1 font-extrabold">{titolo}</span>
+                  <IconaChevronGiu className="size-5 shrink-0 text-muto transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+                </summary>
+                <p className="px-3 pb-3 pl-[4.25rem] text-sm text-muto">{testo}</p>
+              </details>
             </li>
           ))}
         </ul>
@@ -184,7 +198,7 @@ export default async function BenvenutoPage() {
 
       <section className="space-y-4 rounded-3xl bg-inchiostro p-6 text-su-inchiostro">
         <h2 className="text-2xl font-extrabold tracking-tight">Pronto per la prima seduta?</h2>
-        <p className="text-su-inchiostro/80">Ti servono un nome utente, un&apos;email per il recupero della password e due minuti.</p>
+        <p className="text-su-inchiostro/80">Ti servono un nome utente, un indirizzo Gmail per il recupero della password e un minuto.</p>
         <div className="flex flex-wrap gap-3">
           <Link
             href="/login/registrati"
