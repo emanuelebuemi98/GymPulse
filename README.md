@@ -18,10 +18,10 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Tema chiaro e scuro** | Il pulsante con il sole e la luna in alto a destra (anche nelle pagine di accesso) cambia il tema. La prima volta si parte da quello del telefono; dopo il primo tocco la scelta si ricorda in quel browser (`localStorage`, chiave `gympulse_tema`). I colori si chiamano per ruolo e stanno tutti in `src/app/globals.css`; i grafici li leggono da lì. Tema "Foresta": verde bosco con un punto di lime. |
 | **Piè di pagina** | In fondo a tutte le pagine, anche dentro l'app, c'è «App ideata e creata da Emanuele Buemi». Sta nel layout (`PiePagina.tsx`), quindi si cambia in un posto solo. Sotto il piè di pagina resta lo spazio per il timer di recupero, fisso in basso durante la sessione, che altrimenti coprirebbe il nome. |
 | **Logo e icone** | Una kettlebell con il battito dentro. Il disegno è in `public/icon.svg`, da cui sono ricavate le icone PNG (192, 512, "maskable" per Android e 180 per la schermata Home di iPhone); il componente `Logo.tsx` lo riusa con i colori del tema. |
-| **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori. L'email si conferma con un codice e l'account nasce solo dopo il codice giusto. Ogni persona vede solo i propri dati. |
+| **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email Gmail** e password: sono tutti obbligatori, in un solo modulo e **senza nessun codice da ricopiare**: l'account nasce subito. Dell'email si controlla solo che abbia la forma di un indirizzo Gmail vero (`@gmail.com`, solo lettere, numeri e punti, senza `+`): che sia davvero di chi la scrive non si verifica. Ogni persona vede solo i propri dati. |
 | **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
 | **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. La pagina della giornata mostra per ogni esercizio serie × ripetizioni **e il tempo di recupero**  e l'ultimo carico usato. |
-| **Catalogo degli esercizi** | Gli esercizi **non si scrivono più a mano**: si scelgono da un catalogo di **240 esercizi**, diviso in otto categorie (**Petto, Dorsali, Spalle, Braccia, Gambe, Addome, Cardio, Riscaldamento**). Nell'elenco si cerca per nome (italiano, inglese o altri nomi, senza badare agli accenti) e si filtra per categoria. Il nome italiano è in evidenza e l'inglese, più piccolo, sta sotto. La categoria è quella del catalogo e non si cambia. Il catalogo è nel database (tabella `CatalogoEsercizio`) e si carica dal file `prisma/dati/catalogo-esercizi.json` con `npm run db:catalogo`: per aggiungere un esercizio si aggiunge una voce al file e si rilancia il comando. |
+| **Catalogo degli esercizi** | Gli esercizi **non si scrivono più a mano**: si scelgono da un catalogo di **240 esercizi**, diviso in nove categorie (**Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento**). Nell'elenco si cerca per nome (italiano, inglese o altri nomi, senza badare agli accenti) e si filtra per categoria. Il nome italiano è in evidenza e l'inglese, più piccolo, sta sotto. La categoria è quella del catalogo e non si cambia. Il catalogo è nel database (tabella `CatalogoEsercizio`) e si carica dal file `prisma/dati/catalogo-esercizi.json` con `npm run db:catalogo`: per aggiungere un esercizio si aggiunge una voce al file e si rilancia il comando. |
 | **Come si fa** | Sotto ogni esercizio, nella scheda e nella sessione, il pulsante **Come si fa** apre i passi dell'esecuzione e le accortezze da avere. I testi li dà il database a richiesta (non viaggiano con la pagina). Sono scritti in italiano, con parole nostre, a partire da pagine italiane lette, da un dataset pubblico inglese tradotto (free-exercise-db, licenza Unlicense) e, per una parte degli esercizi, dalla sola conoscenza generale perché non si è trovata una fonte leggibile. Tutti i 240 testi sono stati poi riletti e corretti (ortografia, presa «inversa» al posto di «supina», «addome» al posto di «core»), e quelli che erano rimasti di un esercizio sostituito sono stati riscritti. **Non sono consigli di un istruttore**: per i movimenti tecnici e i carichi pesanti c'è sempre l'invito a impararli con un istruttore. Se per l'esercizio c'è un'immagine, compare nel riquadro. |
 | **Immagini degli esercizi** | Un'immagine per esercizio, nella cartella `public/esercizi`: JPEG quadrati di **200 × 200** punti con lo sfondo bianco, chiamati con il numero e lo slug dell'esercizio (`35_push-up.jpg`; lo script accetta anche `.png` e `.webp`, e il solo slug o il solo numero). Il numero e lo slug si trovano nel file `prisma/dati/catalogo-esercizi.json`. Per aggiungerne una basta mettere il file nella cartella e rilanciare `npm run db:catalogo`: lo script ritrova i file da solo, segnala i nomi che non corrispondono a nessun esercizio e i doppioni. Nell'app l'immagine compare nel riquadro **Come si fa** e accanto al nome nella scheda, nella sessione, nell'editor della scheda e nello storico, sempre alla sua grandezza o più piccola (mai ingrandita, perché sfocherebbe). **Controlla i diritti**: il repository è pubblico, quindi le immagini vanno tenute nel repository solo se si ha il permesso di usarle. |
 | **Quante giornate vuoi** | Il numero di giornate non è fisso: da **1 a 7**, a seconda di quante volte ti alleni a settimana. Dalla pagina Scheda il **+** aggiunge la giornata successiva (B, C, D, …) e "Togli la giornata" la toglie, finché ne resta una. Togliendo una giornata che ha già sedute registrate, le sedute **non si perdono**: restano nello storico, nei progressi e nell'export, e la giornata sparisce solo dalla scheda. |
@@ -35,7 +35,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
 | **Progressi: panoramica** | Sedute per settimana (le settimane senza sedute ci sono, a zero), **kg per categoria** di una settimana, sedute per giornata e gli ultimi record. |
 | **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, peso totale per seduta e ripetizioni totali per seduta (nelle sedute con ripetizioni non registrate un avviso lo dice). Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri, e quello del peso totale mostra anche la somma. |
-| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per categoria (le cinque con kg: Petto, Dorsali, Spalle, Braccia, Gambe; Addome, Cardio e Riscaldamento non ci sono) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su una categoria (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza categoria (di prima del catalogo) non entrano nelle categorie: i loro kg compaiono a parte, sotto il grafico. |
+| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per categoria (le sei con kg: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei; Addome, Cardio e Riscaldamento non ci sono) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su una categoria (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza categoria (di prima del catalogo) non entrano nelle categorie: i loro kg compaiono a parte, sotto il grafico. |
 | **Durata della seduta** | Per ogni seduta puoi scrivere, se vuoi, quanti minuti è durata: compare nel dettaglio e nell'elenco dello storico. Non c'è nessun collegamento con orologi o altre app. |
 | **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola) e lo reimporti. I file esportati quando c'erano ancora i dati dell'orologio si importano lo stesso: le colonne dei battiti e delle calorie vengono ignorate. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
 
@@ -109,7 +109,7 @@ git checkout dev
 
    Senza `AUTH_SECRET` nessuno può accedere: l'accesso resta chiuso.
 
-   **Email (registrazione e recupero della password).** Senza un servizio email configurato la registrazione e il recupero sono spenti, e l'app lo dice. Per provare in locale senza mandare nulla aggiungi al `.env`:
+   **Email (recupero della password e cambio dell'indirizzo).** Senza un servizio email configurato il recupero e il cambio dell'indirizzo sono spenti, e l'app lo dice. La registrazione funziona comunque, perché non manda email. Per provare in locale senza mandare nulla aggiungi al `.env`:
 
    ```env
    EMAIL_PROVIDER="console"
@@ -206,6 +206,8 @@ GymPulse/
 │   │   ├── 20261103190000_catalogo_esercizi/         # catalogo degli esercizi e dieci categorie al posto dei sette gruppi
 │   │   ├── 20261102100000_senza_dati_orologio/       # via i battiti e le calorie dell'orologio
 │   │   ├── 20261108120000_categorie_riscaldamento/   # otto categorie: "altri" diventa "riscaldamento", via olimpico e corpo intero
+│   │   ├── 20261108150000_registrazione_senza_codice/ # via la tabella delle registrazioni in attesa del codice
+│   │   ├── 20261108180000_categoria_glutei/          # nasce la categoria "glutei", separata da "gambe": nove categorie
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account o cambia la password
@@ -250,7 +252,7 @@ GymPulse/
 │   │   ├── SelettoreEsercizio.tsx                    # menu per scegliere l'esercizio nei progressi
 │   │   ├── TabGiorni.tsx                             # scelta A / B / C
 │   │   ├── NavSuperiore.tsx                          # menu in alto
-│   │   ├── FormLogin.tsx, FormRegistrazione.tsx      # moduli di accesso e registrazione (a due passi, con il codice per email)
+│   │   ├── FormLogin.tsx, FormRegistrazione.tsx      # moduli di accesso e registrazione (a un passo)
 │   │   ├── FormRecupero.tsx, FormEmail.tsx           # recupero della password e email nell'Account
 │   │   ├── CsvSedute.tsx                             # esporta e importa le sedute in CSV
 │   │   ├── EliminaSessione.tsx                       # pulsante per eliminare una seduta
@@ -279,11 +281,11 @@ Dentro `src/lib/` (33 file):
 | Gruppo | File |
 |---|---|
 | Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account) |
-| Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (codici e registrazioni in attesa nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi) |
+| Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (i codici nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi e di quelli Gmail) |
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, peso totale, carico, record), `panoramica.ts` (sedute per settimana, sedute per giornata, kg per gruppo muscolare), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
-| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le otto categorie), `tema.ts` (dove si ricorda il tema scelto), `bozza.ts` (la sessione in corso nel browser) |
+| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le nove categorie), `tema.ts` (dove si ricorda il tema scelto), `bozza.ts` (la sessione in corso nel browser) |
 
 ## Modello dei dati
 
@@ -295,18 +297,17 @@ In ogni tabella l'`id` è la prima colonna.
 |---|---|---|
 | `User` | `id`, `fullName`, `username`, `passwordHash`, `email` | numero progressivo |
 | `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | chiave primaria composta (id, userId); coppia unica per persona |
-| `Esercizio` | `id`, `userId`, `nome`, `categoria` (una delle otto chiavi, es. `petto`, oppure vuota), `catalogoId` (la voce del catalogo, vuoto per gli esercizi personali di prima) | numero progressivo |
+| `Esercizio` | `id`, `userId`, `nome`, `categoria` (una delle nove chiavi, es. `petto`, oppure vuota), `catalogoId` (la voce del catalogo, vuoto per gli esercizi personali di prima) | numero progressivo |
 | `CatalogoEsercizio` | `id`, `slug`, `nomeIt`, `nomeEn`, `categoria`, `attrezzatura`, `muscoloPrincipale`, `muscoliSecondari`, `tipoMovimento`, `immagine`, `esecuzione`, `accortezze`, `alias` | numero progressivo; uguale per tutti, non modificabile dall'app |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
 | `Sessione` | `id`, `userId`, `giornoId`, `data`, `note`, `durataMinuti`, `datiIniziali` | numero progressivo |
 | `SerieEseguita` | `id`, `userId`, `sessioneId`, `esercizioId`, `ordine`, `pesoKg`, `ripetizioni` | testo casuale |
 
-Due tabelle servono solo ai codici per email e non hanno dati della scheda:
+Una tabella serve solo ai codici per email e non ha dati della scheda:
 
 | Tabella | Colonne, nell'ordine | A cosa serve |
 |---|---|---|
 | `CodiceEmail` | `id`, `userId`, `scopo` (`email` o `recupero`), `email`, `chiave`, `codiceHash`, `tentativi`, `creatoIl`, `scadeIl` | i codici mandati a chi ha già un account |
-| `RegistrazioneSospesa` | `id` (uuid), `fullName`, `username`, `passwordHash`, `email`, `chiave`, `codiceHash`, `tentativi`, `creatoIl`, `scadeIl` | una registrazione in attesa del codice: l'account non esiste ancora |
 
 ## Sicurezza
 
@@ -316,8 +317,8 @@ Due tabelle servono solo ai codici per email e non hanno dati della scheda:
 - **Più account nello stesso browser.** Un browser ha un solo cookie di accesso per tutte le sue schede: se in una scheda si entra con un altro account, una scheda rimasta aperta sul primo scriverebbe nel secondo (era un difetto vero: la scheda di una persona finiva in quella di un'altra). Ora ogni pagina che scrive manda l'id dell'account per cui è stata disegnata, e il server **rifiuta** se non coincide con quello del cookie. L'id mandato dalla pagina serve solo a rifiutare: l'account su cui si scrive resta sempre quello del cookie. In pratica, in un browser si usa un account alla volta; per due account insieme servono due browser o una finestra in incognito.
 - **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
 - **CSV**: ognuno scarica solo le proprie sedute. L'importazione controlla ogni riga (data, peso, ripetizioni, durata, note), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file esportato i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
-- **Registrazione aperta a chiunque** conosca l'indirizzo, ma con l'email obbligatoria e confermata con un codice. Ci sono limiti per indirizzo di rete (3 account all'ora, 10 accessi ogni 15 minuti, 5 email di registrazione o di recupero all'ora) tenuti **in memoria**: su Vercel valgono per ogni istanza e rallentano senza bloccare del tutto.
-- **Limiti delle email nel database** (valgono per tutti i server e non si azzerano riavviando): 1 email al minuto per scopo, 3 all'ora e 10 al giorno per persona, **3 all'ora per ogni casella di destinazione** (ferma chi vuole riempire di messaggi l'indirizzo di un altro; `nome+1@gmail.com`, `n.ome@gmail.com` e `nome@googlemail.com` contano come la stessa casella) e un **tetto globale di 100 email in 24 ore** (cambia con `EMAIL_LIMITE_GIORNALIERO`). Le email sono gratis, ma il tetto protegge l'account che le spedisce: Google dichiara un massimo di 500 email al giorno e blocca l'invio per 1-24 ore se lo si supera. Se il tetto scatta, registrazione e recupero si fermano.
+- **Registrazione aperta a chiunque** conosca l'indirizzo, con l'email Gmail obbligatoria ma **non confermata**: si controlla solo la forma, e un indirizzo sbagliato rende la password non recuperabile mentre uno altrui può ricevere codici di recupero che non ha chiesto (al massimo 3 all'ora, vedi sotto). Nessuno entra nell'account di un altro per questo: il codice arriva alla casella scritta, non a chi lo chiede. Ci sono limiti per indirizzo di rete (3 account all'ora, 10 accessi ogni 15 minuti, 5 email di recupero all'ora) tenuti **in memoria**: su Vercel valgono per ogni istanza e rallentano senza bloccare del tutto.
+- **Limiti delle email nel database** (valgono per tutti i server e non si azzerano riavviando): 1 email al minuto per scopo, 3 all'ora e 10 al giorno per persona, **3 all'ora per ogni casella di destinazione** (ferma chi vuole riempire di messaggi l'indirizzo di un altro; `nome+1@gmail.com`, `n.ome@gmail.com` e `nome@googlemail.com` contano come la stessa casella) e un **tetto globale di 100 email in 24 ore** (cambia con `EMAIL_LIMITE_GIORNALIERO`). Le email sono gratis, ma il tetto protegge l'account che le spedisce: Google dichiara un massimo di 500 email al giorno e blocca l'invio per 1-24 ore se lo si supera. Se il tetto scatta, il recupero e il cambio dell'indirizzo si fermano.
 - **Codici per email**: 6 cifre, valgono 10 minuti, 5 tentativi, uso unico, e un codice nuovo sostituisce il precedente. Nel database c'è solo un HMAC, legato a persona e scopo. Un codice di recupero vale solo se è stato mandato all'indirizzo che l'account ha *in quel momento*: cambiare l'email rende inutili i codici già mandati.
 - **Gli indirizzi sono controllati con rigore** (`lib/indirizzo-email.ts`): niente spazi, virgole, virgolette, a capo o più indirizzi. L'indirizzo finisce in un'intestazione del messaggio, quindi un valore con un a capo potrebbe aggiungere destinatari. Un indirizzo insolito ma valido può essere rifiutato: meglio questo che spedire a qualcosa che non si sa leggere.
 - **L'email apre la porta all'account**: chi ha accesso alla casella può cambiare la password. Per questo collegarla o cambiarla chiede la password (togliere non si può), e il recupero risponde in modo diverso a "non esiste o senza email" solo per dire subito a chi non ne ha una che da qui non può recuperare nulla.
@@ -330,7 +331,7 @@ L'invio è in `src/lib/email.ts` e parla con un server SMTP qualunque tramite No
 
 Si può usare il **proprio Gmail personale**: non serve crearne uno apposta. Cosa comporta:
 
-- **Chi si registra vede il tuo indirizzo** come mittente (`GymPulse <tuonome@gmail.com>`), e se risponde alla email la risposta arriva a te.
+- **Chi chiede un codice (recupero o cambio email) vede il tuo indirizzo** come mittente (`GymPulse <tuonome@gmail.com>`), e se risponde alla email la risposta arriva a te.
 - **Ogni codice mandato finisce nella tua Posta inviata.**
 - **La password per le app non è la password dell'account, ma dà accesso alla tua posta** (Google la accetta per leggere e inviare con programmi esterni). Va trattata come un segreto: se esce, la si revoca dalla pagina di Google e se ne crea un'altra.
 - **Il limite di Google (500 email al giorno) è lo stesso della tua posta di tutti i giorni**: l'app si ferma a 100 al giorno (`EMAIL_LIMITE_GIORNALIERO`) proprio per non arrivarci.
@@ -349,7 +350,7 @@ Se un giorno questi punti ti pesano, basta cambiare le due variabili con quelle 
    EMAIL_LIMITE_GIORNALIERO="100"            # facoltativa: tetto alle email in 24 ore, per tutta l'app
    ```
 
-4. Se manca qualcosa, o è scritto male, l'invio resta spento e l'app lo dice (nelle pagine di registrazione, recupero e Account) invece di fallire a metà. Nel log del server compare il motivo, senza mai l'indirizzo né il codice.
+4. Se manca qualcosa, o è scritto male, l'invio resta spento e l'app lo dice (nelle pagine di recupero e Account) invece di fallire a metà. Nel log del server compare il motivo, senza mai l'indirizzo né il codice.
 
 **Cosa ho verificato e cosa no.** Le prime due righe vengono dalle pagine di Google lette durante il lavoro:
 
@@ -378,7 +379,7 @@ Se un giorno questi punti ti pesano, basta cambiare le due variabili con quelle 
 
 1. Backup del database di tutti i giorni (`gympulse`) con `pg_dump`.
 2. Copia in un database nuovo, `gympulse_produzione`.
-3. Sulla copia si lancia lo script che toglie gli altri account, i codici email e le registrazioni in attesa. Si ferma se l'account non c'è e se lo si lancia per sbaglio su `gympulse`.
+3. Sulla copia si lancia lo script che toglie gli altri account, e i codici email. Si ferma se l'account non c'è e se lo si lancia per sbaglio su `gympulse`.
 4. `pg_dump` della copia e ripristino su Neon con la stringa diretta. Le migrazioni già applicate viaggiano nel dump (la tabella `_prisma_migrations` è una tabella normale), quindi `db:deploy` su Neon deve dire che non c'è niente da applicare.
 5. I file di dump contengono l'hash della password e l'email: restano fuori dal repository e si cancellano a fine lavoro.
 
