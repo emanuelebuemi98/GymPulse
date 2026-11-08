@@ -1861,7 +1861,7 @@
   {
     "id": 141,
     "slug": "reverse-dumbbell-lunges",
-    "nomeIt": "Affondi camminati indietro con manubri",
+    "nomeIt": "Affondi indietro con manubri",
     "nomeEn": "Reverse Dumbbell Lunges",
     "categoria": "gambe",
     "attrezzatura": "Manubri",
@@ -1869,7 +1869,10 @@
     "muscoliSecondari": "Femorali",
     "tipoMovimento": "Monopodalico",
     "esecuzione": "Parti in piedi con un manubrio per mano lungo i fianchi, busto eretto e sguardo in avanti.\nFai un passo indietro con una gamba e abbassa il bacino piegando le ginocchia, con il busto dritto.\nScendi finché il ginocchio posteriore si avvicina al pavimento, con quello anteriore sopra la caviglia.\nSpingi sul piede anteriore per risalire, espirando, e riporta il piede indietro accanto all'altro.\nRipeti con l'altra gamba, alternando o completando un lato per volta.",
-    "accortezze": "Tieni il peso sulla gamba anteriore e controlla la discesa, senza lasciarti cadere all'indietro.\nUn passo lungo coinvolge di più i glutei, uno più corto i quadricipiti: scegli in base all'obiettivo.\nMantieni busto eretto e sguardo in avanti, senza inclinarti troppo sui manubri.\nIl ginocchio anteriore resta sulla verticale della caviglia, senza superare la punta del piede."
+    "accortezze": "Tieni il peso sulla gamba anteriore e controlla la discesa, senza lasciarti cadere all'indietro.\nUn passo lungo coinvolge di più i glutei, uno più corto i quadricipiti: scegli in base all'obiettivo.\nMantieni busto eretto e sguardo in avanti, senza inclinarti troppo sui manubri.\nIl ginocchio anteriore resta sulla verticale della caviglia, senza superare la punta del piede.",
+    "alias": [
+      "Affondi camminati indietro con manubri"
+    ]
   },
   {
     "id": 142,
@@ -2203,7 +2206,7 @@
   {
     "id": 167,
     "slug": "single-leg-dumbbell-rdl",
-    "nomeIt": "Single-Leg Romanian Deadlift",
+    "nomeIt": "Stacco rumeno a una gamba con manubrio",
     "nomeEn": "Single-Leg Dumbbell RDL",
     "categoria": "gambe",
     "attrezzatura": "Manubrio",
@@ -2211,7 +2214,10 @@
     "muscoliSecondari": "Addome",
     "tipoMovimento": "Monopodalico",
     "esecuzione": "Stai in piedi su una gamba con un manubrio in mano, il ginocchio d'appoggio leggermente piegato e la schiena dritta.\nSpingi il bacino indietro e inclina il busto in avanti, mentre la gamba libera si estende dietro di te per bilanciarti.\nAbbassa il manubrio verso il pavimento lungo la gamba, fino a sentire il femorale in allungamento.\nContrai il gluteo e risali alla posizione eretta, riportando la gamba libera accanto all'altra.",
-    "accortezze": "Non incurvare la schiena in discesa: guardare avanti aiuta a mantenerla dritta.\nIl movimento nasce dal bacino che va indietro, non dalla flessione del ginocchio d'appoggio.\nPer l'equilibrio fissa un punto davanti a te e inizia con un carico leggero finché controlli il gesto.\nIl carico grava su schiena e gamba d'appoggio: aumenta il peso con gradualità."
+    "accortezze": "Non incurvare la schiena in discesa: guardare avanti aiuta a mantenerla dritta.\nIl movimento nasce dal bacino che va indietro, non dalla flessione del ginocchio d'appoggio.\nPer l'equilibrio fissa un punto davanti a te e inizia con un carico leggero finché controlli il gesto.\nIl carico grava su schiena e gamba d'appoggio: aumenta il peso con gradualità.",
+    "alias": [
+      "Single-Leg Romanian Deadlift"
+    ]
   },
   {
     "id": 168,
@@ -2337,8 +2343,8 @@
     "nomeEn": "Dumbbell Sumo Deadlift",
     "categoria": "gambe",
     "attrezzatura": "Manubrio",
-    "muscoloPrincipale": "Quadricipiti",
-    "muscoliSecondari": "Gran Adduttore, Glutei, Erettori Spinali",
+    "muscoloPrincipale": "Glutei, Gran Adduttore",
+    "muscoliSecondari": "Quadricipiti, Erettori Spinali",
     "tipoMovimento": "Sollevamento da Terra",
     "esecuzione": "Posizionati con i piedi molto larghi, ben oltre le spalle, e le punte rivolte verso l'esterno.\nMetti un manubrio in verticale sul pavimento, tra i piedi.\nScendi in accosciata con la schiena dritta e afferra con entrambe le mani l'impugnatura sotto il disco superiore.\nSpingi con forza sui talloni ed estendi insieme ginocchia e anche per sollevare il manubrio fino a stare in piedi, contraendo i glutei in alto.\nRiporta il manubrio a terra con controllo, spingendo i fianchi indietro e piegando le ginocchia.",
     "accortezze": "Tieni il petto aperto e la schiena dritta, per non sovraccaricare la zona lombare.\nTieni le ginocchia in linea con le punte dei piedi durante tutta la spinta.\nLascia le braccia distese: non tirare il manubrio con le braccia."
@@ -2350,8 +2356,8 @@
     "nomeEn": "Sumo Deadlift",
     "categoria": "gambe",
     "attrezzatura": "Bilanciere",
-    "muscoloPrincipale": "Quadricipiti",
-    "muscoliSecondari": "Gran Adduttore, Glutei, Erettori Spinali",
+    "muscoloPrincipale": "Glutei, Gran Adduttore",
+    "muscoliSecondari": "Quadricipiti, Erettori Spinali",
     "tipoMovimento": "Sollevamento da Terra",
     "esecuzione": "Avvicinati al bilanciere a terra con i piedi molto larghi e le punte verso l'esterno; il bilanciere sta sopra la metà del piede.\nPiega le anche e afferra il bilanciere con le braccia dentro le gambe e sotto le spalle; presa prona, mista o hook.\nPrendi fiato, abbassa il bacino e tieni petto alto e sguardo avanti, con il peso sulla parte posteriore dei piedi.\nSpingi il pavimento allargando i piedi e distendi anche e ginocchia; passate le ginocchia, porta i fianchi verso il bilanciere.\nRiporta il bilanciere a terra con controllo, piegando le anche.",
     "accortezze": "Non tirare con le braccia: lasciale lunghe e rilassate e lascia che siano gambe e fianchi a sollevare.\nNon incurvare la schiena: petto alto e sguardo avanti dall'inizio alla fine.\nTieni le ginocchia in linea con le punte dei piedi mentre spingi.\nIl carico grava su schiena e ginocchia: aumenta il peso con gradualità e interrompi la serie se la tecnica cede."
@@ -2773,7 +2779,7 @@
     "nomeIt": "Sollevamento gambe alla sedia",
     "nomeEn": "Captain's Chair Leg Raise",
     "categoria": "addome",
-    "attrezzatura": "Attrezzo Parallele",
+    "attrezzatura": "Sedia del Capitano",
     "muscoloPrincipale": "Retto dell'Addome",
     "muscoliSecondari": "Flessori dell'Anca",
     "tipoMovimento": "Flessione",
