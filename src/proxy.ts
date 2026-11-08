@@ -6,12 +6,12 @@ import { COOKIE_SESSIONE, INTESTAZIONE_PERCORSO, tokenValido } from '@/lib/sessi
 export function proxy(richiesta: NextRequest) {
   const { pathname, search } = richiesta.nextUrl
 
-  // Le pagine pubbliche: la presentazione dell'app (/) e le tre dell'accesso (entra, registrati, recupera la password).
+  // Le pagine pubbliche: la presentazione dell'app (/), la registrazione e le due dell'accesso (entra, recupera la password).
   // La presentazione, se sei già dentro, ti manda alla tua home: lo fa la pagina stessa, che sa chi sei.
   if (
     pathname === '/' ||
     pathname === '/login' ||
-    pathname === '/login/registrati' ||
+    pathname === '/registrati' ||
     pathname === '/login/recupera'
   ) {
     return NextResponse.next()

@@ -57,7 +57,7 @@ const passi = [
   {
     titolo: 'Costruisci la scheda',
     testo:
-      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 240, con ricerca per nome e filtro per categoria. Per ognuno decidi serie, ripetizioni e recupero.',
+      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 246, con ricerca per nome e filtro per categoria. Per ognuno decidi serie, ripetizioni e recupero.',
   },
   {
     titolo: 'Allenati',
@@ -73,7 +73,7 @@ const passi = [
 const funzioni = [
   {
     icona: IconaScheda,
-    titolo: 'Catalogo di 240 esercizi',
+    titolo: 'Catalogo di 246 esercizi',
     testo: 'In nove categorie: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio e Riscaldamento.',
   },
   {
@@ -122,7 +122,7 @@ export default async function BenvenutoPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
-            href="/login/registrati"
+            href="/registrati"
             className="inline-flex items-center justify-center rounded-full bg-accento px-6 py-3.5 font-extrabold text-su-accento transition active:opacity-80"
           >
             Crea account
@@ -201,7 +201,7 @@ export default async function BenvenutoPage() {
         <p className="text-su-inchiostro/80">Ti servono un nome utente, un indirizzo Gmail per il recupero della password e un minuto.</p>
         <div className="flex flex-wrap gap-3">
           <Link
-            href="/login/registrati"
+            href="/registrati"
             className="inline-flex items-center justify-center rounded-full bg-accento-chiaro px-6 py-3.5 font-extrabold text-inchiostro transition active:opacity-80"
           >
             Crea account

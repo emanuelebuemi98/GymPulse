@@ -53,7 +53,7 @@ export default async function LoginPage({ searchParams }: Props) {
         </p>
         <p>
           Non hai un account?{' '}
-          <Link href="/login/registrati" className="font-semibold text-accento underline">
+          <Link href="/registrati" className="font-semibold text-accento underline">
             Creane uno
           </Link>
         </p>
