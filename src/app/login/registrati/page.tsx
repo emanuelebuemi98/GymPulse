@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { FormRegistrazione } from '@/components/FormRegistrazione'
+import { LogoGymPulse } from '@/components/Logo'
 import { stileCarta } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
 import { emailAttiva } from '@/lib/email'
@@ -12,15 +13,14 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Crea account' }
 
 export default async function RegistratiPage() {
-  if (await haAccesso()) redirect('/')
+  if (await haAccesso()) redirect('/home')
 
   return (
     <div className="mx-auto max-w-sm space-y-6 pt-10">
       <header className="space-y-2 text-center">
-        <p className="flex items-center justify-center gap-2 text-lg font-extrabold tracking-tight">
-          <span aria-hidden="true" className="size-2.5 rounded-full bg-accento" />
-          GymPulse
-        </p>
+        <Link href="/" aria-label="GymPulse, torna alla presentazione">
+          <LogoGymPulse />
+        </Link>
         <h1 className="text-3xl font-extrabold tracking-tight">Crea account</h1>
         <p className="text-muto">Avrai la tua scheda e il tuo storico, separati da quelli degli altri.</p>
       </header>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { FormLogin } from '@/components/FormLogin'
+import { LogoGymPulse } from '@/components/Logo'
 import { stileCarta } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
 import { percorsoSicuro, valutaSegreto } from '@/lib/sessione-auth'
@@ -27,10 +28,9 @@ export default async function LoginPage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-sm space-y-6 pt-10">
       <header className="space-y-2 text-center">
-        <p className="flex items-center justify-center gap-2 text-lg font-extrabold tracking-tight">
-          <span aria-hidden="true" className="size-2.5 rounded-full bg-accento" />
-          GymPulse
-        </p>
+        <Link href="/" aria-label="GymPulse, torna alla presentazione">
+          <LogoGymPulse />
+        </Link>
         <h1 className="text-3xl font-extrabold tracking-tight">Accedi</h1>
         <p className="text-muto">Il tuo diario di allenamento è privato.</p>
       </header>

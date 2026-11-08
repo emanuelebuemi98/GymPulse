@@ -471,8 +471,9 @@ async function reimposta(dati: FormData): Promise<StatoRecupero> {
   redirect('/login?r=1')
 }
 
+// Dopo l'uscita si torna alla presentazione dell'app (/), non al modulo di accesso.
 export async function esci(): Promise<void> {
   const archivio = await cookies()
   archivio.delete(COOKIE_SESSIONE)
-  redirect('/login')
+  redirect('/')
 }
