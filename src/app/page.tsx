@@ -1,124 +1,202 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { CsvSedute } from '@/components/CsvSedute'
-import { IconaPlay } from '@/components/icone'
-import { SessioneInCorso } from '@/components/SessioneInCorso'
-import { stileCarta, stileEtichetta } from '@/components/stili'
-import { giornoConsigliato } from '@/lib/allenamento'
-import { formatDataLunga } from '@/lib/formato'
-import { leggiScheda } from '@/lib/scheda-db'
-import { riepilogoHome } from '@/lib/storico'
-import { richiediUtente } from '@/lib/accesso'
+import { redirect } from 'next/navigation'
+import { GalleriaSchermate } from '@/components/benvenuto/GalleriaSchermate'
+import {
+  SchermataComeSiFa,
+  SchermataProgressi,
+  SchermataScheda,
+  SchermataSessione,
+} from '@/components/benvenuto/Telefono'
+import { IconaCarica, IconaPlay, IconaScheda, IconaScudo, IconaSpunta, IconaStorico } from '@/components/icone'
+import { SimboloGymPulse } from '@/components/Logo'
+import { stileBottoneChiaro } from '@/components/stili'
+import { haAccesso } from '@/lib/accesso'
 
-// Legge il database a ogni richiesta: il giorno consigliato cambia dopo ogni seduta.
+// Legge il cookie a ogni richiesta: chi è già dentro non vede la presentazione.
 export const dynamic = 'force-dynamic'
 
-export default async function HomePage() {
-  const userId = await richiediUtente()
-  const [giorni, { totale, ultima }] = await Promise.all([leggiScheda(userId), riepilogoHome(userId)])
+export const metadata: Metadata = {
+  title: { absolute: 'GymPulse · il diario di allenamento' },
+  description:
+    'Costruisci la tua scheda, registra kg e ripetizioni serie per serie, segui i tempi di recupero e guarda i progressi.',
+}
 
-  if (giorni.length === 0) {
-    return (
-      <div className={`${stileCarta} space-y-2 p-5`}>
-        <h1 className="text-2xl font-extrabold">Scheda vuota</h1>
-        <p className="text-muto">
-          La scheda non ha ancora nessuna giornata.{' '}
-          <Link href="/scheda" className="font-semibold text-accento underline">
-            Creane una
-          </Link>
-        </p>
-      </div>
-    )
-  }
+const schermate = [
+  {
+    titolo: 'La tua scheda',
+    testo: 'Da una a sette giornate, con gli esercizi scelti dal catalogo, le serie, le ripetizioni e il recupero.',
+    schermata: <SchermataScheda />,
+  },
+  {
+    titolo: 'In palestra',
+    testo: 'Scrivi kg e ripetizioni e tocca la spunta. Parte il timer di recupero e vedi i valori dell\'ultima volta.',
+    schermata: <SchermataSessione />,
+  },
+  {
+    titolo: 'Come si fa',
+    testo: 'Ogni esercizio ha l\'immagine, i passi dell\'esecuzione e gli errori da evitare.',
+    schermata: <SchermataComeSiFa />,
+  },
+  {
+    titolo: 'I tuoi progressi',
+    testo: 'Sedute per settimana, kg per categoria e un grafico per ogni esercizio.',
+    schermata: <SchermataProgressi />,
+  },
+]
 
-  const consigliato = giornoConsigliato(giorni, ultima)
+const passi = [
+  {
+    titolo: 'Costruisci la scheda',
+    testo:
+      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 240, con ricerca per nome e filtro per categoria. Per ognuno decidi serie, ripetizioni e recupero.',
+  },
+  {
+    titolo: 'Allenati',
+    testo:
+      'La home ti dice cosa tocca oggi. Registri ogni serie e l\'app ti mostra i valori dell\'ultima volta, e quando hai completato tutte le ripetizioni ti propone il peso successivo.',
+  },
+  {
+    titolo: 'Guarda come migliori',
+    testo: 'Lo storico tiene ogni seduta. I grafici mostrano carico massimo, peso totale e ripetizioni nel tempo.',
+  },
+]
+
+const funzioni = [
+  {
+    icona: IconaScheda,
+    titolo: 'Catalogo di 240 esercizi',
+    testo: 'In otto categorie: Petto, Dorsali, Spalle, Braccia, Gambe, Addome, Cardio e Riscaldamento.',
+  },
+  {
+    icona: IconaPlay,
+    titolo: 'Timer di recupero',
+    testo: 'Parte dopo ogni serie con il tempo previsto dalla scheda, e vibra quando è finito.',
+  },
+  {
+    icona: IconaSpunta,
+    titolo: 'Non perdi niente',
+    testo: 'Se il telefono si spegne a metà allenamento, le serie confermate restano e riprendi da dove eri.',
+  },
+  {
+    icona: IconaStorico,
+    titolo: 'Giornata consigliata',
+    testo: 'Segue l\'ordine delle giornate e ogni lunedì riparte dalla prima.',
+  },
+  {
+    icona: IconaCarica,
+    titolo: 'Le tue sedute in Excel',
+    testo: 'Le esporti in un file CSV e le reimporti quando vuoi. Importare due volte lo stesso file non duplica niente.',
+  },
+  {
+    icona: IconaScudo,
+    titolo: 'Account personale',
+    testo: 'Ognuno vede solo i propri dati. Se dimentichi la password la recuperi con un codice per email.',
+  },
+]
+
+export default async function BenvenutoPage() {
+  if (await haAccesso()) redirect('/home')
 
   return (
-    <div className="space-y-7">
-      {/* Se c'è una sessione lasciata a metà (anche dopo aver chiuso il browser), si riprende da qui. */}
-      <SessioneInCorso utenteId={userId} giorni={giorni.map((giorno) => ({ id: giorno.id, titolo: giorno.titolo }))} />
-
-      {/* Prima cosa: cosa fare oggi. */}
-      <section className="relative overflow-hidden rounded-3xl bg-inchiostro p-6 text-su-inchiostro">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-4 -right-2 text-[9rem] leading-none font-extrabold text-accento-chiaro/20"
-        >
-          {consigliato.id}
-        </span>
-        <p className="text-sm font-semibold text-su-inchiostro/70">Oggi tocca a</p>
-        <h1 className="mt-1 max-w-[16rem] text-3xl leading-tight font-extrabold tracking-tight">
-          {consigliato.titolo}
-        </h1>
-        <p className="mt-1 text-sm text-su-inchiostro/70">
-          Allenamento {consigliato.id} · {consigliato.esercizi.length} esercizi
-        </p>
-        <div className="relative mt-5 flex flex-wrap items-center gap-3">
+    <div className="space-y-14">
+      {/* Prima cosa: che cos'è e come entrare. */}
+      <section className="space-y-5 pt-2">
+        <SimboloGymPulse className="size-14" />
+        <div className="space-y-3">
+          <h1 className="text-4xl leading-[1.05] font-extrabold tracking-tight text-balance">
+            Scheda, serie e progressi in un solo posto.
+          </h1>
+          <p className="max-w-prose text-lg text-muto">
+            GymPulse è il diario di allenamento per la palestra. Costruisci la tua scheda, registra kg e ripetizioni serie
+            per serie e guarda come migliori settimana dopo settimana.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
           <Link
-            href={`/sessione?r=${consigliato.id}`}
-            className="inline-flex items-center gap-2 rounded-full bg-accento-chiaro px-5 py-3 font-extrabold text-inchiostro active:opacity-80"
+            href="/login/registrati"
+            className="inline-flex items-center justify-center rounded-full bg-accento px-6 py-3.5 font-extrabold text-su-accento transition active:opacity-80"
           >
-            <IconaPlay className="size-4" />
-            Inizia
+            Crea account
           </Link>
-          <Link href={`/scheda?r=${consigliato.id}`} className="px-1 py-3 text-sm font-semibold text-su-inchiostro underline underline-offset-4">
-            Vedi la scheda
+          <Link href="/login" className={`${stileBottoneChiaro} !px-6 !py-3.5 !text-base !font-bold`}>
+            Accedi
           </Link>
         </div>
       </section>
 
-      {/* Numeri e ultima seduta in una riga sola. */}
-      <section aria-label="Riepilogo" className="flex items-stretch gap-3">
-        <div className={`${stileCarta} w-28 shrink-0 p-4`}>
-          <p className="text-4xl leading-none font-extrabold text-accento">{totale}</p>
-          <p className="mt-1 text-xs font-semibold text-muto">{totale === 1 ? 'seduta registrata' : 'sedute registrate'}</p>
+      {/* Le schermate dell'app: quattro schede piccole, da toccare per vederle a grandezza intera. */}
+      <section aria-labelledby="titolo-schermate" className="space-y-4">
+        <div className="space-y-1">
+          <h2 id="titolo-schermate" className="text-2xl font-extrabold tracking-tight">
+            Dentro l&apos;app
+          </h2>
+          <p className="text-muto">Tocca una scheda per vederla a grandezza intera.</p>
         </div>
-        {ultima ? (
-          <Link href={`/storico/${ultima.id}`} className={`${stileCarta} min-w-0 flex-1 space-y-1 p-4 active:bg-carta-alta`}>
-            <p className="text-xs font-semibold text-muto">Ultima seduta</p>
-            <p className="truncate font-extrabold">{formatDataLunga(ultima.data)}</p>
-            <p className="truncate text-sm text-muto">
-              {ultima.giornoId} · {ultima.giornoTitolo}
-            </p>
-            {ultima.datiIniziali && <span className={stileEtichetta}>Dati iniziali</span>}
-          </Link>
-        ) : (
-          <div className={`${stileCarta} flex-1 p-4 text-sm text-muto`}>Nessuna seduta ancora: inizia dal pulsante qui sopra.</div>
-        )}
+        <GalleriaSchermate voci={schermate} />
+        <p className="text-xs text-muto">Le schermate sono un esempio, con dati di prova.</p>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-extrabold">Le tue giornate</h2>
-        <ul className="space-y-2">
-          {giorni.map((giorno) => {
-            const èConsigliato = giorno.id === consigliato.id
-            return (
-              <li key={giorno.id}>
-                <Link
-                  href={`/scheda?r=${giorno.id}`}
-                  className={`${stileCarta} flex items-center gap-3 overflow-hidden py-3 pr-4 pl-0 active:bg-carta-alta`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`h-12 w-1.5 shrink-0 rounded-r-full ${èConsigliato ? 'bg-accento' : 'bg-bordo'}`}
-                  />
-                  <span className="w-6 shrink-0 text-center text-xl font-extrabold">{giorno.id}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-bold">{giorno.titolo}</span>
-                    <span className="block text-xs text-muto">
-                      {giorno.esercizi.length} esercizi{èConsigliato && ' · consigliata'}
-                    </span>
-                  </span>
-                  <span aria-hidden="true" className="text-muto">
-                    ›
-                  </span>
-                </Link>
-              </li>
-            )
-          })}
+      {/* Come si usa: un percorso vero, in ordine. */}
+      <section aria-labelledby="titolo-passi" className="space-y-4">
+        <h2 id="titolo-passi" className="text-2xl font-extrabold tracking-tight">
+          Come funziona
+        </h2>
+        <ol className="space-y-5">
+          {passi.map((passo, i) => (
+            <li key={passo.titolo} className="flex gap-4">
+              <span
+                aria-hidden="true"
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-inchiostro font-extrabold text-accento-chiaro tabular-nums"
+              >
+                {i + 1}
+              </span>
+              <div className="min-w-0 space-y-1">
+                <h3 className="text-lg font-extrabold">{passo.titolo}</h3>
+                <p className="text-muto">{passo.testo}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section aria-labelledby="titolo-funzioni" className="space-y-4">
+        <h2 id="titolo-funzioni" className="text-2xl font-extrabold tracking-tight">
+          Tutto quello che fa
+        </h2>
+        <ul className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+          {funzioni.map(({ icona: Icona, titolo, testo }) => (
+            <li key={titolo} className="flex gap-3">
+              <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-2xl bg-carta-alta text-accento">
+                <Icona className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-extrabold">{titolo}</h3>
+                <p className="text-sm text-muto">{testo}</p>
+              </div>
+            </li>
+          ))}
         </ul>
+        <p className="text-sm text-muto">
+          Chiaro o scuro, come preferisci: il pulsante con il sole e la luna in alto a destra cambia il tema.
+        </p>
       </section>
 
-      <CsvSedute utenteId={userId} />
+      <section className="space-y-4 rounded-3xl bg-inchiostro p-6 text-su-inchiostro">
+        <h2 className="text-2xl font-extrabold tracking-tight">Pronto per la prima seduta?</h2>
+        <p className="text-su-inchiostro/80">Ti servono un nome utente, un&apos;email per il recupero della password e due minuti.</p>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/login/registrati"
+            className="inline-flex items-center justify-center rounded-full bg-accento-chiaro px-6 py-3.5 font-extrabold text-inchiostro transition active:opacity-80"
+          >
+            Crea account
+          </Link>
+          <Link href="/login" className="inline-flex items-center px-3 py-3.5 font-bold underline underline-offset-4">
+            Ho già un account
+          </Link>
+        </div>
+      </section>
     </div>
   )
 }

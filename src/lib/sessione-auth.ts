@@ -123,11 +123,12 @@ export function tokenValido(token: string | undefined, segreto: string | undefin
 }
 
 // Dove tornare dopo il login. Solo percorsi interni: un indirizzo come "//sito.com" o "/\sito.com"
-// porterebbe fuori dall'app (open redirect).
+// porterebbe fuori dall'app (open redirect). Se non c'è un posto valido si va alla home dell'app (/home), non alla
+// presentazione (/), che serve a chi non è ancora entrato.
 export function percorsoSicuro(da: unknown): string {
-  if (typeof da !== 'string' || da.length === 0 || da.length > 500) return '/'
-  if (!da.startsWith('/') || da.startsWith('//') || da.includes('\\')) return '/'
-  if (/[\u0000-\u001f\u007f]/.test(da)) return '/'
-  if (da === '/login' || da.startsWith('/login?') || da.startsWith('/login/')) return '/'
+  if (typeof da !== 'string' || da.length === 0 || da.length > 500) return '/home'
+  if (!da.startsWith('/') || da.startsWith('//') || da.includes('\\')) return '/home'
+  if (/[\u0000-\u001f\u007f]/.test(da)) return '/home'
+  if (da === '/' || da === '/login' || da.startsWith('/login?') || da.startsWith('/login/')) return '/home'
   return da
 }

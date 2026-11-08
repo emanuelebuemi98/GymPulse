@@ -4,14 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const voci = [
-  { href: '/', etichetta: 'Home', radici: [] as string[] },
+  { href: '/home', etichetta: 'Home', radici: [] as string[] },
   { href: '/scheda', etichetta: 'Scheda', radici: ['/sessione'] },
   { href: '/storico', etichetta: 'Storico', radici: [] },
   { href: '/progressi', etichetta: 'Progressi', radici: [] },
 ]
 
 function èAttiva(percorso: string, href: string, radici: string[]): boolean {
-  if (href === '/') return percorso === '/'
   return [href, ...radici].some((radice) => percorso === radice || percorso.startsWith(`${radice}/`))
 }
 

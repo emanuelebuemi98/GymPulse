@@ -148,6 +148,6 @@ async function conferma(userId: number, dati: FormData): Promise<StatoEmail> {
   ])
 
   revalidatePath('/account')
-  revalidatePath('/')
+  revalidatePath('/home')
   return { passo: 'indirizzo', errore: null, messaggio: 'Email collegata.', email: null }
 }

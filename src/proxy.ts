@@ -1,13 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { COOKIE_SESSIONE, INTESTAZIONE_PERCORSO, tokenValido } from '@/lib/sessione-auth'
 
-// Prima porta dell'app: senza un cookie di sessione valido si può vedere solo /login.
+// Prima porta dell'app: senza un cookie di sessione valido si vedono solo le pagine pubbliche.
 // Gli stessi controlli si ripetono in pagine, azioni e /api/export (vedi lib/accesso.ts).
 export function proxy(richiesta: NextRequest) {
   const { pathname, search } = richiesta.nextUrl
 
-  // Le tre pagine pubbliche: accesso, registrazione e recupero della password.
-  if (pathname === '/login' || pathname === '/login/registrati' || pathname === '/login/recupera') {
+  // Le pagine pubbliche: la presentazione dell'app (/) e le tre dell'accesso (entra, registrati, recupera la password).
+  // La presentazione, se sei già dentro, ti manda alla tua home: lo fa la pagina stessa, che sa chi sei.
+  if (
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname === '/login/registrati' ||
+    pathname === '/login/recupera'
+  ) {
     return NextResponse.next()
   }
 
@@ -30,7 +36,11 @@ export function proxy(richiesta: NextRequest) {
   return NextResponse.redirect(login, 303)
 }
 
-// Fuori dal controllo restano solo i file statici: l'icona e il manifest vengono richiesti dal browser senza cookie.
+// Fuori dal controllo restano solo i file statici: icone e manifest vengono richiesti dal browser senza cookie, e le
+// immagini degli esercizi compaiono anche nella presentazione, che si vede prima di fare l'accesso. Sono uguali per tutti
+// e non contengono dati di nessuno.
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|icon.svg|manifest.webmanifest).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|icon\\.svg|icon-.*\\.png|apple-icon\\.png|manifest\\.webmanifest|esercizi/).*)',
+  ],
 }

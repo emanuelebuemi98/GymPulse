@@ -1,18 +1,36 @@
 {
   "name": "GymPulse",
   "short_name": "GymPulse",
-  "description": "Registra i tuoi allenamenti in palestra.",
+  "description": "Il tuo diario di allenamento: scheda, sedute, storico e progressi.",
   "lang": "it",
-  "start_url": "/",
+  "start_url": "/home",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#eef2ea",
+  "theme_color": "#1b7a47",
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
