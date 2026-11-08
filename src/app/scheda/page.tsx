@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AggiungiGiornata } from '@/components/AggiungiGiornata'
 import { IconaPlay, IconaRegolazioni } from '@/components/icone'
+import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { RimuoviGiornata } from '@/components/RimuoviGiornata'
 import { stileBottoneChiaro, stileCarta } from '@/components/stili'
 import { TabGiorni } from '@/components/TabGiorni'
@@ -80,6 +81,7 @@ export default async function SchedaPage({ searchParams }: Props) {
           return (
             <li key={esercizio.id} className="flex items-center gap-3 px-4 py-3.5">
               <span className="w-6 shrink-0 text-sm font-bold text-muto tabular-nums">{indice + 1}</span>
+              <ImmagineEsercizio src={esercizio.immagine} nome={esercizio.nome} className="size-20" />
               <span className="min-w-0 flex-1">
                 <span className="block font-bold">{esercizio.nome}</span>
                 {esercizio.nomeEn && <span className="block text-xs text-muto">{esercizio.nomeEn}</span>}

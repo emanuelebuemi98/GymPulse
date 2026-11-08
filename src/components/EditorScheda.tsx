@@ -14,6 +14,7 @@ import {
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
 import type { VoceElenco } from '@/lib/tipi'
 import { ElencoEsercizi } from './ElencoEsercizi'
+import { ImmagineEsercizio } from './ImmagineEsercizio'
 import { IconaCestino, IconaGiu, IconaSu } from './icone'
 import { IstruzioniEsercizio } from './IstruzioniEsercizio'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
@@ -95,7 +96,8 @@ export function EditorScheda({ utenteId, giorno, elenco }: Props) {
         {voci.map((voce, indice) => (
           <li key={voce.chiave} className={`${stileCarta} space-y-3 p-4`}>
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
+              <ImmagineEsercizio src={voce.immagine} nome={voce.nome} className="size-16" />
+              <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-extrabold leading-tight">{voce.nome}</h2>
                 {voce.nomeEn !== '' && <p className="text-xs text-muto">{voce.nomeEn}</p>}
               </div>

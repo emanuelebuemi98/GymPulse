@@ -14,6 +14,7 @@ export type VoceForm = {
   catalogoId: number | null
   nome: string
   nomeEn: string
+  immagine: string
   // La categoria dell'esercizio ('petto'), solo da mostrare: la dà il catalogo e non si cambia da qui.
   categoria: string
   tipo: TipoVoce
@@ -64,6 +65,7 @@ export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
     catalogoId: null,
     nome: esercizio.nome,
     nomeEn: esercizio.nomeEn,
+    immagine: esercizio.immagine,
     categoria: esercizio.categoria,
     tipo: o.tipo,
     ...(o.tipo === 'serie'
@@ -90,6 +92,7 @@ export function nuovaVoceForm(chiave: string, scelta: VoceElenco): VoceForm {
     catalogoId: scelta.id === null ? scelta.catalogoId : null,
     nome: scelta.nome,
     nomeEn: scelta.nomeEn,
+    immagine: scelta.immagine,
     categoria: scelta.categoria,
     tipo: 'serie',
   }

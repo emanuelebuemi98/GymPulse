@@ -11,6 +11,7 @@ import { parseIntero, parseNumero } from '@/lib/numeri'
 import { suggerimentoSerie, suggerisciCarichi, type SuggerimentoCarico } from '@/lib/progressi'
 import type { UltimeVolte, VoceElenco } from '@/lib/tipi'
 import { ElencoEsercizi } from './ElencoEsercizi'
+import { ImmagineEsercizio } from './ImmagineEsercizio'
 import { IconaCestino, IconaMeno, IconaPiu, IconaSpunta } from './icone'
 import { IstruzioniEsercizio } from './IstruzioniEsercizio'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
@@ -27,6 +28,7 @@ type EsSessione = {
   nomeNuovo?: string
   nome: string
   nomeEn?: string
+  immagine?: string
   serie: RigaSerie[]
 }
 
@@ -55,6 +57,7 @@ function esercizioIniziale(esercizio: Esercizio): EsSessione {
     catalogoId: null,
     nome: esercizio.nome,
     nomeEn: esercizio.nomeEn,
+    immagine: esercizio.immagine,
     serie: Array.from({ length: serieIniziali(esercizio.obiettivo) }, rigaVuota),
   }
 }
@@ -107,6 +110,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
             catalogoId: trovato.id === null ? trovato.catalogoId : null,
             nome: trovato.nome,
             nomeEn: trovato.nomeEn,
+            immagine: trovato.immagine,
           },
         ]
       })
@@ -246,6 +250,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
         catalogoId: scelto.id === null ? scelto.catalogoId : null,
         nome: scelto.nome,
         nomeEn: scelto.nomeEn,
+        immagine: scelto.immagine,
         serie: Array.from({ length: 3 }, rigaVuota),
       },
     ])
@@ -357,7 +362,8 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
           return (
             <li key={es.chiave} className={`${stileCarta} space-y-3 p-4`}>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <ImmagineEsercizio src={es.immagine ?? ''} nome={es.nome} className="size-20" />
+                <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-extrabold leading-tight">{es.nome}</h3>
                   {es.nomeEn && <p className="text-xs text-muto">{es.nomeEn}</p>}
                   <p className="text-sm text-muto">

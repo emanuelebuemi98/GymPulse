@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { EliminaSessione } from '@/components/EliminaSessione'
+import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
 import { formatData, formatDataLunga, formatNumero } from '@/lib/formato'
@@ -58,7 +59,8 @@ export default async function DettaglioSessionePage({ params }: Props) {
         {sessione.esercizi.map((esercizio) => (
           <li key={esercizio.id} className={`${stileCarta} p-4`}>
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
+              <ImmagineEsercizio src={esercizio.immagine} nome={esercizio.nome} className="size-16" />
+              <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-extrabold leading-tight">{esercizio.nome}</h2>
                 {esercizio.nomeEn && <p className="text-xs text-muto">{esercizio.nomeEn}</p>}
                 {categoriaDa(esercizio.categoria) && (

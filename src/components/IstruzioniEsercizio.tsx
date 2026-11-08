@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { leggiDettaglio } from '@/app/esercizi/actions'
 import type { DettaglioEsercizio } from '@/lib/tipi'
+import { ImmagineEsercizio } from './ImmagineEsercizio'
 
 type Props = {
   // Per un esercizio del catalogo non ancora della persona si passa catalogoId; per uno suo, l'id.
@@ -57,8 +58,7 @@ export function IstruzioniEsercizio({ catalogoId, esercizioId, nome }: Props) {
           {dettaglio && !vuoto && (
             <>
               {dettaglio.immagine && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={dettaglio.immagine} alt={`Esecuzione: ${nome}`} className="w-full max-w-xs rounded-xl" loading="lazy" />
+                <ImmagineEsercizio src={dettaglio.immagine} nome={nome} className="aspect-square w-full max-w-[200px]" />
               )}
               <p className="text-xs text-muto">
                 {[dettaglio.attrezzatura, dettaglio.muscoloPrincipale && `muscoli: ${dettaglio.muscoloPrincipale}`]

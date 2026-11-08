@@ -6,7 +6,7 @@ import { esercizioDaVoce } from './voci'
 const includeVoci = {
   voci: {
     orderBy: { ordine: 'asc' as const },
-    include: { esercizio: { include: { catalogo: { select: { nomeEn: true } } } } },
+    include: { esercizio: { include: { catalogo: { select: { nomeEn: true, immagine: true } } } } },
   },
 }
 
@@ -48,10 +48,10 @@ export async function leggiElenco(userId: number): Promise<VoceElenco[]> {
   const [propri, catalogo] = await Promise.all([
     db.esercizio.findMany({
       where: { userId },
-      include: { catalogo: { select: { nomeEn: true, muscoloPrincipale: true, alias: true } } },
+      include: { catalogo: { select: { nomeEn: true, immagine: true, muscoloPrincipale: true, alias: true } } },
     }),
     db.catalogoEsercizio.findMany({
-      select: { id: true, nomeIt: true, nomeEn: true, categoria: true, muscoloPrincipale: true, alias: true },
+      select: { id: true, nomeIt: true, nomeEn: true, immagine: true, categoria: true, muscoloPrincipale: true, alias: true },
     }),
   ])
   const giaUsati = new Set(propri.flatMap((riga) => (riga.catalogoId === null ? [] : [riga.catalogoId])))
@@ -64,6 +64,7 @@ export async function leggiElenco(userId: number): Promise<VoceElenco[]> {
       catalogoId: riga.catalogoId,
       nome: riga.nome,
       nomeEn: riga.catalogo?.nomeEn ?? '',
+      immagine: riga.catalogo?.immagine ?? '',
       categoria: riga.categoria,
       muscolo: riga.catalogo?.muscoloPrincipale ?? '',
       alias: riga.catalogo?.alias ?? '',
@@ -76,6 +77,7 @@ export async function leggiElenco(userId: number): Promise<VoceElenco[]> {
         catalogoId: riga.id,
         nome: riga.nomeIt,
         nomeEn: riga.nomeEn,
+        immagine: riga.immagine ?? '',
         categoria: riga.categoria,
         muscolo: riga.muscoloPrincipale,
         alias: riga.alias ?? '',
