@@ -22,6 +22,9 @@ import { trovaImmagini } from './immagini'
 // serie già registrate e le voci della scheda restano agganciate allo stesso esercizio, quindi storico e progressi non
 // cambiano: cambia solo il nome. Quello che non si riconosce resta com'è e viene elencato alla fine.
 //
+// Per sostituire un esercizio con un altro sullo stesso numero basta cambiarlo nel file (nuovo slug, stesso id): la riga
+// vecchia si toglie, ma solo se nessuna persona la usa; altrimenti lo script si ferma e lo dice.
+//
 // Un esercizio già collegato si tocca in due casi soltanto. Se il suo nome è quello di un'altra voce, il collegamento è
 // finito sul numero sbagliato (capita se nel database si sostituisce a mano il contenuto di una riga senza spostare chi
 // la usa) e lo script lo sposta sulla voce giusta. E poi tutti gli esercizi collegati riprendono il nome e la categoria
@@ -110,6 +113,7 @@ async function main() {
   let legati = 0
   let ricollegati = 0
   let spostati = 0
+  let sostituiti: string[] = []
   const cambi: string[] = []
   const sincronizzati: string[] = []
   const restano: string[] = []
@@ -123,11 +127,22 @@ async function main() {
         const numeroDi = new Map(presenti.map((riga) => [riga.slug, riga.id]))
         const slugNelFile = new Set(voci.map((voce) => voce.slug))
         const numeriDelFile = new Set(voci.map((voce) => voce.id))
+        // Un esercizio può essere sostituito da un altro sullo stesso numero (nel file cambia lo slug ma l'id resta). Se
+        // nessuna persona ha quell'esercizio nella scheda o nello storico, la riga vecchia si toglie e al suo posto nasce
+        // quella nuova. Se qualcuno lo usa ci si ferma: cambiarne il contenuto cambierebbe il senso delle sue schede.
         const bloccati = presenti.filter((riga) => !slugNelFile.has(riga.slug) && numeriDelFile.has(riga.id))
         if (bloccati.length > 0) {
-          throw new Error(
-            `Nel database ci sono esercizi che non sono più nel file e occupano numeri del file: ${bloccati.map((r) => `${r.slug} (${r.id})`).join(', ')}. Non cambio niente.`,
-          )
+          const inUso = await tx.esercizio.findMany({
+            where: { catalogoId: { in: bloccati.map((riga) => riga.id) } },
+            select: { catalogoId: true, nome: true, user: { select: { username: true } } },
+          })
+          if (inUso.length > 0) {
+            throw new Error(
+              `Questi esercizi non sono più nel file ma qualcuno li usa: ${inUso.map((e) => `${e.nome} (${e.user.username}, voce ${e.catalogoId})`).join(', ')}. Non cambio niente: togli prima l'esercizio dalla scheda oppure ridai al file lo stesso slug.`,
+            )
+          }
+          await tx.catalogoEsercizio.deleteMany({ where: { id: { in: bloccati.map((riga) => riga.id) } } })
+          sostituiti = bloccati.map((riga) => `${riga.id}: ${riga.slug}`)
         }
         const daSpostare = voci.filter((voce) => numeroDi.has(voce.slug) && numeroDi.get(voce.slug) !== voce.id)
         for (const voce of daSpostare) {
@@ -251,6 +266,8 @@ async function main() {
   const dopo = await db.catalogoEsercizio.count()
   console.log(SOLO_PROVA ? '*** PROVA: non è stato scritto niente (transazione annullata) ***\n' : '')
   console.log(`Numeri (id) cambiati per allinearli al file: ${spostati}`)
+  console.log(`Esercizi sostituiti da un altro sullo stesso numero: ${sostituiti.length}`)
+  for (const riga of sostituiti) console.log(`  tolto ${riga}`)
   console.log(`Esercizi delle persone collegati al catalogo: ${legati}`)
   console.log(`Esercizi spostati su un'altra voce perché il collegamento era sbagliato: ${ricollegati}`)
   for (const riga of cambi) console.log(`  ${riga}`)
