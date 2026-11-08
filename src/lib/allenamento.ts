@@ -90,3 +90,38 @@ export function serieIniziali(obiettivo: Obiettivo): number {
 export function ripetizioniTarget(obiettivo: Obiettivo): number | null {
   return obiettivo.tipo === 'serie' ? obiettivo.ripMax : null
 }
+
+export type RiepilogoGiornata = {
+  esercizi: number
+  serie: number
+  // Una stima, non un dato misurato: ogni serie dura circa 40 secondi e si aggiunge il recupero previsto tra una serie e
+  // l'altra (non dopo l'ultima). Null se nessun esercizio ha serie con un recupero da contare.
+  minutiStimati: number | null
+  categorie: string[]
+}
+
+const SECONDI_PER_SERIE = 40
+
+// Quante serie ha una giornata e quanto può durare, più le categorie che lavora (senza ripetizioni, nell'ordine in cui
+// compaiono). Gli esercizi a ripetizioni totali o a serie libere non hanno un numero fisso di serie: si contano per
+// l'estremo più basso.
+export function riepilogoGiornata(
+  esercizi: { categoria: string; obiettivo: Obiettivo }[],
+): RiepilogoGiornata {
+  let serie = 0
+  let secondi = 0
+  let conTempo = false
+  for (const { obiettivo } of esercizi) {
+    if (obiettivo.tipo === 'serie') {
+      serie += obiettivo.serie
+      secondi += obiettivo.serie * SECONDI_PER_SERIE + Math.max(0, obiettivo.serie - 1) * obiettivo.recuperoSec
+      conTempo = true
+    } else if (obiettivo.tipo === 'libero') {
+      serie += obiettivo.serieMin
+    } else {
+      serie += 1
+    }
+  }
+  const categorie = [...new Set(esercizi.map((esercizio) => esercizio.categoria).filter((categoria) => categoria !== ''))]
+  return { esercizi: esercizi.length, serie, minutiStimati: conTempo ? Math.max(1, Math.round(secondi / 60)) : null, categorie }
+}

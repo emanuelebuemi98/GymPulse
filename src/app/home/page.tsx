@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { CsvSedute } from '@/components/CsvSedute'
 import { IconaPlay } from '@/components/icone'
+import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { SessioneInCorso } from '@/components/SessioneInCorso'
 import { stileCarta, stileEtichetta } from '@/components/stili'
 import { giornoConsigliato } from '@/lib/allenamento'
@@ -11,6 +12,9 @@ import { richiediUtente } from '@/lib/accesso'
 
 // Legge il database a ogni richiesta: il giorno consigliato cambia dopo ogni seduta.
 export const dynamic = 'force-dynamic'
+
+// Quante miniature degli esercizi di oggi mostra la card; per gli altri c'è il "+3".
+const ANTEPRIME_IN_HOME = 5
 
 export default async function HomePage() {
   const userId = await richiediUtente()
@@ -31,6 +35,10 @@ export default async function HomePage() {
   }
 
   const consigliato = giornoConsigliato(giorni, ultima)
+  // Le miniature degli esercizi di oggi: solo quelli con un'immagine, e gli altri si contano.
+  const conImmagine = consigliato.esercizi.filter((esercizio) => esercizio.immagine !== '')
+  const anteprime = conImmagine.slice(0, ANTEPRIME_IN_HOME)
+  const eserciziInPiu = consigliato.esercizi.length - anteprime.length
 
   return (
     <div className="space-y-7">
@@ -52,6 +60,19 @@ export default async function HomePage() {
         <p className="mt-1 text-sm text-su-inchiostro/70">
           Allenamento {consigliato.id} · {consigliato.esercizi.length} esercizi
         </p>
+        {/* Gli esercizi di oggi, in miniatura: si vede subito cosa c'è in programma. */}
+        {anteprime.length > 0 && (
+          <ul aria-label="Esercizi di oggi" className="relative mt-4 flex flex-wrap items-center gap-2">
+            {anteprime.map((esercizio) => (
+              <li key={esercizio.id}>
+                <ImmagineEsercizio src={esercizio.immagine} nome={esercizio.nome} className="size-12 rounded-xl border-0" />
+              </li>
+            ))}
+            {eserciziInPiu > 0 && (
+              <li className="text-sm font-bold text-su-inchiostro/80 tabular-nums">+{eserciziInPiu}</li>
+            )}
+          </ul>
+        )}
         <div className="relative mt-5 flex flex-wrap items-center gap-3">
           <Link
             href={`/sessione?r=${consigliato.id}`}
@@ -75,7 +96,7 @@ export default async function HomePage() {
         {ultima ? (
           <Link href={`/storico/${ultima.id}`} className={`${stileCarta} min-w-0 flex-1 space-y-1 p-4 active:bg-carta-alta`}>
             <p className="text-xs font-semibold text-muto">Ultima seduta</p>
-            <p className="truncate font-extrabold">{formatDataLunga(ultima.data)}</p>
+            <p className="font-extrabold">{formatDataLunga(ultima.data)}</p>
             <p className="truncate text-sm text-muto">
               {ultima.giornoId} · {ultima.giornoTitolo}
             </p>

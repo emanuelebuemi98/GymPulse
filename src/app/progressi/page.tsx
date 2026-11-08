@@ -7,7 +7,7 @@ import { SelettoreEsercizio } from '@/components/SelettoreEsercizio'
 import { stileCarta } from '@/components/stili'
 import { PesoPerGruppo } from '@/components/PesoPerGruppo'
 import { dataIso, formatData, formatDataBreve, formatDataNumerica, formatNumero } from '@/lib/formato'
-import { istanteDaIso, lunediDi, pesoPerGruppo, perGiornata, perSettimana, spostaSettimane } from '@/lib/panoramica'
+import { istanteDaIso, lunediDi, pesoPerGruppo, perGiornata, perSettimana, riepilogoGenerale, spostaSettimane } from '@/lib/panoramica'
 import { descriviSomma } from '@/lib/progressi'
 import { andamentoEsercizio, elencoSessioni, eserciziConDati, recordPerEsercizio, serieConGruppo } from '@/lib/storico'
 import { idDaParametro } from '@/lib/url'
@@ -66,6 +66,7 @@ async function Panoramica({
   const [elenco, record, serie] = await Promise.all([elencoSessioni(userId), recordPerEsercizio(userId), serieConGruppo(userId)])
   const settimane = perSettimana(elenco)
   const giornate = perGiornata(elenco)
+  const generale = riepilogoGenerale(elenco, settimane)
   const recenti = [...record].sort((a, b) => b.data.getTime() - a.data.getTime()).slice(0, RECORD_RECENTI)
 
   const corrente = lunediDi(dataIso(new Date()))
@@ -92,6 +93,18 @@ async function Panoramica({
     <div className="space-y-5">
       <h1 className="text-3xl font-extrabold tracking-tight">Progressi</h1>
       <SchedeProgressi attiva="panoramica" primoEsercizio={primoEsercizio} />
+
+      {/* I numeri di sempre, prima dei grafici: sedute, serie, kg sollevati, ore in palestra e settimane di fila. */}
+      <section aria-label="I tuoi numeri" className="grid grid-cols-2 gap-3">
+        <Numero valore={String(generale.sedute)} etichetta={generale.sedute === 1 ? 'seduta' : 'sedute'} />
+        <Numero valore={formatNumero(generale.serie, 0)} etichetta="serie fatte" />
+        <Numero valore={formatNumero(generale.volumeKg / 1000, 1)} etichetta="tonnellate sollevate" />
+        {generale.minuti > 0 ? (
+          <Numero valore={formatDurata(generale.minuti)} etichetta="in palestra" />
+        ) : (
+          <Numero valore={String(generale.settimaneDiFila)} etichetta={generale.settimaneDiFila === 1 ? 'settimana di fila' : 'settimane di fila'} />
+        )}
+      </section>
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <div>
@@ -196,6 +209,24 @@ async function Panoramica({
       </section>
     </div>
   )
+}
+
+// Un numero grande con la sua etichetta: i totali in cima alla panoramica.
+function Numero({ valore, etichetta }: { valore: string; etichetta: string }) {
+  return (
+    <div className={`${stileCarta} p-4`}>
+      <p className="text-3xl leading-none font-extrabold text-accento tabular-nums">{valore}</p>
+      <p className="mt-1 text-xs font-semibold text-muto">{etichetta}</p>
+    </div>
+  )
+}
+
+// 135 minuti → '2 h 15 min'; meno di un'ora → '45 min'.
+function formatDurata(minuti: number): string {
+  const ore = Math.floor(minuti / 60)
+  const resto = minuti % 60
+  if (ore === 0) return `${resto} min`
+  return resto === 0 ? `${ore} h` : `${ore} h ${resto} min`
 }
 
 async function PerEsercizio({

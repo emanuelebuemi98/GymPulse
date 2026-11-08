@@ -4,9 +4,10 @@ import { AggiungiGiornata } from '@/components/AggiungiGiornata'
 import { IconaPlay, IconaRegolazioni } from '@/components/icone'
 import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { RimuoviGiornata } from '@/components/RimuoviGiornata'
-import { stileBottoneChiaro, stileCarta } from '@/components/stili'
+import { stileBottoneChiaro, stileCarta, stileEtichetta } from '@/components/stili'
 import { TabGiorni } from '@/components/TabGiorni'
-import { descrizioneObiettivo, descrizioneRecupero, giornoConsigliato } from '@/lib/allenamento'
+import { descrizioneObiettivo, descrizioneRecupero, giornoConsigliato, riepilogoGiornata } from '@/lib/allenamento'
+import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
 import { formatNumero } from '@/lib/formato'
 import { GIORNATE_MASSIME } from '@/lib/giornate'
 import { massimoKg } from '@/lib/progressi'
@@ -40,6 +41,7 @@ export default async function SchedaPage({ searchParams }: Props) {
   }
 
   const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)
+  const riepilogo = riepilogoGiornata(giorno.esercizi)
   const [ultime, sedute] = await Promise.all([
     ultimeVolte(userId, giorno.esercizi.map((e) => e.id)),
     contaSeduteGiornata(userId, giorno.id),
@@ -64,6 +66,24 @@ export default async function SchedaPage({ searchParams }: Props) {
           Modifica
         </Link>
       </header>
+
+      {/* Cosa c'è dentro la giornata, prima dell'elenco: quanti esercizi e serie, quanto può durare e cosa si allena. */}
+      <section aria-label="Riepilogo della giornata" className="space-y-2">
+        <div className="grid grid-cols-3 gap-2">
+          <DatoGiornata valore={String(riepilogo.esercizi)} etichetta={riepilogo.esercizi === 1 ? 'esercizio' : 'esercizi'} />
+          <DatoGiornata valore={String(riepilogo.serie)} etichetta="serie" />
+          <DatoGiornata valore={riepilogo.minutiStimati === null ? '—' : `~${riepilogo.minutiStimati}`} etichetta="minuti circa" />
+        </div>
+        {riepilogo.categorie.length > 0 && (
+          <ul aria-label="Categorie allenate" className="flex flex-wrap gap-1.5">
+            {riepilogo.categorie.map((categoria) => (
+              <li key={categoria} className={stileEtichetta}>
+                {categoriaDa(categoria) ? etichettaCategoria(categoriaDa(categoria)!) : categoria}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* Il pulsante principale sta subito sopra l'elenco, non in fondo. */}
       <Link
@@ -101,6 +121,16 @@ export default async function SchedaPage({ searchParams }: Props) {
       </ol>
 
       {giorni.length > 1 && <RimuoviGiornata utenteId={userId} id={giorno.id} titolo={giorno.titolo} sedute={sedute} />}
+    </div>
+  )
+}
+
+// Un numero con la sua etichetta, nella riga sopra l'elenco degli esercizi.
+function DatoGiornata({ valore, etichetta }: { valore: string; etichetta: string }) {
+  return (
+    <div className={`${stileCarta} px-3 py-2.5 text-center`}>
+      <p className="text-2xl leading-none font-extrabold tabular-nums">{valore}</p>
+      <p className="mt-1 text-xs font-semibold text-muto">{etichetta}</p>
     </div>
   )
 }

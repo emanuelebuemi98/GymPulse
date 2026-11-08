@@ -4,6 +4,9 @@ import type { SerieConGruppo } from './panoramica'
 import { calcolaRecord, massimoKg, pesoTotaleKg, volumeSerie, type RecordEsercizio } from './progressi'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
 
+// Quante miniature di esercizi mostra ogni card dello storico; gli altri esercizi si contano ("+4").
+const ANTEPRIME_IN_STORICO = 4
+
 // Conteggi e ultima seduta per la home.
 export async function riepilogoHome(userId: number) {
   const [totale, ultima] = await Promise.all([
@@ -33,20 +36,39 @@ export async function elencoSessioni(userId: number) {
   const sessioni = await db.sessione.findMany({
     where: { userId },
     orderBy: { data: 'desc' },
-    include: { giorno: true, serie: true },
+    include: {
+      giorno: true,
+      serie: {
+        orderBy: { ordine: 'asc' },
+        include: { esercizio: { select: { nome: true, catalogo: { select: { immagine: true } } } } },
+      },
+    },
   })
 
-  return sessioni.map((sessione) => ({
-    id: sessione.id,
-    data: sessione.data,
-    giornoId: sessione.giornoId,
-    giornoTitolo: sessione.giorno.titolo,
-    numeroEsercizi: new Set(sessione.serie.map((s) => s.esercizioId)).size,
-    numeroSerie: sessione.serie.length,
-    volumeKg: volumeSerie(sessione.serie),
-    durataMinuti: sessione.durataMinuti,
-    datiIniziali: sessione.datiIniziali,
-  }))
+  return sessioni.map((sessione) => {
+    // Gli esercizi della seduta una volta sola, nell'ordine in cui sono stati fatti: servono le miniature della card.
+    const esercizi = new Map<number, { nome: string; immagine: string }>()
+    for (const riga of sessione.serie) {
+      if (!esercizi.has(riga.esercizioId)) {
+        esercizi.set(riga.esercizioId, { nome: riga.esercizio.nome, immagine: riga.esercizio.catalogo?.immagine ?? '' })
+      }
+    }
+    const conImmagine = [...esercizi.values()].filter((esercizio) => esercizio.immagine !== '')
+
+    return {
+      id: sessione.id,
+      data: sessione.data,
+      giornoId: sessione.giornoId,
+      giornoTitolo: sessione.giorno.titolo,
+      numeroEsercizi: esercizi.size,
+      numeroSerie: sessione.serie.length,
+      volumeKg: volumeSerie(sessione.serie),
+      durataMinuti: sessione.durataMinuti,
+      datiIniziali: sessione.datiIniziali,
+      anteprime: conImmagine.slice(0, ANTEPRIME_IN_STORICO),
+      eserciziInPiu: Math.max(0, esercizi.size - ANTEPRIME_IN_STORICO),
+    }
+  })
 }
 
 type GruppoEsercizio = { id: number; nome: string; nomeEn: string; immagine: string; categoria: string; serie: SerieRegistrata[] }

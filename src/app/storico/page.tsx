@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
 import { formatDataLunga, formatNumero } from '@/lib/formato'
 import { elencoSessioni } from '@/lib/storico'
@@ -56,6 +57,16 @@ export default async function StoricoPage() {
                     {sessione.volumeKg > 0 && ` · ${formatNumero(sessione.volumeKg, 0)} kg`}
                     {sessione.durataMinuti !== null && ` · ${sessione.durataMinuti} min`}
                   </span>
+                  {sessione.anteprime.length > 0 && (
+                    <span className="flex items-center gap-1.5 pt-1">
+                      {sessione.anteprime.map((esercizio) => (
+                        <ImmagineEsercizio key={esercizio.nome} src={esercizio.immagine} nome={esercizio.nome} className="size-10 rounded-lg" />
+                      ))}
+                      {sessione.eserciziInPiu > 0 && (
+                        <span className="text-xs font-semibold text-muto tabular-nums">+{sessione.eserciziInPiu}</span>
+                      )}
+                    </span>
+                  )}
                   {sessione.datiIniziali && (
                     <span className="flex flex-wrap gap-2 pt-1">
                       <span className={stileEtichetta}>Dati iniziali</span>
