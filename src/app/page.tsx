@@ -3,10 +3,18 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { GalleriaSchermate } from '@/components/benvenuto/GalleriaSchermate'
 import {
+  SchermataAndamento,
+  SchermataCatalogo,
   SchermataComeSiFa,
+  SchermataCsv,
+  SchermataGiornate,
+  SchermataHome,
   SchermataProgressi,
+  SchermataRecord,
   SchermataScheda,
+  SchermataSeduta,
   SchermataSessione,
+  SchermataStorico,
 } from '@/components/benvenuto/Telefono'
 import {
   IconaCarica,
@@ -32,9 +40,24 @@ export const metadata: Metadata = {
 
 const schermate = [
   {
+    titolo: 'La home',
+    testo: 'Appena entri vedi cosa tocca oggi, con gli esercizi in programma, quante sedute hai fatto e l\'ultima.',
+    schermata: <SchermataHome />,
+  },
+  {
+    titolo: 'Le tue giornate',
+    testo: 'Da una a sette giornate (A, B, C…), ognuna con i suoi esercizi, le serie, le ripetizioni e il recupero.',
+    schermata: <SchermataGiornate />,
+  },
+  {
     titolo: 'La tua scheda',
-    testo: 'Da una a sette giornate, con gli esercizi scelti dal catalogo, le serie, le ripetizioni e il recupero.',
+    testo: 'La scheda di una giornata, con la foto di ogni esercizio, le serie e l\'ultimo carico usato.',
     schermata: <SchermataScheda />,
+  },
+  {
+    titolo: 'Il catalogo',
+    testo: 'Cerchi un esercizio per nome o filtri per categoria: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento.',
+    schermata: <SchermataCatalogo />,
   },
   {
     titolo: 'In palestra',
@@ -47,9 +70,34 @@ const schermate = [
     schermata: <SchermataComeSiFa />,
   },
   {
+    titolo: 'Lo storico',
+    testo: 'Una card per ogni seduta, con la data, i numeri e le foto degli esercizi che hai fatto.',
+    schermata: <SchermataStorico />,
+  },
+  {
+    titolo: 'Ogni seduta nel dettaglio',
+    testo: 'Apri una seduta e vedi tutte le serie di ogni esercizio, con kg e ripetizioni.',
+    schermata: <SchermataSeduta />,
+  },
+  {
+    titolo: 'L\'andamento',
+    testo: 'Per ogni esercizio un grafico del carico massimo, e sotto il peso totale e le ripetizioni di ogni seduta.',
+    schermata: <SchermataAndamento />,
+  },
+  {
     titolo: 'I tuoi progressi',
-    testo: 'Sedute per settimana, kg per categoria e un grafico per ogni esercizio.',
+    testo: 'Sedute per settimana, kg per categoria e quante volte hai fatto ogni giornata.',
     schermata: <SchermataProgressi />,
+  },
+  {
+    titolo: 'I record',
+    testo: 'Il peso più alto sollevato per ogni esercizio, con la data in cui l\'hai raggiunto.',
+    schermata: <SchermataRecord />,
+  },
+  {
+    titolo: 'Le sedute in Excel',
+    testo: 'Esporti tutte le sedute in un file e le reimporti quando vuoi, senza doppioni.',
+    schermata: <SchermataCsv />,
   },
 ]
 

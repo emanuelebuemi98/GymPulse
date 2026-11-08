@@ -135,6 +135,282 @@ export function SchermataComeSiFa() {
   )
 }
 
+const foto = (nome: string) => `/esercizi/${nome}.jpg`
+
+function Miniatura({ nome, file, className = 'size-8' }: { nome: string; file: string; className?: string }) {
+  return <ImmagineEsercizio src={foto(file)} nome={nome} className={`${className} rounded-lg`} />
+}
+
+// La home: la card scura di oggi con gli esercizi in miniatura, i numeri e l'elenco delle giornate.
+export function SchermataHome() {
+  return (
+    <Telefono>
+      <Barra attiva="Home" />
+      <div className="relative overflow-hidden rounded-2xl bg-inchiostro p-3 text-su-inchiostro">
+        <span className="absolute -top-2 right-1 text-[60px] leading-none font-extrabold text-accento-chiaro/20">A</span>
+        <p className="text-[9.5px] opacity-70">Oggi tocca a</p>
+        <p className="text-[16px] leading-tight font-extrabold">Petto e tricipiti</p>
+        <p className="text-[9.5px] opacity-70">Allenamento A · 6 esercizi</p>
+        <span className="relative mt-2 flex items-center gap-1">
+          <Miniatura nome="Panca piana con bilanciere" file="27_barbell-bench-press" className="size-8 border-0" />
+          <Miniatura nome="Panca inclinata con manubri" file="24_dumbbell-incline-bench-press" className="size-8 border-0" />
+          <Miniatura nome="Croci ai cavi su panca inclinata" file="6_incline-cable-fly" className="size-8 border-0" />
+          <Miniatura nome="Piegamenti sulle braccia" file="35_push-up" className="size-8 border-0" />
+          <span className="pl-0.5 text-[10px] font-bold opacity-80">+2</span>
+        </span>
+        <span className="relative mt-2 inline-block rounded-full bg-accento-chiaro px-3 py-1 text-[10px] font-extrabold text-inchiostro">▶ Inizia</span>
+      </div>
+      <div className="flex gap-1.5">
+        <div className="w-16 rounded-xl border border-bordo bg-carta p-1.5">
+          <p className="text-[20px] leading-none font-extrabold text-accento">42</p>
+          <p className="text-[8.5px] font-semibold text-muto">sedute registrate</p>
+        </div>
+        <div className="min-w-0 flex-1 rounded-xl border border-bordo bg-carta p-1.5">
+          <p className="text-[8.5px] font-semibold text-muto">Ultima seduta</p>
+          <p className="text-[10px] font-extrabold">Venerdì 6 Novembre 2026</p>
+          <p className="text-[8.5px] text-muto">C · Dorso e spalle</p>
+        </div>
+      </div>
+      <p className="text-[11px] font-extrabold">Le tue giornate</p>
+      {[
+        ['A', 'Petto e tricipiti', '6 esercizi · consigliata', true],
+        ['B', 'Gambe e glutei', '7 esercizi', false],
+      ].map(([sigla, titolo, dettaglio, attiva]) => (
+        <div key={String(sigla)} className="flex items-center gap-2 overflow-hidden rounded-xl border border-bordo bg-carta py-1 pr-2">
+          <span className={`h-6 w-1 shrink-0 rounded-r-full ${attiva ? 'bg-accento' : 'bg-bordo'}`} />
+          <span className="w-3 text-center text-[13px] font-extrabold">{String(sigla)}</span>
+          <span className="min-w-0">
+            <span className="block text-[10.5px] font-bold">{String(titolo)}</span>
+            <span className="block text-[8.5px] text-muto">{String(dettaglio)}</span>
+          </span>
+        </div>
+      ))}
+    </Telefono>
+  )
+}
+
+// Le giornate: da una a sette, con le linguette A B C D e il "+" per aggiungerne una.
+export function SchermataGiornate() {
+  return (
+    <Telefono>
+      <Barra attiva="Scheda" />
+      <div className="grid grid-cols-5 gap-0.5 rounded-2xl bg-carta-alta p-0.5 text-center">
+        {['A', 'B', 'C', 'D'].map((sigla) => (
+          <span key={sigla} className={`rounded-xl py-1 text-[13px] font-extrabold ${sigla === 'B' ? 'bg-carta text-testo shadow-sm' : 'text-muto'}`}>
+            {sigla}
+          </span>
+        ))}
+        <span className="rounded-xl py-1 text-[13px] font-extrabold text-muto">+</span>
+      </div>
+      <div className="flex items-end justify-between">
+        <span>
+          <span className="block text-[9px] font-semibold text-muto">Allenamento B</span>
+          <span className="block text-[15px] leading-tight font-extrabold">Gambe e glutei</span>
+        </span>
+        <span className="rounded-full border border-bordo bg-carta px-2 py-1 text-[9px] font-semibold">Modifica</span>
+      </div>
+      <span className="rounded-full bg-accento py-1.5 text-center text-[11px] font-extrabold text-su-accento">▶ Avvia sessione B</span>
+      <Esercizio immagine={foto('172_barbell-back-squat')} nome="Squat con bilanciere" dettaglio="4 × 6-8 · recupero 2 min" />
+      <Esercizio immagine={foto('163_leg-press')} nome="Pressa 45°" dettaglio="3 × 10-12 · recupero 90 s" />
+      <Esercizio immagine={foto('154_barbell-hip-thrust')} nome="Hip Thrust con bilanciere" dettaglio="4 × 10 · recupero 90 s" />
+    </Telefono>
+  )
+}
+
+// Il catalogo: ricerca per nome e filtro per categoria.
+export function SchermataCatalogo() {
+  const voci = [
+    ['Hip Thrust con bilanciere', 'Barbell Hip Thrust'],
+    ['Hip Thrust alla macchina', 'Machine Hip Thrust'],
+    ['Slanci ad ascia al cavo basso', 'Cable Diagonal Glute Kickback'],
+    ['Abduttori alla macchina', 'Abductor Machine'],
+    ['Frog Pump a terra', 'Frog Pump'],
+  ]
+  return (
+    <Telefono>
+      <p className="text-[13px] font-extrabold">Aggiungi esercizio</p>
+      <div className="rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px] text-suggerito">Cerca un esercizio</div>
+      <div className="flex items-center justify-between rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px]">
+        <span>Glutei</span>
+        <span className="text-muto">⌄</span>
+      </div>
+      <p className="text-[9px] text-muto">17 esercizi</p>
+      <div className="divide-y divide-bordo overflow-hidden rounded-xl border border-bordo">
+        {voci.map(([nome, inglese]) => (
+          <div key={nome} className="flex items-center justify-between gap-1 px-2 py-1.5">
+            <span className="min-w-0">
+              <span className="block truncate text-[10.5px] leading-tight font-bold">{nome}</span>
+              <span className="block truncate text-[8.5px] text-muto">{inglese}</span>
+            </span>
+            <span className="shrink-0 rounded-full bg-carta-alta px-1.5 py-0.5 text-[8px] font-semibold text-muto">Glutei</span>
+          </div>
+        ))}
+      </div>
+    </Telefono>
+  )
+}
+
+// Lo storico: una card per seduta, con la data, i numeri e le miniature degli esercizi.
+export function SchermataStorico() {
+  const sedute = [
+    { giorno: '6', mese: 'nov', titolo: 'C · Dorso e spalle', dettaglio: '8 esercizi · 26 serie · 9.329 kg', foto: ['45_lat-pulldown', '58_incline-dumbbell-row', '85_dumbbell-lateral-raise'] },
+    { giorno: '4', mese: 'nov', titolo: 'B · Gambe e glutei', dettaglio: '7 esercizi · 24 serie · 19.550 kg', foto: ['172_barbell-back-squat', '163_leg-press', '154_barbell-hip-thrust'] },
+    { giorno: '2', mese: 'nov', titolo: 'A · Petto e tricipiti', dettaglio: '7 esercizi · 23 serie · 5.220 kg', foto: ['27_barbell-bench-press', '24_dumbbell-incline-bench-press', '35_push-up'] },
+  ]
+  return (
+    <Telefono>
+      <Barra attiva="Storico" />
+      <div className="flex items-end justify-between">
+        <p className="text-[15px] font-extrabold">Storico</p>
+        <p className="text-[9px] font-semibold text-muto">42 sedute</p>
+      </div>
+      {sedute.map((seduta) => (
+        <div key={seduta.giorno} className="flex gap-2 rounded-2xl border border-bordo bg-carta p-1.5">
+          <span className="grid w-10 shrink-0 place-content-center rounded-xl bg-carta-alta text-center">
+            <span className="text-[15px] leading-none font-extrabold">{seduta.giorno}</span>
+            <span className="text-[8px] font-bold text-muto uppercase">{seduta.mese}</span>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[10.5px] font-extrabold">{seduta.titolo}</span>
+            <span className="block text-[8.5px] text-muto">{seduta.dettaglio}</span>
+            <span className="mt-0.5 flex gap-1">
+              {seduta.foto.map((file) => (
+                <Miniatura key={file} nome={file} file={file} className="size-6" />
+              ))}
+            </span>
+          </span>
+        </div>
+      ))}
+    </Telefono>
+  )
+}
+
+// Il dettaglio di una seduta: ogni esercizio con le sue serie, e il link all'andamento.
+export function SchermataSeduta() {
+  const serie = [
+    ['1', '52,5', '8'],
+    ['2', '52,5', '8'],
+    ['3', '55', '6'],
+    ['4', '55', '6'],
+  ]
+  return (
+    <Telefono>
+      <p className="text-[9.5px] font-semibold text-accento">← Storico</p>
+      <p className="text-[14px] leading-tight font-extrabold">Lunedì 2 Novembre 2026</p>
+      <p className="text-[9.5px] text-muto">Allenamento A · Petto e tricipiti · 58 min</p>
+      <div className="rounded-2xl border border-bordo bg-carta p-2">
+        <div className="flex items-center gap-2">
+          <Miniatura nome="Panca piana con bilanciere" file="27_barbell-bench-press" className="size-10" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] leading-tight font-extrabold">Panca piana con bilanciere</span>
+            <span className="block text-[8.5px] text-muto">Barbell Bench Press · Petto</span>
+          </span>
+          <span className="text-[9px] font-semibold text-accento">Andamento</span>
+        </div>
+        <div className="mt-1.5 grid grid-cols-3 text-[8.5px] font-semibold text-muto">
+          <span>Serie</span>
+          <span>Kg</span>
+          <span>Rip.</span>
+        </div>
+        {serie.map(([numero, kg, rip]) => (
+          <div key={numero} className="grid grid-cols-3 border-t border-bordo py-1 text-[10.5px] tabular-nums">
+            <span className="text-muto">{numero}</span>
+            <span className="font-semibold">{kg}</span>
+            <span>{rip}</span>
+          </div>
+        ))}
+      </div>
+    </Telefono>
+  )
+}
+
+// Il grafico di un esercizio: il carico massimo seduta per seduta, con l'ultimo valore in evidenza.
+export function SchermataAndamento() {
+  const carichi = [40, 40, 42.5, 45, 45, 47.5, 50]
+  const minimo = 37.5
+  const massimo = 52.5
+  const punti = carichi.map((kg, i) => [10 + (i * 180) / (carichi.length - 1), 62 - ((kg - minimo) / (massimo - minimo)) * 54] as const)
+  return (
+    <Telefono>
+      <Barra attiva="Progressi" />
+      <div className="grid grid-cols-2 gap-0.5 rounded-full bg-carta-alta p-0.5 text-center text-[9.5px] font-bold">
+        <span className="rounded-full py-1 text-muto">Panoramica</span>
+        <span className="rounded-full bg-carta py-1 shadow-sm">Per esercizio</span>
+      </div>
+      <div className="flex items-center justify-between rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px] font-semibold">
+        <span>Lat Machine avanti</span>
+        <span className="text-muto">⌄</span>
+      </div>
+      <div className="rounded-2xl border border-bordo bg-carta p-2">
+        <p className="text-[11px] font-extrabold">Carico massimo</p>
+        <p className="text-[8.5px] text-muto">Kg più alto tra le serie, seduta per seduta.</p>
+        <svg viewBox="0 0 200 74" className="mt-1 w-full" role="presentation">
+          {[8, 28, 48, 62].map((y) => (
+            <line key={y} x1="10" x2="190" y1={y} y2={y} className="stroke-bordo" strokeWidth="0.6" />
+          ))}
+          <polyline points={punti.map(([x, y]) => `${x},${y}`).join(' ')} fill="none" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" className="stroke-grafico" />
+          {punti.map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r={i === punti.length - 1 ? 3 : 2} className="fill-grafico stroke-carta" strokeWidth="1" />
+          ))}
+          <text x={punti[punti.length - 1][0] - 6} y={punti[punti.length - 1][1] - 6} textAnchor="end" fontSize="9" fontWeight="700" className="fill-testo">
+            50 kg
+          </text>
+        </svg>
+      </div>
+      <p className="text-[9px] text-muto">Sotto trovi anche il peso totale e le ripetizioni di ogni seduta.</p>
+    </Telefono>
+  )
+}
+
+// I record: il peso più alto per ogni esercizio, con la data.
+export function SchermataRecord() {
+  const record = [
+    ['Panca piana con bilanciere', '60', '02/11'],
+    ['Squat con bilanciere', '90', '04/11'],
+    ['Stacco da terra', '110', '04/11'],
+    ['Lat Machine avanti', '50', '06/11'],
+    ['Alzate laterali con manubri', '8', '06/11'],
+  ]
+  return (
+    <Telefono>
+      <Barra attiva="Progressi" />
+      <div className="rounded-2xl border border-bordo bg-carta p-2">
+        <p className="text-[11px] font-extrabold">Record recenti</p>
+        {record.map(([nome, kg, data]) => (
+          <div key={nome} className="flex items-baseline justify-between gap-1 border-t border-bordo py-1.5 first:mt-1">
+            <span className="min-w-0 text-[10px] leading-tight font-semibold">{nome}</span>
+            <span className="shrink-0 tabular-nums">
+              <span className="text-[10.5px] font-extrabold text-accento">{kg} kg</span> <span className="text-[8.5px] text-muto">{data}</span>
+            </span>
+          </div>
+        ))}
+        <p className="mt-1 text-[9px] font-semibold text-muto">▸ Tutti i record (21)</p>
+      </div>
+    </Telefono>
+  )
+}
+
+// L'esportazione e l'importazione delle sedute in un file che si apre in Excel.
+export function SchermataCsv() {
+  return (
+    <Telefono>
+      <Barra attiva="Home" />
+      <div className="space-y-2 rounded-2xl border border-bordo bg-carta p-2.5">
+        <p className="text-[12px] font-extrabold">Sedute in CSV</p>
+        <p className="text-[9.5px] text-muto">
+          Esporta le tue sedute in un file che si apre anche in Excel. Importando un file, le sedute nuove si aggiungono e quelle
+          già presenti non si duplicano.
+        </p>
+        <div className="grid grid-cols-2 gap-1.5 text-center text-[10px] font-semibold">
+          <span className="rounded-full border border-bordo bg-carta py-1.5">↓ Esporta</span>
+          <span className="rounded-full border border-bordo bg-carta py-1.5">↑ Importa</span>
+        </div>
+        <p className="rounded-lg bg-ok/10 px-2 py-1 text-[9.5px] font-semibold text-ok">Importate 3 sedute (2 erano già presenti)</p>
+      </div>
+    </Telefono>
+  )
+}
+
 function BarraOrizzontale({ nome, kg, quota }: { nome: string; kg: string; quota: number }) {
   return (
     <div>
