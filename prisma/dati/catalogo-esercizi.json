@@ -2055,20 +2055,21 @@
   },
   {
     "id": 155,
-    "slug": "cable-glute-kickback",
-    "nomeIt": "Kickback glutei ai cavi",
-    "nomeEn": "Cable Glute Kickback",
+    "slug": "dumbbell-curtsy-lunge",
+    "nomeIt": "Affondo incrociato con manubrio al petto",
+    "nomeEn": "Dumbbell Curtsy Lunge",
     "categoria": "glutei",
-    "attrezzatura": "Cavi",
+    "attrezzatura": "Manubri",
     "muscoloPrincipale": "Grande Gluteo",
-    "muscoliSecondari": "Femorali",
-    "tipoMovimento": "Isolamento",
-    "esecuzione": "Aggancia la cavigliera al cavo basso e allacciala alla caviglia della gamba che lavora.\nMettiti di fronte alla macchina e afferra la struttura per sostenerti, con ginocchia e anche leggermente piegate e addominali contratti.\nContrai il gluteo e porta la gamba indietro con un movimento ad arco, espirando, fin dove arrivi senza compensare con la schiena.\nStringi il gluteo per un istante nel punto finale.\nRiporta la gamba in avanti lentamente, frenando il cavo, poi cambia lato.",
-    "accortezze": "Non inarcare la zona lombare per salire di più: l'escursione utile è quella in cui lavora il gluteo.\nEvita lo slancio e scegli un carico che ti permetta di controllare sia l'andata sia il ritorno.\nTieni busto e bacino fermi, senza ruotare il bacino verso la gamba d'appoggio.",
+    "muscoliSecondari": "Medio Gluteo, Quadricipiti",
+    "tipoMovimento": "Monopodalico",
+    "esecuzione": "Stai in piedi con i piedi alla larghezza delle anche e tieni un solo manubrio in verticale davanti al petto, afferrandolo con entrambe le mani dal disco superiore.\nPorta una gamba indietro e in diagonale, incrociandola dietro l'altra, come in una riverenza.\nPiega le ginocchia e abbassa il bacino finché la coscia davanti è quasi parallela al pavimento, con il busto eretto e i gomiti vicini al corpo.\nSpingi sul piede davanti, stringendo il gluteo, e torna alla posizione di partenza.\nRipeti dallo stesso lato oppure alterna le gambe.",
+    "accortezze": "Il ginocchio davanti resta in linea con la punta del piede, senza cadere verso l'interno.\nTieni il manubrio fermo contro il petto, il busto eretto e il peso sul tallone del piede davanti, per far lavorare il gluteo.\nScendi in modo controllato e parti con un manubrio leggero finché non trovi l'equilibrio.\nSe perdi l'equilibrio, appoggia una mano a un sostegno o fai l'esercizio senza pesi.",
     "alias": [
-      "Slanci al cavo basso",
-      "Slanci indietro al cavo basso",
-      "Slanci posteriori al cavo"
+      "Affondo incrociato con manubri",
+      "Curtsy lunge",
+      "Affondi incrociati",
+      "Affondo a riverenza"
     ]
   },
   {
@@ -2151,16 +2152,21 @@
   },
   {
     "id": 162,
-    "slug": "dumbbell-single-leg-hip-thrust",
-    "nomeIt": "Hip Thrust monolaterale con manubrio",
-    "nomeEn": "Dumbbell Single-Leg Hip Thrust",
+    "slug": "bench-quadruped-straight-leg-kickback",
+    "nomeIt": "Slanci indietro a quattro zampe su panca",
+    "nomeEn": "Bench Quadruped Straight-Leg Kickback",
     "categoria": "glutei",
-    "attrezzatura": "Panca e Manubrio",
+    "attrezzatura": "Panca / Corpo Libero",
     "muscoloPrincipale": "Grande Gluteo",
-    "muscoliSecondari": "Femorali",
-    "tipoMovimento": "Estensione Anca",
-    "esecuzione": "Appoggia la parte alta della schiena contro il bordo di una panca piana, con le ginocchia piegate e i piedi a terra.\nPosiziona un manubrio sulla piega dell'anca della gamba che lavora e solleva l'altra gamba da terra, tenendola piegata o distesa in avanti.\nSpingi con il tallone del piede a terra ed estendi l'anca verso l'alto, finché bacino e tronco sono in linea.\nMantieni una breve contrazione in alto, poi riporta lentamente il bacino verso il basso, senza appoggiarlo del tutto a terra tra una ripetizione e l'altra.",
-    "accortezze": "Tieni il mento leggermente verso il petto e lo sguardo in avanti per tutto il movimento, per evitare di inarcare la zona lombare.\nSpingi solo con il tallone della gamba d'appoggio e contrai l'addome per mantenere il bacino stabile.\nEvita di ruotare il bacino verso il lato della gamba sollevata."
+    "muscoliSecondari": "Femorali, Addome",
+    "tipoMovimento": "Isolamento",
+    "esecuzione": "Mettiti a quattro zampe su una panca piana, con le mani all'estremità della panca e il ginocchio della gamba d'appoggio sulla panca, la schiena neutra.\nContrai l'addome e distendi l'altra gamba all'indietro, tenendo il ginocchio teso.\nSali fino a portare la gamba in linea con il busto, stringendo il gluteo, senza inarcare la schiena.\nRiporta lentamente la gamba verso il basso, senza appoggiarla, e ripeti. Poi cambia gamba.",
+    "accortezze": "Non inarcare la zona lombare per salire più in alto: la gamba si ferma quando è in linea con il busto.\nTieni il bacino fermo e le anche allineate, senza ruotare.\nUsa una panca stabile, che non scivoli, e muoviti lentamente, senza slancio.",
+    "alias": [
+      "Slanci indietro su panca",
+      "Slanci a quattro zampe su panca",
+      "Calcio all'indietro su panca"
+    ]
   },
   {
     "id": 163,
@@ -3214,11 +3220,15 @@
     "muscoloPrincipale": "Grande Gluteo",
     "muscoliSecondari": "Medio Gluteo, Femorali",
     "tipoMovimento": "Isolamento",
-    "esecuzione": "Aggancia la cavigliera al cavo basso e allacciala alla caviglia della gamba che lavora.\nMettiti di fronte alla macchina e afferra la struttura per sostenerti, con il busto leggermente inclinato in avanti e gli addominali contratti.\nParti con la gamba che lavora un po’ davanti e leggermente incrociata davanti a quella d’appoggio.\nContrai il gluteo e porta la gamba indietro e verso l’esterno, in diagonale, con un movimento ad arco come un colpo d’ascia, espirando.\nStringi il gluteo per un istante, poi riporta la gamba alla partenza lentamente, frenando il cavo. Completa le ripetizioni e cambia lato.",
-    "accortezze": "Il movimento nasce dall’anca: non ruotare il bacino e non inarcare la zona lombare per salire di più.\nTieni il ginocchio della gamba che lavora morbido, senza bloccarlo.\nEvita lo slancio e scegli un carico che ti permetta di controllare sia l’andata sia il ritorno.\nSe il busto ruota o si sposta, il carico è troppo alto.",
+    "esecuzione": "Aggancia la cavigliera al cavo basso e allacciala alla caviglia della gamba che lavora.\nMettiti di fronte alla macchina con i piedi vicini, inclinato in avanti dalle anche e con le ginocchia leggermente piegate, e appoggia le mani alla struttura per sostenerti.\nContrai addome e gluteo e porta la gamba che lavora indietro e un po' verso l'esterno, in diagonale, con un movimento ad arco come un colpo d'ascia, espirando.\nStringi il gluteo per un istante, poi riporta la gamba verso l'altra lentamente, frenando il cavo.\nCompleta le ripetizioni e cambia lato.",
+    "accortezze": "Il movimento nasce dall'anca: tieni il busto inclinato e fermo, senza risalire né ruotare il bacino.\nNon inarcare la zona lombare per salire di più.\nEvita lo slancio e scegli un carico che ti permetta di controllare sia l'andata sia il ritorno.\nSe il busto si muove o il bacino ruota, il carico è troppo alto.",
     "alias": [
       "Slanci in diagonale al cavo basso",
-      "Slanci incrociati al cavo basso"
+      "Slanci al cavo basso",
+      "Slanci indietro al cavo basso",
+      "Slanci posteriori al cavo",
+      "Kickback glutei ai cavi",
+      "Cable Glute Kickback"
     ]
   },
   {
@@ -3231,27 +3241,28 @@
     "muscoloPrincipale": "Grande Gluteo",
     "muscoliSecondari": "Femorali, Addome",
     "tipoMovimento": "Isolamento",
-    "esecuzione": "Mettiti a quattro zampe, con le mani sotto le spalle e le ginocchia sotto le anche, la schiena neutra.\nContrai l’addome e, tenendo il ginocchio piegato a 90 gradi, spingi un piede verso il soffitto.\nSali fino a portare la coscia in linea con il busto, stringendo il gluteo, senza inarcare la schiena.\nRiporta lentamente il ginocchio verso il pavimento, senza appoggiarlo, e ripeti. Poi cambia gamba.",
-    "accortezze": "Non inarcare la zona lombare per salire più in alto: l’escursione utile finisce quando la coscia è in linea con il busto.\nTieni il bacino fermo e le anche allineate, senza ruotare verso il lato della gamba che sale.\nMuoviti lentamente, senza slancio.\nSe polsi o ginocchia danno fastidio, appoggiati sugli avambracci e usa un tappetino.",
+    "esecuzione": "Mettiti a quattro zampe, con le mani sotto le spalle e le ginocchia sotto le anche, la schiena neutra.\nContrai l'addome e, tenendo il ginocchio piegato a 90 gradi, spingi un piede verso il soffitto.\nSali fino a portare la coscia in linea con il busto, stringendo il gluteo, senza inarcare la schiena.\nRiporta lentamente il ginocchio verso il pavimento, senza appoggiarlo, e ripeti. Poi cambia gamba.",
+    "accortezze": "Non inarcare la zona lombare per salire più in alto: l'escursione utile finisce quando la coscia è in linea con il busto.\nTieni il bacino fermo e le anche allineate, senza ruotare verso il lato della gamba che sale.\nMuoviti lentamente, senza slancio.\nSe polsi o ginocchia danno fastidio, appoggiati sugli avambracci e usa un tappetino.",
     "alias": [
       "Slanci posteriori a quattro zampe",
-      "Calcio all’indietro a quattro zampe"
+      "Calcio all'indietro a quattro zampe"
     ]
   },
   {
     "id": 243,
-    "slug": "fire-hydrant",
-    "nomeIt": "Fire Hydrant a quattro zampe",
-    "nomeEn": "Fire Hydrant",
+    "slug": "quadruped-straight-leg-kickback",
+    "nomeIt": "Slanci indietro a quattro zampe",
+    "nomeEn": "Quadruped Straight-Leg Kickback",
     "categoria": "glutei",
     "attrezzatura": "Corpo Libero",
-    "muscoloPrincipale": "Medio Gluteo",
-    "muscoliSecondari": "Grande Gluteo, Addome",
+    "muscoloPrincipale": "Grande Gluteo",
+    "muscoliSecondari": "Femorali, Addome",
     "tipoMovimento": "Isolamento",
-    "esecuzione": "Mettiti a quattro zampe, con le mani sotto le spalle e le ginocchia sotto le anche.\nTieni il ginocchio piegato a 90 gradi e solleva lateralmente una gamba, come un cane vicino a un idrante, con il busto fermo.\nSali fino a portare la coscia all’altezza dell’anca, stringendo il gluteo.\nRiporta lentamente il ginocchio alla posizione di partenza, senza appoggiarlo, poi ripeti e cambia lato.",
-    "accortezze": "Non ruotare il bacino né inclinare il busto verso il lato opposto: se lo fai, sei salito troppo.\nTieni la schiena neutra e gli addominali contratti.\nFai movimenti lenti e controllati, senza slancio.\nPer renderlo più difficile puoi mettere un elastico sopra le ginocchia.",
+    "esecuzione": "Mettiti a quattro zampe, con le mani sotto le spalle e le ginocchia sotto le anche, la schiena neutra.\nContrai l'addome e distendi una gamba all'indietro, tenendo il ginocchio teso e il piede flesso.\nSali fino a portare la gamba in linea con il busto, stringendo il gluteo, senza inarcare la schiena.\nRiporta lentamente la gamba verso il pavimento, senza appoggiare il ginocchio, e ripeti. Poi cambia gamba.",
+    "accortezze": "Non inarcare la zona lombare per salire più in alto: la gamba si ferma quando è in linea con il busto.\nTieni il bacino fermo e le anche allineate, senza ruotare.\nMuoviti lentamente, senza slancio.\nSe i polsi danno fastidio, appoggiati sugli avambracci e usa un tappetino.",
     "alias": [
-      "Abduzioni anca a quattro zampe"
+      "Slanci posteriori a gamba tesa a quattro zampe",
+      "Calcio all'indietro a gamba tesa"
     ]
   },
   {
@@ -3264,7 +3275,7 @@
     "muscoloPrincipale": "Glutei",
     "muscoliSecondari": "Femorali, Gran Adduttore",
     "tipoMovimento": "Estensione Anca",
-    "esecuzione": "Sdraiati sulla schiena con le piante dei piedi unite e le ginocchia aperte verso l’esterno, i talloni vicino ai glutei.\nAppoggia le braccia lungo i fianchi, con i palmi a terra.\nSpingi sulle piante dei piedi e solleva il bacino stringendo i glutei, fino a mettere il busto in linea con le cosce.\nResta un istante in alto, poi abbassa il bacino senza appoggiarlo del tutto e ripeti con un movimento fluido.",
+    "esecuzione": "Sdraiati sulla schiena con le piante dei piedi unite e le ginocchia aperte verso l'esterno, i talloni vicino ai glutei.\nAppoggia le braccia lungo i fianchi, con i palmi a terra.\nSpingi sulle piante dei piedi e solleva il bacino stringendo i glutei, fino a mettere il busto in linea con le cosce.\nResta un istante in alto, poi abbassa il bacino senza appoggiarlo del tutto e ripeti con un movimento fluido.",
     "accortezze": "Spingi con i glutei, non con la schiena: non inarcare la zona lombare in alto.\nTieni il collo rilassato e le ginocchia aperte per tutta la serie.\nDi solito si fa con tante ripetizioni e senza peso, per sentire bene il gluteo.",
     "alias": [
       "Ponte a rana",
@@ -3281,8 +3292,8 @@
     "muscoloPrincipale": "Glutei",
     "muscoliSecondari": "Femorali, Erettori Spinali",
     "tipoMovimento": "Estensione Anca",
-    "esecuzione": "Sdraiati a pancia in giù sulla panca per le estensioni inverse, con il bacino sul bordo e le gambe che pendono, e afferra le maniglie davanti a te.\nContrai addominali e glutei.\nSolleva le gambe distese all’indietro, estendendo le anche, fino a portarle in linea con il busto.\nResta un istante in alto, poi riporta le gambe in basso lentamente, controllando il movimento.",
-    "accortezze": "Non salire oltre la linea del busto: inarcare la schiena per salire di più carica la zona lombare.\nEvita lo slancio: il peso che oscilla non deve spingerti.\nParti con un carico leggero e aumentalo con gradualità.\nLavora anche i lombari: se hai problemi alla schiena, impara l’esercizio con un istruttore.",
+    "esecuzione": "Sdraiati a pancia in giù sulla panca per le estensioni inverse, con il bacino sul bordo e le gambe che pendono, e afferra le maniglie davanti a te.\nContrai addominali e glutei.\nSolleva le gambe distese all'indietro, estendendo le anche, fino a portarle in linea con il busto.\nResta un istante in alto, poi riporta le gambe in basso lentamente, controllando il movimento.",
+    "accortezze": "Non salire oltre la linea del busto: inarcare la schiena per salire di più carica la zona lombare.\nEvita lo slancio: il peso che oscilla non deve spingerti.\nParti con un carico leggero e aumentalo con gradualità.\nLavora anche i lombari: se hai problemi alla schiena, impara l'esercizio con un istruttore.",
     "alias": [
       "Reverse hyper",
       "Iperestensioni inverse"
@@ -3298,8 +3309,8 @@
     "muscoloPrincipale": "Medio Gluteo",
     "muscoliSecondari": "Tensore Fascia Lata",
     "tipoMovimento": "Isolamento",
-    "esecuzione": "Sdraiati su un fianco con le anche piegate a circa 45 gradi e le ginocchia a circa 90, con un elastico attorno alle cosce appena sopra le ginocchia; appoggia la testa sul braccio.\nTieni i piedi uniti e il bacino fermo.\nApri il ginocchio superiore verso l’alto, come una conchiglia che si apre, senza muovere il bacino.\nFermati un istante stringendo il gluteo, poi richiudi lentamente. Completa le ripetizioni e cambia lato.",
-    "accortezze": "Non ruotare il bacino all’indietro: si muove solo l’anca e i piedi restano uniti.\nSe il bacino si sposta, usa un elastico più leggero.\nFai movimenti lenti, senza slancio.\nContrai l’addome per non inarcare la schiena.",
+    "esecuzione": "Sdraiati su un fianco con le anche piegate a circa 45 gradi e le ginocchia a circa 90, con un elastico attorno alle cosce appena sopra le ginocchia; appoggia la testa sul braccio.\nTieni i piedi uniti e il bacino fermo.\nApri il ginocchio superiore verso l'alto, come una conchiglia che si apre, senza muovere il bacino.\nFermati un istante stringendo il gluteo, poi richiudi lentamente. Completa le ripetizioni e cambia lato.",
+    "accortezze": "Non ruotare il bacino all'indietro: si muove solo l'anca e i piedi restano uniti.\nSe il bacino si sposta, usa un elastico più leggero.\nFai movimenti lenti, senza slancio.\nContrai l'addome per non inarcare la schiena.",
     "alias": [
       "Clamshell",
       "Apertura a conchiglia"
