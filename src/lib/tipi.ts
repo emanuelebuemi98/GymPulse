@@ -21,6 +21,8 @@ export type VoceElenco = {
   catalogoId: number | null
   nome: string
   nomeEn: string
+  // Il percorso dell'immagine o vuoto se non c'è.
+  immagine: string
   categoria: string
   muscolo: string
   // Altri nomi con cui si può cercare l'esercizio ("curl in piedi"), separati da a capo. Non si mostrano.

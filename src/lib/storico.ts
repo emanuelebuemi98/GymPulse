@@ -49,7 +49,7 @@ export async function elencoSessioni(userId: number) {
   }))
 }
 
-type GruppoEsercizio = { id: number; nome: string; nomeEn: string; categoria: string; serie: SerieRegistrata[] }
+type GruppoEsercizio = { id: number; nome: string; nomeEn: string; immagine: string; categoria: string; serie: SerieRegistrata[] }
 
 // Dettaglio di un allenamento, con gli esercizi nell'ordine in cui sono stati fatti.
 export async function dettaglioSessione(userId: number, sessioneId: number) {
@@ -59,7 +59,7 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
       giorno: true,
       serie: {
         orderBy: { ordine: 'asc' },
-        include: { esercizio: { include: { catalogo: { select: { nomeEn: true } } } } },
+        include: { esercizio: { include: { catalogo: { select: { nomeEn: true, immagine: true } } } } },
       },
     },
   })
@@ -71,6 +71,7 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
       id: riga.esercizioId,
       nome: riga.esercizio.nome,
       nomeEn: riga.esercizio.catalogo?.nomeEn ?? '',
+      immagine: riga.esercizio.catalogo?.immagine ?? '',
       categoria: riga.esercizio.categoria,
       serie: [],
     }
