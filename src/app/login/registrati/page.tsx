@@ -5,7 +5,6 @@ import { FormRegistrazione } from '@/components/FormRegistrazione'
 import { LogoGymPulse } from '@/components/Logo'
 import { stileCarta } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
-import { emailAttiva } from '@/lib/email'
 
 // Legge il cookie a ogni richiesta.
 export const dynamic = 'force-dynamic'
@@ -25,15 +24,9 @@ export default async function RegistratiPage() {
         <p className="text-muto">Avrai la tua scheda e il tuo storico, separati da quelli degli altri.</p>
       </header>
 
-      {emailAttiva() ? (
-        <section className={`${stileCarta} p-5`}>
-          <FormRegistrazione />
-        </section>
-      ) : (
-        <p role="status" className="rounded-2xl bg-attenzione/15 p-4 text-sm text-attenzione">
-          La registrazione non è attiva su questo server: serve l&apos;invio delle email per confermare l&apos;indirizzo.
-        </p>
-      )}
+      <section className={`${stileCarta} p-5`}>
+        <FormRegistrazione />
+      </section>
 
       <p className="text-center text-sm text-muto">
         Hai già un account?{' '}

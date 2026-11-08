@@ -22,9 +22,9 @@ datasource db {
 }
 
 // Account. Si crea dalla registrazione nell'app. fullName è il nome completo; username e passwordHash servono
-// al login (passwordHash è un hash scrypt, mai la password). email è l'indirizzo confermato con un codice: è dove
-// arrivano i codici per reimpostare la password. Vuota finché la persona non la aggiunge (gli account nuovi la hanno
-// sempre, perché la registrazione la richiede).
+// al login (passwordHash è un hash scrypt, mai la password). email è un indirizzo Gmail: è dove arrivano i codici per
+// reimpostare la password. Alla registrazione si scrive e basta (non si conferma con un codice); cambiandola dalla pagina
+// Account, invece, la nuova si conferma con un codice. Vuota solo negli account molto vecchi.
 model User {
   id           Int            @id @default(autoincrement())
   fullName     String
@@ -59,26 +59,6 @@ model CodiceEmail {
   @@index([creatoIl])
 }
 
-// Registrazione in attesa del codice per email. L'account non esiste ancora: si crea solo quando l'indirizzo è
-// confermato, così nessuno si registra con un indirizzo sbagliato (e quindi senza poter recuperare la password) o
-// altrui. L'id è casuale (uuid) perché è l'unica cosa che lega il browser alla registrazione. La password è già un
-// hash scrypt. Una registrazione usata o scaduta resta qui due giorni, perché conta nei limiti degli invii.
-model RegistrazioneSospesa {
-  id           String   @id @default(uuid())
-  fullName     String
-  username     String
-  passwordHash String
-  email        String
-  chiave       String
-  codiceHash   String
-  tentativi    Int      @default(0)
-  creatoIl     DateTime @default(now())
-  scadeIl      DateTime
-
-  @@index([chiave, creatoIl])
-  @@index([creatoIl])
-}
-
 // Giornata della scheda di una persona. L'id è la sigla (A, B, C, ...): una lettera, e le giornate attive sono da 1 a
 // 7. L'ordine è quello delle sigle. Una nuova giornata prende la lettera dopo l'ultima usata, quindi le sigle possono
 // avere dei buchi (A, C, D) se se ne è tolta una in mezzo.
@@ -100,7 +80,7 @@ model GiornoScheda {
 // Catalogo degli esercizi, uguale per tutti e non modificabile dall'app: si carica con `npm run db:catalogo` dal file
 // prisma/dati/catalogo-esercizi.json. Gli esercizi di una persona (Esercizio) si collegano qui con catalogoId.
 // slug è il nome inglese in minuscolo e con i trattini: è la chiave con cui lo script ritrova una riga già caricata, e
-// anche il nome del file della foto. categoria è una di otto chiavi (vincolo CatalogoEsercizio_categoria, scritto a mano
+// anche il nome del file della foto. categoria è una di nove chiavi (vincolo CatalogoEsercizio_categoria, scritto a mano
 // nelle migrazioni perché Prisma non lo descrive). immagine è il percorso della foto, vuoto finché non c'è.
 // esecuzione: come si fa l'esercizio, un passo per riga. accortezze: gli errori da evitare e le cautele, una per riga.
 // Si mostrano nella scheda dell'esercizio, dopo averlo scelto. Vuoti finché non sono scritti.
@@ -127,7 +107,7 @@ model CatalogoEsercizio {
 
 // Esercizi noti a una persona: quelli presi dal catalogo e quelli che ha scritto lei.
 // L'unicità (userId, id) serve alle chiavi esterne composte di voci e serie.
-// categoria: una delle otto categorie (stesso vincolo del catalogo, Esercizio_categoria), oppure il testo vuoto per gli
+// categoria: una delle nove categorie (stesso vincolo del catalogo, Esercizio_categoria), oppure il testo vuoto per gli
 // esercizi arrivati da un CSV, finché non si sceglie la categoria dalla scheda. Quando c'è catalogoId la categoria è
 // quella del catalogo. Un esercizio con catalogoId vuoto è personale.
 model Esercizio {

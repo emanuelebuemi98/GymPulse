@@ -13,15 +13,14 @@ export const INVII_GIORNO_MASSIMI = 10
 // Verso una stessa casella, qualunque sia lo scopo: ferma chi vuole riempire di email l'indirizzo di un altro.
 export const INVII_DESTINATARIO_ORA_MASSIMI = 3
 
-export type ScopoCodice = 'email' | 'recupero' | 'registrazione'
+export type ScopoCodice = 'email' | 'recupero'
 
 export function generaCodiceOtp(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, '0')
 }
 
-// `soggetto` è a chi appartiene il codice: l'id numerico di una persona, oppure l'id casuale di una registrazione
-// ancora in attesa (l'account non esiste finché l'indirizzo non è confermato). Entra nell'HMAC, quindi un codice
-// non vale per un'altra persona né per un altro scopo.
+// `soggetto` è a chi appartiene il codice: l'id numerico della persona. Entra nell'HMAC, quindi un codice non vale per
+// un'altra persona né per un altro scopo.
 export function hashCodiceOtp(segreto: string, soggetto: number | string, scopo: ScopoCodice, codice: string): string {
   return createHmac('sha256', segreto).update(`otp|${soggetto}|${scopo}|${codice}`).digest('base64url')
 }
@@ -45,7 +44,6 @@ export function normalizzaCodiceOtp(testo: string): string | null {
 }
 
 const PER_COSA: Record<ScopoCodice, string> = {
-  registrazione: 'per confermare il tuo indirizzo e creare l’account',
   email: 'per confermare il nuovo indirizzo del tuo account',
   recupero: 'per scegliere una nuova password',
 }

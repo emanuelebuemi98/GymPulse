@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from './db'
 import { chiaveEmail } from './indirizzo-email'
@@ -17,15 +16,14 @@ import {
 } from './otp'
 
 // I codici per email nel database: crearne uno (con i limiti che evitano di riempire di messaggi una casella e di far
-// bloccare l'account che li spedisce) e controllarne uno. Due casi: i codici di chi ha già un account (conferma
-// dell'indirizzo, recupero della password) e le registrazioni in attesa, dove l'account non esiste ancora.
+// bloccare l'account che li spedisce) e controllarne uno. Sono i codici di chi ha già un account: conferma
+// dell'indirizzo (pagina Account) e recupero della password. La registrazione non ne usa: l'account nasce subito.
 
 const ORA_MS = 60 * 60 * 1000
 const GIORNO_MS = 24 * ORA_MS
 const LIMITE_GLOBALE_PREDEFINITO = 100
-const FORMATO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
-// Un codice o una registrazione "usati" non si cancellano: si fanno scadere. La riga resta e continua a contare nei
+// Un codice "usato" non si cancella: si fa scadere. La riga resta e continua a contare nei
 // limiti, altrimenti confermare un codice libererebbe subito un altro invio e il limite si aggirerebbe in ciclo.
 // Le righe si cancellano da sole dopo due giorni.
 const GIA_SCADUTO = new Date(0)
@@ -42,7 +40,7 @@ export type MotivoRifiuto = 'troppo-presto' | 'limite-persona' | 'limite-destina
 
 export type EsitoCreazione = { ok: true; id: number; codice: string } | { ok: false; motivo: MotivoRifiuto }
 
-// Cosa dire a chi si vede rifiutare un'email, uguale in registrazione, recupero e collegamento dell'indirizzo.
+// Cosa dire a chi si vede rifiutare un'email, uguale in recupero e collegamento dell'indirizzo.
 export const MESSAGGI_RIFIUTO: Record<MotivoRifiuto, string> = {
   'troppo-presto': 'Ho appena mandato un codice a questo indirizzo: aspetta un minuto prima di chiederne un altro.',
   'limite-persona': 'Hai chiesto troppi codici. Riprova più tardi.',
@@ -61,14 +59,12 @@ async function tettiInvio(
   const ultimoGiorno = new Date(adesso - GIORNO_MS)
   const ultimaOra = new Date(adesso - ORA_MS)
 
-  const [codiciGiorno, registrazioniGiorno, codiciCasella, registrazioniCasella] = await Promise.all([
+  const [codiciGiorno, codiciCasella] = await Promise.all([
     tx.codiceEmail.count({ where: { creatoIl: { gt: ultimoGiorno } } }),
-    tx.registrazioneSospesa.count({ where: { creatoIl: { gt: ultimoGiorno } } }),
     tx.codiceEmail.count({ where: { chiave, creatoIl: { gt: ultimaOra } } }),
-    tx.registrazioneSospesa.count({ where: { chiave, creatoIl: { gt: ultimaOra } } }),
   ])
-  if (codiciGiorno + registrazioniGiorno >= limiteGlobale()) return 'limite-globale'
-  if (codiciCasella + registrazioniCasella >= INVII_DESTINATARIO_ORA_MASSIMI) return 'limite-destinatario'
+  if (codiciGiorno >= limiteGlobale()) return 'limite-globale'
+  if (codiciCasella >= INVII_DESTINATARIO_ORA_MASSIMI) return 'limite-destinatario'
   return null
 }
 
@@ -76,7 +72,6 @@ async function tettiInvio(
 async function ripulisci(tx: Prisma.TransactionClient, adesso: number): Promise<void> {
   const limite = new Date(adesso - 2 * GIORNO_MS)
   await tx.codiceEmail.deleteMany({ where: { creatoIl: { lt: limite } } })
-  await tx.registrazioneSospesa.deleteMany({ where: { creatoIl: { lt: limite } } })
 }
 
 // Crea un codice nuovo per questa persona. I limiti sono nel database e non in memoria: valgono per tutti i server
@@ -168,103 +163,4 @@ export async function controllaCodiceEmail(
     data: { scadeIl: GIA_SCADUTO },
   })
   return usati === 1 ? { ok: true, email: riga.email } : { ok: false }
-}
-
-// ---------- Registrazione: l'account nasce solo quando l'indirizzo è confermato ----------
-
-// I dati scelti dalla persona. La password è già un hash scrypt: in chiaro non arriva mai fin qui.
-export type DatiRegistrazione = { fullName: string; username: string; passwordHash: string; email: string }
-
-export type EsitoRegistrazione = { ok: true; id: string; codice: string } | { ok: false; motivo: MotivoRifiuto }
-
-// Mette da parte la registrazione e crea il suo codice. L'id è casuale (uuid): è l'unica cosa che lega il browser
-// a questa registrazione, e chi non lo conosce non può provare codici per lei. Il blocco è sulla casella.
-export async function creaRegistrazioneSospesa(
-  segreto: string,
-  dati: DatiRegistrazione,
-  adesso = new Date(),
-): Promise<EsitoRegistrazione> {
-  const id = randomUUID()
-  const codice = generaCodiceOtp()
-  const codiceHash = hashCodiceOtp(segreto, id, 'registrazione', codice)
-  const chiave = chiaveEmail(dati.email)
-  const istante = adesso.getTime()
-
-  return db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${chiave}))`
-    await ripulisci(tx, istante)
-
-    const rifiuto = await tettiInvio(tx, chiave, istante)
-    if (rifiuto) return { ok: false, motivo: rifiuto } as const
-
-    const recente = await tx.registrazioneSospesa.findFirst({
-      where: { chiave, creatoIl: { gt: new Date(istante - INTERVALLO_INVII_MS) } },
-      select: { id: true },
-    })
-    if (recente) return { ok: false, motivo: 'troppo-presto' } as const
-
-    await tx.registrazioneSospesa.create({
-      data: { id, ...dati, chiave, codiceHash, creatoIl: adesso, scadeIl: new Date(istante + SCADENZA_CODICE_MS) },
-    })
-    return { ok: true, id, codice } as const
-  })
-}
-
-const èUuid = (id: unknown): id is string => typeof id === 'string' && FORMATO_UUID.test(id)
-
-// La registrazione è stata sostituita da una più nuova: i dati non servono più. Si conserva la riga (conta nei
-// limiti) ma si butta la password.
-export async function invalidaRegistrazioneSospesa(id: string): Promise<void> {
-  if (!èUuid(id)) return
-  await db.registrazioneSospesa.updateMany({ where: { id }, data: { scadeIl: GIA_SCADUTO, passwordHash: '' } })
-}
-
-// Annulla del tutto un invio che non è partito: nemmeno il conteggio deve restare.
-export async function annullaRegistrazioneSospesa(id: string): Promise<void> {
-  if (!èUuid(id)) return
-  await db.registrazioneSospesa.deleteMany({ where: { id } })
-}
-
-// I dati di una registrazione ancora in sospeso (non usata e di meno di un'ora fa), per rimandare il codice senza
-// richiedere tutto di nuovo.
-export async function leggiRegistrazioneSospesa(id: unknown): Promise<DatiRegistrazione | null> {
-  if (!èUuid(id)) return null
-  return db.registrazioneSospesa.findFirst({
-    where: { id, passwordHash: { not: '' }, creatoIl: { gt: new Date(Date.now() - ORA_MS) } },
-    select: { fullName: true, username: true, passwordHash: true, email: true },
-  })
-}
-
-export type EsitoConferma = { ok: true; dati: DatiRegistrazione } | { ok: false }
-
-// Controlla il codice di una registrazione. Stesse garanzie di controllaCodiceEmail: cinque tentativi, uso unico, e
-// nessuna richiesta in parallelo può superarli. Un codice giusto consegna i dati e butta subito l'hash della password.
-export async function confermaRegistrazioneSospesa(
-  segreto: string,
-  id: unknown,
-  digitato: string,
-  adesso = new Date(),
-): Promise<EsitoConferma> {
-  const codice = normalizzaCodiceOtp(digitato)
-  if (codice === null || !èUuid(id)) return { ok: false }
-
-  const riga = await db.registrazioneSospesa.findFirst({ where: { id, scadeIl: { gt: adesso } } })
-  if (!riga) return { ok: false }
-
-  const { count } = await db.registrazioneSospesa.updateMany({
-    where: { id, tentativi: { lt: TENTATIVI_MASSIMI } },
-    data: { tentativi: { increment: 1 } },
-  })
-  if (count !== 1) return { ok: false }
-  if (!codiceOtpGiusto(segreto, id, 'registrazione', codice, riga.codiceHash)) return { ok: false }
-
-  const { count: usate } = await db.registrazioneSospesa.updateMany({
-    where: { id, scadeIl: { gt: adesso } },
-    data: { scadeIl: GIA_SCADUTO, passwordHash: '' },
-  })
-  if (usate !== 1) return { ok: false }
-  return {
-    ok: true,
-    dati: { fullName: riga.fullName, username: riga.username, passwordHash: riga.passwordHash, email: riga.email },
-  }
 }
