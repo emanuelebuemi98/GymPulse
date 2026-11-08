@@ -14,6 +14,10 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 
 | Cosa | Come funziona |
 |---|---|
+| **Presentazione prima dell'accesso** | La pagina iniziale (`/`) spiega l'app a chi non è ancora entrato: quattro schede piccole (scheda, sessione, "Come si fa", progressi) da toccare: si apre la schermata ingrandita, con i pulsanti avanti e indietro (si può anche scorrere col dito o usare le frecce della tastiera) e si chiude con la X, con Esc o toccando fuori, come si usa in tre passi, l'elenco delle funzioni e i pulsanti per creare l'account o accedere. Chi è già entrato viene mandato alla sua home, che sta in `/home`; uscendo con «Esci» si torna alla presentazione. Le immagini degli esercizi si vedono anche qui, quindi `public/esercizi` non è protetta dall'accesso. |
+| **Tema chiaro e scuro** | Il pulsante con il sole e la luna in alto a destra (anche nelle pagine di accesso) cambia il tema. La prima volta si parte da quello del telefono; dopo il primo tocco la scelta si ricorda in quel browser (`localStorage`, chiave `gympulse_tema`). I colori si chiamano per ruolo e stanno tutti in `src/app/globals.css`; i grafici li leggono da lì. Tema "Foresta": verde bosco con un punto di lime. |
+| **Piè di pagina** | In fondo a tutte le pagine, anche dentro l'app, c'è «App ideata e creata da Emanuele Buemi». Sta nel layout (`PiePagina.tsx`), quindi si cambia in un posto solo. Sotto il piè di pagina resta lo spazio per il timer di recupero, fisso in basso durante la sessione, che altrimenti coprirebbe il nome. |
+| **Logo e icone** | Una kettlebell con il battito dentro. Il disegno è in `public/icon.svg`, da cui sono ricavate le icone PNG (192, 512, "maskable" per Android e 180 per la schermata Home di iPhone); il componente `Logo.tsx` lo riusa con i colori del tema. |
 | **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori. L'email si conferma con un codice e l'account nasce solo dopo il codice giusto. Ogni persona vede solo i propri dati. |
 | **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
 | **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. La pagina della giornata mostra per ogni esercizio serie × ripetizioni **e il tempo di recupero**  e l'ultimo carico usato. |
@@ -31,7 +35,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Storico** | Elenco delle sedute con volume e durata; dettaglio di ogni seduta; puoi eliminarne una. |
 | **Progressi: panoramica** | Sedute per settimana (le settimane senza sedute ci sono, a zero), **kg per categoria** di una settimana, sedute per giornata e gli ultimi record. |
 | **Progressi: per esercizio** | Tre grafici per ogni esercizio: carico massimo, peso totale per seduta e ripetizioni totali per seduta (nelle sedute con ripetizioni non registrate un avviso lo dice). Ogni grafico ha il suggerimento al passaggio del mouse (o con la tastiera) e la tabella dei numeri, e quello del peso totale mostra anche la somma. |
-| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per categoria (le otto con kg: Petto, Dorsali, Spalle, Braccia, Gambe, Olimpico, Corpo intero, Altri; Addome e Cardio non ci sono) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su una categoria (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza categoria (di prima del catalogo) non entrano nelle categorie: i loro kg compaiono a parte, sotto il grafico. |
+| **Kg per gruppo e peso totale** | I kg di ogni serie si **sommano senza moltiplicare per le ripetizioni**. Nella panoramica la somma è per categoria (le cinque con kg: Petto, Dorsali, Spalle, Braccia, Gambe; Addome, Cardio e Riscaldamento non ci sono) e si sfoglia una settimana alla volta con le frecce. Passando il mouse su una categoria (con la tastiera: Tab; sul telefono: toccandolo) compaiono i suoi esercizi con il calcolo. Gli esercizi senza categoria (di prima del catalogo) non entrano nelle categorie: i loro kg compaiono a parte, sotto il grafico. |
 | **Durata della seduta** | Per ogni seduta puoi scrivere, se vuoi, quanti minuti è durata: compare nel dettaglio e nell'elenco dello storico. Non c'è nessun collegamento con orologi o altre app. |
 | **Sedute in CSV** | Esporti le tue sedute in un file che si apre in Excel (una riga per serie, separatore `;`, decimali con la virgola) e lo reimporti. I file esportati quando c'erano ancora i dati dell'orologio si importano lo stesso: le colonne dei battiti e delle calorie vengono ignorate. L'importazione **aggiunge**: le sedute già presenti (stessa data e stessa giornata) si saltano, quindi importare due volte lo stesso file non duplica nulla. Gli esercizi si ritrovano per nome e, se non ci sono, si creano. La scheda non è nel file. |
 
@@ -206,14 +210,17 @@ GymPulse/
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account o cambia la password
 ├── public/
-│   ├── icon.svg                                      # icona dell'app
+│   ├── icon.svg                                      # logo e icona dell'app (kettlebell con il battito)
+│   ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-icon.png  # icone PNG ricavate dal logo
+│   ├── esercizi/                                     # le immagini degli esercizi (200 x 200)
 │   └── manifest.webmanifest                          # nome e colori dell'app, se la aggiungi alla schermata Home
 ├── src/
-│   ├── proxy.ts                                      # prima porta: senza accesso si vede solo il login
+│   ├── proxy.ts                                      # prima porta: senza accesso si vedono solo presentazione e accesso
 │   ├── app/                                          # pagine e route (Next.js App Router)
 │   │   ├── layout.tsx                                # intestazione, menu in alto, font
-│   │   ├── globals.css                               # colori del tema
-│   │   ├── page.tsx                                  # home
+│   │   ├── globals.css                               # colori del tema, chiaro e scuro
+│   │   ├── page.tsx                                  # presentazione dell'app, pubblica (chi è dentro va a /home)
+│   │   ├── home/page.tsx                             # la home di chi è entrato: cosa tocca oggi
 │   │   ├── actions.ts                                # azioni sul server: salva sessione e scheda, elimina, importa CSV
 │   │   ├── api/
 │   │   │   └── export/route.ts                       # esportazione delle sedute in CSV
@@ -247,6 +254,10 @@ GymPulse/
 │   │   ├── FormRecupero.tsx, FormEmail.tsx           # recupero della password e email nell'Account
 │   │   ├── CsvSedute.tsx                             # esporta e importa le sedute in CSV
 │   │   ├── EliminaSessione.tsx                       # pulsante per eliminare una seduta
+│   │   ├── Logo.tsx, PiePagina.tsx                   # logo e piè di pagina con il nome dell'autore
+│   │   ├── TemaPulsante.tsx                          # il pulsante sole/luna che cambia il tema
+│   │   ├── benvenuto/Telefono.tsx                    # le schermate da telefono della presentazione
+│   │   ├── benvenuto/GalleriaSchermate.tsx           # le quattro schede da toccare e la finestra con la schermata ingrandita
 │   │   ├── icone.tsx                                 # icone SVG
 │   │   └── stili.ts                                  # classi condivise (carte, campi, pulsanti)
 │   ├── lib/                                          # calcoli, validazioni e accesso ai dati (tabella sotto)
@@ -272,7 +283,7 @@ Dentro `src/lib/` (33 file):
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (scrive e legge il CSV delle sedute), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, peso totale, carico, record), `panoramica.ts` (sedute per settimana, sedute per giornata, kg per gruppo muscolare), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
-| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le otto categorie), `bozza.ts` (la sessione in corso nel browser) |
+| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le otto categorie), `tema.ts` (dove si ricorda il tema scelto), `bozza.ts` (la sessione in corso nel browser) |
 
 ## Modello dei dati
 
