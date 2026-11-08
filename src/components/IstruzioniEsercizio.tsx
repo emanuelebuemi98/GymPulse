@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { leggiDettaglio } from '@/app/esercizi/actions'
 import type { DettaglioEsercizio } from '@/lib/tipi'
+import { IconaChevronGiu } from './icone'
 import { ImmagineEsercizio } from './ImmagineEsercizio'
+import { OminoDomanda } from './OminoDomanda'
 
 type Props = {
   // Per un esercizio del catalogo non ancora della persona si passa catalogoId; per uno suo, l'id.
@@ -40,14 +42,20 @@ export function IstruzioniEsercizio({ catalogoId, esercizioId, nome }: Props) {
 
   return (
     <div className="space-y-2">
+      {/* Un vero pulsante, con l'omino che si chiede come si fa e la freccia che dice che si apre e si chiude. */}
       <button
         type="button"
         onClick={alClick}
         aria-expanded={aperto}
         aria-label={`Come si fa: ${nome}`}
-        className="text-sm font-semibold text-accento underline-offset-2 hover:underline"
+        className="flex w-full items-center gap-3 rounded-2xl border border-bordo bg-carta-alta py-1.5 pr-3 pl-2 text-left transition active:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accento"
       >
-        {aperto ? 'Nascondi come si fa' : 'Come si fa'}
+        <OminoDomanda className="h-11 w-auto shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-extrabold">{aperto ? 'Nascondi come si fa' : 'Come si fa'}</span>
+          <span className="block text-xs text-muto">Immagine, passi e accortezze</span>
+        </span>
+        <IconaChevronGiu className={`size-5 shrink-0 text-muto transition-transform motion-reduce:transition-none ${aperto ? 'rotate-180' : ''}`} />
       </button>
 
       {aperto && (
