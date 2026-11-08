@@ -1811,20 +1811,23 @@
     "slug": "abductor-machine",
     "nomeIt": "Abduttori alla macchina",
     "nomeEn": "Abductor Machine",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Macchina",
     "muscoloPrincipale": "Medio Gluteo",
     "muscoliSecondari": "Tensore Fascia Lata",
     "tipoMovimento": "Isolamento",
     "esecuzione": "Siediti con la schiena ben appoggiata allo schienale e le cosce unite, con gambe o piedi sui cuscinetti o sulle pedane, e impugna le maniglie.\nApri le gambe verso l'esterno fino al limite del tuo movimento, espirando.\nResta un istante in contrazione, sentendo lavorare glutei e parte esterna dell'anca.\nRiporta le gambe al centro lentamente, inspirando, senza far battere i pesi.",
-    "accortezze": "Non staccare la schiena dallo schienale: il busto resta fermo e il movimento nasce solo dalle anche.\nEvita strappi e rimbalzi: apri e chiudi con controllo, con un carico adatto al tuo livello.\nRegola la macchina sulla tua statura prima di cominciare, così la posizione resta comoda per tutta la serie."
+    "accortezze": "Non staccare la schiena dallo schienale: il busto resta fermo e il movimento nasce solo dalle anche.\nEvita strappi e rimbalzi: apri e chiudi con controllo, con un carico adatto al tuo livello.\nRegola la macchina sulla tua statura prima di cominciare, così la posizione resta comoda per tutta la serie.",
+    "alias": [
+      "Abductor"
+    ]
   },
   {
     "id": 138,
     "slug": "cable-hip-abduction",
     "nomeIt": "Abduzioni anca ai cavi",
     "nomeEn": "Cable Hip Abduction",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Cavi",
     "muscoloPrincipale": "Medio Gluteo",
     "muscoliSecondari": "",
@@ -1961,7 +1964,7 @@
     "slug": "miniband-lateral-walk",
     "nomeIt": "Camminata laterale con miniband",
     "nomeEn": "Miniband Lateral Walk",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Elastico Miniband",
     "muscoloPrincipale": "Medio Gluteo",
     "muscoliSecondari": "Quadricipiti",
@@ -2026,7 +2029,7 @@
     "slug": "machine-hip-thrust",
     "nomeIt": "Hip Thrust alla macchina",
     "nomeEn": "Machine Hip Thrust",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Macchina",
     "muscoloPrincipale": "Glutei",
     "muscoliSecondari": "Femorali",
@@ -2039,33 +2042,41 @@
     "slug": "barbell-hip-thrust",
     "nomeIt": "Hip Thrust con bilanciere",
     "nomeEn": "Barbell Hip Thrust",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Bilanciere / Panca",
     "muscoloPrincipale": "Glutei",
     "muscoliSecondari": "Femorali, Addome",
     "tipoMovimento": "Estensione Anca",
     "esecuzione": "Siediti a terra con la parte alta della schiena contro il bordo di una panca e il bilanciere sopra le gambe, con un cuscinetto di protezione per le anche.\nPiega le ginocchia e appoggia i piedi a terra, alla larghezza delle spalle, vicino ai glutei.\nFai rotolare il bilanciere fino a portarlo sopra le anche, tenendolo con le mani, con la parte bassa delle scapole appoggiata al bordo della panca.\nSpingi sui talloni ed estendi le anche in verticale, sollevando il bilanciere il più in alto possibile e stringendo i glutei.\nResta un istante in alto, con busto e cosce allineati, poi torna giù in modo controllato.",
-    "accortezze": "Il peso si scarica su scapole e piedi: non inarcare la zona lombare in alto, la spinta deve venire dai glutei.\nProteggi le anche con un cuscinetto sul bilanciere e blocca la panca, perché non scivoli durante la spinta.\nParti con un carico leggero e aumentalo gradualmente; controlla la discesa e non far rimbalzare il bilanciere."
+    "accortezze": "Il peso si scarica su scapole e piedi: non inarcare la zona lombare in alto, la spinta deve venire dai glutei.\nProteggi le anche con un cuscinetto sul bilanciere e blocca la panca, perché non scivoli durante la spinta.\nParti con un carico leggero e aumentalo gradualmente; controlla la discesa e non far rimbalzare il bilanciere.",
+    "alias": [
+      "Hip thrust"
+    ]
   },
   {
     "id": 155,
     "slug": "cable-glute-kickback",
     "nomeIt": "Kickback glutei ai cavi",
     "nomeEn": "Cable Glute Kickback",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Cavi",
     "muscoloPrincipale": "Grande Gluteo",
     "muscoliSecondari": "Femorali",
     "tipoMovimento": "Isolamento",
     "esecuzione": "Aggancia la cavigliera al cavo basso e allacciala alla caviglia della gamba che lavora.\nMettiti di fronte alla macchina e afferra la struttura per sostenerti, con ginocchia e anche leggermente piegate e addominali contratti.\nContrai il gluteo e porta la gamba indietro con un movimento ad arco, espirando, fin dove arrivi senza compensare con la schiena.\nStringi il gluteo per un istante nel punto finale.\nRiporta la gamba in avanti lentamente, frenando il cavo, poi cambia lato.",
-    "accortezze": "Non inarcare la zona lombare per salire di più: l'escursione utile è quella in cui lavora il gluteo.\nEvita lo slancio e scegli un carico che ti permetta di controllare sia l'andata sia il ritorno.\nTieni busto e bacino fermi, senza ruotare il bacino verso la gamba d'appoggio."
+    "accortezze": "Non inarcare la zona lombare per salire di più: l'escursione utile è quella in cui lavora il gluteo.\nEvita lo slancio e scegli un carico che ti permetta di controllare sia l'andata sia il ritorno.\nTieni busto e bacino fermi, senza ruotare il bacino verso la gamba d'appoggio.",
+    "alias": [
+      "Slanci al cavo basso",
+      "Slanci indietro al cavo basso",
+      "Slanci posteriori al cavo"
+    ]
   },
   {
     "id": 156,
     "slug": "machine-glute-kickback",
     "nomeIt": "Kickback glutei alla macchina",
     "nomeEn": "Machine Glute Kickback",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Macchina",
     "muscoloPrincipale": "Grande Gluteo",
     "muscoliSecondari": "Femorali",
@@ -2143,7 +2154,7 @@
     "slug": "dumbbell-single-leg-hip-thrust",
     "nomeIt": "Hip Thrust monolaterale con manubrio",
     "nomeEn": "Dumbbell Single-Leg Hip Thrust",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Panca e Manubrio",
     "muscoloPrincipale": "Grande Gluteo",
     "muscoliSecondari": "Femorali",
@@ -2195,7 +2206,7 @@
     "slug": "cable-pull-through",
     "nomeIt": "Pull-through ai cavi",
     "nomeEn": "Cable Pull-Through",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Cavi",
     "muscoloPrincipale": "Glutei, Femorali",
     "muscoliSecondari": "Erettori Spinali",
@@ -2341,7 +2352,7 @@
     "slug": "dumbbell-sumo-deadlift",
     "nomeIt": "Stacco Sumo con manubri",
     "nomeEn": "Dumbbell Sumo Deadlift",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Manubrio",
     "muscoloPrincipale": "Glutei, Gran Adduttore",
     "muscoliSecondari": "Quadricipiti, Erettori Spinali",
@@ -2354,7 +2365,7 @@
     "slug": "sumo-deadlift",
     "nomeIt": "Stacco Sumo con bilanciere",
     "nomeEn": "Sumo Deadlift",
-    "categoria": "gambe",
+    "categoria": "glutei",
     "attrezzatura": "Bilanciere",
     "muscoloPrincipale": "Glutei, Gran Adduttore",
     "muscoliSecondari": "Quadricipiti, Erettori Spinali",
@@ -2373,7 +2384,11 @@
     "muscoliSecondari": "Femorali",
     "tipoMovimento": "Monopodalico",
     "esecuzione": "Stai in piedi davanti a una panchetta o a un box, con un manubrio per mano e le braccia lungo i fianchi.\nAppoggia un piede sul box, con il ginocchio sopra la caviglia.\nSpingi sul tallone, distendendo anca e ginocchio, e porta su anche l'altro piede.\nScendi in modo controllato, riportando i piedi a terra. Completa le ripetizioni con la stessa gamba, poi cambia lato.",
-    "accortezze": "Spingi con la gamba sul box, non con quella rimasta a terra, altrimenti il lavoro su quadricipiti e glutei si riduce.\nNon lanciare il busto in avanti: il ginocchio resta sopra la caviglia, senza superare la punta del piede.\nScegli un box di altezza adatta: più è alto, più l'esercizio è impegnativo.\nCon manubri pesanti proteggi ginocchia e schiena: aumenta il carico gradualmente. Espira mentre sali."
+    "accortezze": "Spingi con la gamba sul box, non con quella rimasta a terra, altrimenti il lavoro su quadricipiti e glutei si riduce.\nNon lanciare il busto in avanti: il ginocchio resta sopra la caviglia, senza superare la punta del piede.\nScegli un box di altezza adatta: più è alto, più l'esercizio è impegnativo.\nCon manubri pesanti proteggi ginocchia e schiena: aumenta il carico gradualmente. Espira mentre sali.",
+    "alias": [
+      "Step up",
+      "Step up con manubri"
+    ]
   },
   {
     "id": 180,
@@ -3188,5 +3203,106 @@
     "tipoMovimento": "Mobilità Globale",
     "esecuzione": "Parti in plank alto, con le mani sotto le spalle e il corpo in linea retta dalla testa ai talloni.\nPorta un piede avanti, accanto alla mano dello stesso lato, con il ginocchio aperto verso l'esterno.\nAbbassa il bacino verso terra, tenendo la gamba dietro tesa, per allungare l'anca.\nRuota il busto e solleva verso il soffitto il braccio dal lato della gamba avanti, seguendo la mano con lo sguardo.\nRiporta la mano a terra, rimetti il piede indietro in plank e ripeti dall'altro lato.",
     "accortezze": "Muoviti lentamente, senza rimbalzi, e non andare oltre un leggero fastidio.\nTieni il busto lungo e il bacino stabile: non arrotondare la schiena nelle fasi di allungamento.\nIl ginocchio avanti resta in linea con il piede, senza cadere verso l'interno.\nRespira con calma durante ogni fase."
+  },
+  {
+    "id": 241,
+    "slug": "cable-diagonal-glute-kickback",
+    "nomeIt": "Slanci ad ascia al cavo basso",
+    "nomeEn": "Cable Diagonal Glute Kickback",
+    "categoria": "glutei",
+    "attrezzatura": "Cavi",
+    "muscoloPrincipale": "Grande Gluteo",
+    "muscoliSecondari": "Medio Gluteo, Femorali",
+    "tipoMovimento": "Isolamento",
+    "esecuzione": "Aggancia la cavigliera al cavo basso e allacciala alla caviglia della gamba che lavora.\nMettiti di fronte alla macchina e afferra la struttura per sostenerti, con il busto leggermente inclinato in avanti e gli addominali contratti.\nParti con la gamba che lavora un po’ davanti e leggermente incrociata davanti a quella d’appoggio.\nContrai il gluteo e porta la gamba indietro e verso l’esterno, in diagonale, con un movimento ad arco come un colpo d’ascia, espirando.\nStringi il gluteo per un istante, poi riporta la gamba alla partenza lentamente, frenando il cavo. Completa le ripetizioni e cambia lato.",
+    "accortezze": "Il movimento nasce dall’anca: non ruotare il bacino e non inarcare la zona lombare per salire di più.\nTieni il ginocchio della gamba che lavora morbido, senza bloccarlo.\nEvita lo slancio e scegli un carico che ti permetta di controllare sia l’andata sia il ritorno.\nSe il busto ruota o si sposta, il carico è troppo alto.",
+    "alias": [
+      "Slanci in diagonale al cavo basso",
+      "Slanci incrociati al cavo basso"
+    ]
+  },
+  {
+    "id": 242,
+    "slug": "donkey-kick",
+    "nomeIt": "Donkey Kick a quattro zampe",
+    "nomeEn": "Donkey Kick",
+    "categoria": "glutei",
+    "attrezzatura": "Corpo Libero",
+    "muscoloPrincipale": "Grande Gluteo",
+    "muscoliSecondari": "Femorali, Addome",
+    "tipoMovimento": "Isolamento",
+    "esecuzione": "Mettiti a quattro zampe, con le mani sotto le spalle e le ginocchia sotto le anche, la schiena neutra.\nContrai l’addome e, tenendo il ginocchio piegato a 90 gradi, spingi un piede verso il soffitto.\nSali fino a portare la coscia in linea con il busto, stringendo il gluteo, senza inarcare la schiena.\nRiporta lentamente il ginocchio verso il pavimento, senza appoggiarlo, e ripeti. Poi cambia gamba.",
+    "accortezze": "Non inarcare la zona lombare per salire più in alto: l’escursione utile finisce quando la coscia è in linea con il busto.\nTieni il bacino fermo e le anche allineate, senza ruotare verso il lato della gamba che sale.\nMuoviti lentamente, senza slancio.\nSe polsi o ginocchia danno fastidio, appoggiati sugli avambracci e usa un tappetino.",
+    "alias": [
+      "Slanci posteriori a quattro zampe",
+      "Calcio all’indietro a quattro zampe"
+    ]
+  },
+  {
+    "id": 243,
+    "slug": "fire-hydrant",
+    "nomeIt": "Fire Hydrant a quattro zampe",
+    "nomeEn": "Fire Hydrant",
+    "categoria": "glutei",
+    "attrezzatura": "Corpo Libero",
+    "muscoloPrincipale": "Medio Gluteo",
+    "muscoliSecondari": "Grande Gluteo, Addome",
+    "tipoMovimento": "Isolamento",
+    "esecuzione": "Mettiti a quattro zampe, con le mani sotto le spalle e le ginocchia sotto le anche.\nTieni il ginocchio piegato a 90 gradi e solleva lateralmente una gamba, come un cane vicino a un idrante, con il busto fermo.\nSali fino a portare la coscia all’altezza dell’anca, stringendo il gluteo.\nRiporta lentamente il ginocchio alla posizione di partenza, senza appoggiarlo, poi ripeti e cambia lato.",
+    "accortezze": "Non ruotare il bacino né inclinare il busto verso il lato opposto: se lo fai, sei salito troppo.\nTieni la schiena neutra e gli addominali contratti.\nFai movimenti lenti e controllati, senza slancio.\nPer renderlo più difficile puoi mettere un elastico sopra le ginocchia.",
+    "alias": [
+      "Abduzioni anca a quattro zampe"
+    ]
+  },
+  {
+    "id": 244,
+    "slug": "frog-pump",
+    "nomeIt": "Frog Pump a terra",
+    "nomeEn": "Frog Pump",
+    "categoria": "glutei",
+    "attrezzatura": "Corpo Libero",
+    "muscoloPrincipale": "Glutei",
+    "muscoliSecondari": "Femorali, Gran Adduttore",
+    "tipoMovimento": "Estensione Anca",
+    "esecuzione": "Sdraiati sulla schiena con le piante dei piedi unite e le ginocchia aperte verso l’esterno, i talloni vicino ai glutei.\nAppoggia le braccia lungo i fianchi, con i palmi a terra.\nSpingi sulle piante dei piedi e solleva il bacino stringendo i glutei, fino a mettere il busto in linea con le cosce.\nResta un istante in alto, poi abbassa il bacino senza appoggiarlo del tutto e ripeti con un movimento fluido.",
+    "accortezze": "Spingi con i glutei, non con la schiena: non inarcare la zona lombare in alto.\nTieni il collo rilassato e le ginocchia aperte per tutta la serie.\nDi solito si fa con tante ripetizioni e senza peso, per sentire bene il gluteo.",
+    "alias": [
+      "Ponte a rana",
+      "Ponte glutei a rana"
+    ]
+  },
+  {
+    "id": 245,
+    "slug": "reverse-hyperextension",
+    "nomeIt": "Estensioni inverse alla panca",
+    "nomeEn": "Reverse Hyperextension",
+    "categoria": "glutei",
+    "attrezzatura": "Macchina",
+    "muscoloPrincipale": "Glutei",
+    "muscoliSecondari": "Femorali, Erettori Spinali",
+    "tipoMovimento": "Estensione Anca",
+    "esecuzione": "Sdraiati a pancia in giù sulla panca per le estensioni inverse, con il bacino sul bordo e le gambe che pendono, e afferra le maniglie davanti a te.\nContrai addominali e glutei.\nSolleva le gambe distese all’indietro, estendendo le anche, fino a portarle in linea con il busto.\nResta un istante in alto, poi riporta le gambe in basso lentamente, controllando il movimento.",
+    "accortezze": "Non salire oltre la linea del busto: inarcare la schiena per salire di più carica la zona lombare.\nEvita lo slancio: il peso che oscilla non deve spingerti.\nParti con un carico leggero e aumentalo con gradualità.\nLavora anche i lombari: se hai problemi alla schiena, impara l’esercizio con un istruttore.",
+    "alias": [
+      "Reverse hyper",
+      "Iperestensioni inverse"
+    ]
+  },
+  {
+    "id": 246,
+    "slug": "banded-clamshell",
+    "nomeIt": "Conchiglia con elastico",
+    "nomeEn": "Banded Clamshell",
+    "categoria": "glutei",
+    "attrezzatura": "Elastico",
+    "muscoloPrincipale": "Medio Gluteo",
+    "muscoliSecondari": "Tensore Fascia Lata",
+    "tipoMovimento": "Isolamento",
+    "esecuzione": "Sdraiati su un fianco con le anche piegate a circa 45 gradi e le ginocchia a circa 90, con un elastico attorno alle cosce appena sopra le ginocchia; appoggia la testa sul braccio.\nTieni i piedi uniti e il bacino fermo.\nApri il ginocchio superiore verso l’alto, come una conchiglia che si apre, senza muovere il bacino.\nFermati un istante stringendo il gluteo, poi richiudi lentamente. Completa le ripetizioni e cambia lato.",
+    "accortezze": "Non ruotare il bacino all’indietro: si muove solo l’anca e i piedi restano uniti.\nSe il bacino si sposta, usa un elastico più leggero.\nFai movimenti lenti, senza slancio.\nContrai l’addome per non inarcare la schiena.",
+    "alias": [
+      "Clamshell",
+      "Apertura a conchiglia"
+    ]
   }
 ]
