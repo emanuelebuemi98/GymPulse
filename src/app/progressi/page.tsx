@@ -112,7 +112,7 @@ async function Panoramica({
         <div>
           <h2 className="text-lg font-extrabold">Kg per gruppo muscolare</h2>
           <p className="text-sm text-muto">
-            I kg di tutte le serie della settimana, sommati per gruppo. L&apos;addome è escuso.
+            I kg di tutte le serie della settimana, sommati per gruppo. Addome, cardio e riscaldamento non hanno kg da sommare e non compaiono.
           </p>
         </div>
         <div className="flex items-center justify-between gap-2">
