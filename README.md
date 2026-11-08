@@ -4,8 +4,6 @@
 
 Si usa dal browser del telefono e funziona anche in locale sul PC.
 
-> **Stato:** funziona in locale con PostgreSQL in Docker. Il collegamento a Neon e la pubblicazione su Vercel non sono ancora fatti.
-
 ---
 
 ## Cosa può fare l'app
@@ -56,7 +54,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | Interfaccia | React | 19.3.1 | Libreria per la costruzione dell'interfaccia utente tramite componenti riutilizzabili e gestione dello stato |
 | Linguaggio | TypeScript | 7.0.2 | Superset tipizzato di JavaScript; controllo statico dei tipi per un codice più sicuro e manutenibile |
 | Stile | Tailwind CSS | 4.3.3 | Font Bricolage Grotesque, tema chiaro |
-| Database | PostgreSQL | 17 | Docker in locale; Neon (cloud) previsto per la pubblicazione |
+| Database | PostgreSQL | 17 | Docker in locale; Neon (cloud) online |
 | ORM | Prisma | 7.10.1 | Con driver `pg` 8.23.1 e `@prisma/adapter-pg` 7.10.1 |
 | Validazione | Zod | 4.6.7 | I dati arrivati dal browser si ricontrollano sempre sul server |
 | Accesso | Scritto nel progetto | — | Cookie firmato (HMAC-SHA256) e password con scrypt, entrambi di Node.js: nessuna libreria in più |
@@ -163,7 +161,7 @@ npm.cmd start             # avvia su http://localhost:3000
 
 Le variabili della shell valgono solo per quella finestra e vincono sul file `.env`, quindi la build di produzione non usa per sbaglio il database locale. Chiusa la finestra, spariscono. **Non scrivere le credenziali di produzione nel `.env`.**
 
-**Su Vercel** (quando sarà collegato) si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo) e `AUTH_SECRET`. Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema.
+**Su Vercel** si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo) e `AUTH_SECRET`. Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema.
 
 ## Script disponibili
 

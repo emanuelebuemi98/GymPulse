@@ -649,7 +649,10 @@
     "muscoliSecondari": "Bicipiti, Trapezio",
     "tipoMovimento": "Trazione",
     "esecuzione": "Siediti alla macchina con i piedi sulla pedana, le ginocchia leggermente piegate (non bloccate) e afferra il triangolo a braccia tese.\nRaddrizza il busto mantenendo la naturale curva della schiena e il petto in fuori, sentendo allungarsi i dorsali.\nTira il triangolo verso l'ombelico, con i gomiti vicini al corpo e le scapole che si avvicinano.\nFai una breve pausa stringendo la schiena, poi torna lentamente in avanti a braccia tese.",
-    "accortezze": "Non oscillare con la schiena: slanci eccessivi caricano la zona lombare.\nTieni le spalle basse e la testa in linea con la colonna, senza spingerla in avanti.\nIl busto resta fermo: non lanciarti all'indietro per spostare il carico.\nControlla il ritorno, lasciando le braccia tornare in avanti lentamente."
+    "accortezze": "Non oscillare con la schiena: slanci eccessivi caricano la zona lombare.\nTieni le spalle basse e la testa in linea con la colonna, senza spingerla in avanti.\nIl busto resta fermo: non lanciarti all'indietro per spostare il carico.\nControlla il ritorno, lasciando le braccia tornare in avanti lentamente.",
+    "alias": [
+      "Pulley basso"
+    ]
   },
   {
     "id": 50,
@@ -1500,7 +1503,8 @@
     "alias": [
       "Curl alternato con manubri",
       "Curl con manubri alternati",
-      "Curl in piedi"
+      "Curl in piedi",
+      "Curl con manubri alternato"
     ]
   },
   {
