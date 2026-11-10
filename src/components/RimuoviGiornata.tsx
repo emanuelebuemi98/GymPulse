@@ -3,29 +3,34 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { rimuoviGiornata } from '@/app/actions'
+import { rimuoviGiornataAllievo } from '@/app/trainer/actions'
 import { IconaCestino } from './icone'
 
-type Props = { utenteId: number; id: string; titolo: string; sedute: number }
+// `sedute` è il numero di sedute registrate sulla giornata: la persona proprietaria della scheda lo vede nella conferma. Un
+// personal trainer (`allievoId`) non lo deve sapere, quindi non lo riceve e la conferma non ne parla.
+type Props = { utenteId: number; id: string; titolo: string; sedute?: number; allievoId?: number; base?: string }
 
 // Toglie una giornata dalla scheda, dopo una conferma che dice cosa succede davvero: se ha sedute registrate non si
 // cancellano, la giornata resta solo per lo storico.
-export function RimuoviGiornata({ utenteId, id, titolo, sedute }: Props) {
+export function RimuoviGiornata({ utenteId, id, titolo, sedute = 0, allievoId, base = '/scheda' }: Props) {
   const router = useRouter()
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
 
   function rimuovi() {
     const domanda =
-      sedute > 0
-        ? `Togliere la giornata ${id} (${titolo}) dalla scheda?\n\nHa ${sedute === 1 ? '1 seduta registrata' : `${sedute} sedute registrate`}: restano nello storico e nei progressi. Sparisce solo la giornata, con i suoi esercizi di scheda.`
-        : `Togliere la giornata ${id} (${titolo}) dalla scheda?\n\nSparisce con i suoi esercizi di scheda. Non ha sedute registrate.`
+      allievoId !== undefined
+        ? `Togliere la giornata ${id} (${titolo}) dalla scheda?\n\nSparisce con i suoi esercizi di scheda. Le sedute già registrate dall'utente restano nel suo storico.`
+        : sedute > 0
+          ? `Togliere la giornata ${id} (${titolo}) dalla scheda?\n\nHa ${sedute === 1 ? '1 seduta registrata' : `${sedute} sedute registrate`}: restano nello storico e nei progressi. Sparisce solo la giornata, con i suoi esercizi di scheda.`
+          : `Togliere la giornata ${id} (${titolo}) dalla scheda?\n\nSparisce con i suoi esercizi di scheda. Non ha sedute registrate.`
     if (!window.confirm(domanda)) return
 
     setErrore(null)
     startTransition(async () => {
-      const esito = await rimuoviGiornata(utenteId, id)
+      const esito = allievoId === undefined ? await rimuoviGiornata(utenteId, id) : await rimuoviGiornataAllievo(utenteId, allievoId, id)
       if ('errore' in esito) return setErrore(esito.errore)
-      router.push('/scheda')
+      router.push(base)
       router.refresh()
     })
   }

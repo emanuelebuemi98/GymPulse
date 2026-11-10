@@ -3,21 +3,31 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { aggiungiGiornata } from '@/app/actions'
+import { aggiungiGiornataAllievo } from '@/app/trainer/actions'
 import { IconaPiu } from './icone'
 
-// Il "+" in fondo alle linguette delle giornate: crea la giornata successiva e porta subito a riempirla.
-export function AggiungiGiornata({ utenteId }: { utenteId: number }) {
+// Il "+" in fondo alle linguette delle giornate: crea la giornata successiva e porta subito a riempirla. Per un personal trainer
+// `allievoId` è l'utente di cui è la scheda e `modifica` la pagina dell'editor (/trainer/12/modifica).
+export function AggiungiGiornata({
+  utenteId,
+  allievoId,
+  modifica = '/scheda/modifica',
+}: {
+  utenteId: number
+  allievoId?: number
+  modifica?: string
+}) {
   const router = useRouter()
   const [inCorso, startTransition] = useTransition()
 
   function aggiungi() {
     startTransition(async () => {
-      const esito = await aggiungiGiornata(utenteId)
+      const esito = allievoId === undefined ? await aggiungiGiornata(utenteId) : await aggiungiGiornataAllievo(utenteId, allievoId)
       if ('errore' in esito) {
         window.alert(esito.errore)
         return
       }
-      router.push(`/scheda/modifica?r=${esito.id}`)
+      router.push(`${modifica}?r=${esito.id}`)
     })
   }
 

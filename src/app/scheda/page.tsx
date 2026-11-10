@@ -3,13 +3,13 @@ import Link from 'next/link'
 import { AggiungiGiornata } from '@/components/AggiungiGiornata'
 import { CsvScheda } from '@/components/CsvScheda'
 import { IconaPlay, IconaRegolazioni } from '@/components/icone'
-import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
+import { ElencoGiornata } from '@/components/ElencoGiornata'
+import { ModificataDa } from '@/components/ModificataDa'
 import { RimuoviGiornata } from '@/components/RimuoviGiornata'
 import { stileBottoneChiaro, stileCarta, stileEtichetta } from '@/components/stili'
 import { TabGiorni } from '@/components/TabGiorni'
-import { descrizioneObiettivo, descrizioneRecupero, giornoConsigliato, riepilogoGiornata } from '@/lib/allenamento'
+import { giornoConsigliato, riepilogoGiornata } from '@/lib/allenamento'
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
-import { formatNumero } from '@/lib/formato'
 import { GIORNATE_MASSIME } from '@/lib/giornate'
 import { massimoKg } from '@/lib/progressi'
 import { contaSeduteGiornata, leggiScheda } from '@/lib/scheda-db'
@@ -68,6 +68,8 @@ export default async function SchedaPage({ searchParams }: Props) {
         </Link>
       </header>
 
+      <ModificataDa modificata={giorno.modificata} />
+
       {/* Cosa c'è dentro la giornata, prima dell'elenco: quanti esercizi e serie, quanto può durare e cosa si allena. */}
       <section aria-label="Riepilogo della giornata" className="space-y-2">
         <div className="grid grid-cols-3 gap-2">
@@ -95,31 +97,10 @@ export default async function SchedaPage({ searchParams }: Props) {
         Avvia sessione {giorno.id}
       </Link>
 
-      <ol className={`${stileCarta} divide-y divide-bordo overflow-hidden`}>
-        {giorno.esercizi.map((esercizio, indice) => {
-          const kg = massimoKg(ultime[esercizio.id]?.serie ?? [])
-          const recupero = descrizioneRecupero(esercizio.obiettivo)
-          return (
-            <li key={esercizio.id} className="flex items-center gap-3 px-4 py-3.5">
-              <span className="w-6 shrink-0 text-sm font-bold text-muto tabular-nums">{indice + 1}</span>
-              <ImmagineEsercizio src={esercizio.immagine} nome={esercizio.nome} className="size-20" />
-              <span className="min-w-0 flex-1">
-                <span className="block font-bold">{esercizio.nome}</span>
-                {esercizio.nomeEn && <span className="block text-xs text-muto">{esercizio.nomeEn}</span>}
-                <span className="block text-sm text-muto">
-                  {descrizioneObiettivo(esercizio.obiettivo)}
-                  {recupero && ` · ${recupero}`}
-                </span>
-              </span>
-              {kg !== null && (
-                <span className="shrink-0 rounded-full bg-carta-alta px-3 py-1 text-sm font-bold tabular-nums">
-                  {formatNumero(kg)} kg
-                </span>
-              )}
-            </li>
-          )
-        })}
-      </ol>
+      <ElencoGiornata
+        esercizi={giorno.esercizi}
+        kg={Object.fromEntries(giorno.esercizi.map((e) => [e.id, massimoKg(ultime[e.id]?.serie ?? [])]))}
+      />
 
       {giorni.length > 1 && <RimuoviGiornata utenteId={userId} id={giorno.id} titolo={giorno.titolo} sedute={sedute} />}
 

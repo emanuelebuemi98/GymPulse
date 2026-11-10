@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaScheda } from '@/app/actions'
+import { salvaSchedaAllievo } from '@/app/trainer/actions'
 import type { Giorno } from '@/lib/scheda-tipi'
 import {
   nuovaVoceForm,
@@ -19,7 +20,16 @@ import { IconaCestino, IconaGiu, IconaSu } from './icone'
 import { IstruzioniEsercizio } from './IstruzioniEsercizio'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
-type Props = { utenteId: number; giorno: Giorno; elenco: VoceElenco[] }
+// `utenteId` è l'account per cui la pagina è stata disegnata (chi sta modificando). Se a modificare è un personal trainer,
+// `allievoId` è l'utente di cui è la scheda e `base` la pagina a cui tornare (/trainer/12); altrimenti si modifica la propria.
+// `versione` è il momento dell'ultima modifica letto dalla pagina: il server rifiuta il salvataggio se nel frattempo è cambiata.
+type Props = {
+  utenteId: number
+  giorno: Giorno
+  elenco: VoceElenco[]
+  allievoId?: number
+  base?: string
+}
 
 const etichetteTipo: Record<TipoVoce, string> = {
   serie: 'Serie × ripetizioni',
@@ -27,7 +37,7 @@ const etichetteTipo: Record<TipoVoce, string> = {
   libero: 'Serie a scelta',
 }
 
-export function EditorScheda({ utenteId, giorno, elenco }: Props) {
+export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/scheda' }: Props) {
   const router = useRouter()
   const [titolo, setTitolo] = useState(giorno.titolo)
   const [voci, setVoci] = useState<VoceForm[]>(() => giorno.esercizi.map(voceFormDaEsercizio))
@@ -40,6 +50,7 @@ export function EditorScheda({ utenteId, giorno, elenco }: Props) {
     voci.flatMap((v) => [
       ...(v.esercizioId !== null ? [`e${v.esercizioId}`] : []),
       ...(v.catalogoId !== null ? [`c${v.catalogoId}`] : []),
+      ...(v.catalogoRif !== null ? [`c${v.catalogoRif}`] : []),
     ]),
   )
 
@@ -69,9 +80,14 @@ export function EditorScheda({ utenteId, giorno, elenco }: Props) {
     if (sbagliata) return setErrore(sbagliata.errore)
 
     startTransition(async () => {
-      const esito = await salvaScheda(utenteId, { giornoId: giorno.id, titolo, voci: convertite })
+      const scheda = { giornoId: giorno.id, titolo, voci: convertite }
+      const versione = giorno.modificata?.il ?? null
+      const esito =
+        allievoId === undefined
+          ? await salvaScheda(utenteId, scheda, versione)
+          : await salvaSchedaAllievo(utenteId, allievoId, scheda, versione)
       if ('errore' in esito) return setErrore(esito.errore)
-      router.push(`/scheda?r=${giorno.id}`)
+      router.push(`${base}?r=${giorno.id}`)
       router.refresh()
     })
   }
@@ -80,7 +96,7 @@ export function EditorScheda({ utenteId, giorno, elenco }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold tracking-tight">Personalizza {giorno.id}</h1>
-        <button type="button" onClick={() => router.push(`/scheda?r=${giorno.id}`)} className={stileBottoneChiaro}>
+        <button type="button" onClick={() => router.push(`${base}?r=${giorno.id}`)} className={stileBottoneChiaro}>
           Annulla
         </button>
       </div>
@@ -126,7 +142,7 @@ export function EditorScheda({ utenteId, giorno, elenco }: Props) {
               </p>
             )}
 
-            <IstruzioniEsercizio catalogoId={voce.catalogoId} esercizioId={voce.esercizioId} nome={voce.nome} />
+            <IstruzioniEsercizio catalogoId={voce.catalogoId ?? voce.catalogoRif} esercizioId={voce.esercizioId} nome={voce.nome} />
 
             <label className="block space-y-1 text-sm text-muto">
               <span>Tipo di obiettivo</span>
