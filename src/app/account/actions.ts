@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
+import { eliminaDatiUtente } from '@/lib/account-eliminazione'
 import { utenteDellaPagina } from '@/lib/accesso'
 import {
   MESSAGGI_RIFIUTO,
@@ -15,7 +17,7 @@ import { mascheraEmail, normalizzaEmail } from '@/lib/indirizzo-email'
 import { creaLimite, testoLimite } from '@/lib/limite'
 import { messaggioCodice } from '@/lib/otp'
 import { verificaPassword } from '@/lib/password'
-import { LUNGHEZZA_MAX_PASSWORD, valutaSegreto } from '@/lib/sessione-auth'
+import { COOKIE_SESSIONE, LUNGHEZZA_MAX_PASSWORD, valutaSegreto } from '@/lib/sessione-auth'
 
 // Lo stato del modulo dell'email. `email` è l'indirizzo in attesa di conferma, già mascherato.
 export type StatoEmail = {
@@ -150,4 +152,44 @@ async function conferma(userId: number, dati: FormData): Promise<StatoEmail> {
   revalidatePath('/account')
   revalidatePath('/home')
   return { passo: 'indirizzo', errore: null, messaggio: 'Email collegata.', email: null }
+}
+
+// ---------- Eliminare l'account ----------
+// Cancella l'account di chi è entrato, con tutto ciò che gli appartiene (scheda, esercizi, sedute, serie: quindi anche storico
+// e progressi). Non si torna indietro. La conferma è una finestra di avviso nel browser (EliminaAccount.tsx), senza password:
+// l'unico controllo del server è che l'account sia quello per cui la pagina è stata disegnata (utenteDellaPagina) e che la
+// sessione sia valida. La cancellazione avviene in una transazione sola (lib/account-eliminazione.ts).
+// Poi il cookie viene tolto. Gli altri dispositivi ancora connessi smettono di valere da soli: utenteCorrente (lib/accesso.ts)
+// cerca la riga dell'utente e non la trova più. I backup già fatti non si toccano.
+export type EsitoEliminazione = { ok: true } | { ok: false; errore: string }
+
+export async function eliminaAccount(utenteId: unknown): Promise<EsitoEliminazione> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) {
+    // Sessione non più valida: o è scaduta, o l'account è già stato eliminato (da un altro dispositivo o da un'altra scheda).
+    // Dal server non si distingue, quindi si dice la verità invece di far credere che riaccedere basti.
+    if (utente.scaduta) {
+      return {
+        ok: false,
+        errore: 'La sessione non è più valida. Se avevi già eliminato l’account non c’è altro da fare; altrimenti accedi di nuovo e riprova.',
+      }
+    }
+    return { ok: false, errore: utente.errore }
+  }
+  const userId = utente.userId
+
+  try {
+    await db.$transaction((tx) => eliminaDatiUtente(tx, userId), { timeout: 30_000 })
+  } catch (errore) {
+    if (errore instanceof Error && errore.message === 'ACCOUNT_GIA_ELIMINATO') {
+      ;(await cookies()).delete(COOKIE_SESSIONE)
+      return { ok: true }
+    }
+    console.error(`[account] eliminazione non riuscita per l'utente ${userId}`, errore)
+    return { ok: false, errore: 'Non sono riuscito a eliminare l’account: non è stato cancellato niente. Riprova.' }
+  }
+
+  ;(await cookies()).delete(COOKIE_SESSIONE)
+  revalidatePath('/', 'layout')
+  return { ok: true }
 }
