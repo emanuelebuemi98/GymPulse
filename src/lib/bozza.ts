@@ -50,6 +50,24 @@ export function eliminaBozza(utenteId: number, giornoId: string): void {
   }
 }
 
+// Toglie dal browser TUTTE le bozze di una persona, in qualunque giornata e anche se ancora valide. Si usa quando l'account viene
+// eliminato: le serie confermate a metà non devono restare nel telefono di un account che non esiste più. Le bozze degli altri
+// account sullo stesso browser non si toccano (la chiave porta l'id). Restituisce quante ne ha tolte.
+export function eliminaBozzeDi(utenteId: number): number {
+  try {
+    const inizio = `${PREFISSO}${utenteId}-`
+    const daTogliere: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k?.startsWith(inizio)) daTogliere.push(k)
+    }
+    for (const k of daTogliere) localStorage.removeItem(k)
+    return daTogliere.length
+  } catch {
+    return 0
+  }
+}
+
 // Butta le bozze scadute o illeggibili di chiunque, comprese quelle salvate prima che la chiave portasse l'id della
 // persona (non si leggono più e resterebbero lì per sempre). Una bozza ancora valida non si tocca mai.
 function ripulisciBozzeScadute(ora: number): void {

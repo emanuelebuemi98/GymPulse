@@ -12,8 +12,10 @@ import {
 } from '@/lib/codici-email'
 import { db } from '@/lib/db'
 import { emailAttiva, inviaEmail } from '@/lib/email'
+import { codiceTrainerConfigurato, codiceTrainerGiusto } from '@/lib/codice-trainer'
 import { validaEmail } from '@/lib/indirizzo-email'
 import { creaLimite, indirizzoClient, testoLimite } from '@/lib/limite'
+import { palestraDa } from '@/lib/palestre'
 import { messaggioCodice, normalizzaCodiceOtp } from '@/lib/otp'
 import { creaHashPassword, hashFittizio, verificaPassword } from '@/lib/password'
 import {
@@ -48,6 +50,10 @@ export type StatoRegistrazione = {
   nome: string
   utente: string
   email: string
+  // La palestra scelta (una di src/lib/palestre.ts, o il testo vuoto) e se si è spuntato «Sono un personal trainer». Il codice
+  // d'invito non si rimanda mai indietro.
+  palestra: string
+  trainer: boolean
 }
 
 const PAUSA_DOPO_ERRORE_MS = 800
@@ -62,6 +68,9 @@ const limiteRegistrazioni = creaLimite(3, 60 * 60 * 1000)
 const limiteAccessi = creaLimite(10, 15 * 60 * 1000)
 const limiteInviiRecupero = creaLimite(5, 60 * 60 * 1000)
 const limiteControlliRecupero = creaLimite(8, 15 * 60 * 1000)
+// I codici d'invito sbagliati: pochi, perché una persona vera lo scrive giusto al primo o al secondo colpo. Per istanza su Vercel,
+// quindi rallenta e non blocca del tutto: la sicurezza vera è la lunghezza del codice (almeno 12 caratteri).
+const limiteCodiceTrainer = creaLimite(5, 60 * 60 * 1000)
 
 export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<StatoLogin> {
   const segreto = valutaSegreto(process.env.AUTH_SECRET)
@@ -118,12 +127,14 @@ export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<S
 
 const registrazioneRifiutata = (
   errore: string | null,
-  campi: Partial<Pick<StatoRegistrazione, 'nome' | 'utente' | 'email'>> = {},
+  campi: Partial<Pick<StatoRegistrazione, 'nome' | 'utente' | 'email' | 'palestra' | 'trainer'>> = {},
 ): StatoRegistrazione => ({
   errore,
   nome: campi.nome ?? '',
   utente: campi.utente ?? '',
   email: campi.email ?? '',
+  palestra: campi.palestra ?? '',
+  trainer: campi.trainer ?? false,
 })
 
 export async function registrati(_precedente: StatoRegistrazione, dati: FormData): Promise<StatoRegistrazione> {
@@ -142,15 +153,24 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
   const emailScritta = dati.get('email')
   const password = dati.get('password')
   const conferma = dati.get('conferma')
+  const palestraScritta = dati.get('palestra') ?? ''
+  const codiceScritto = dati.get('codice') ?? ''
+  // La scelta «Utente» / «Personal trainer» del modulo. Qualunque altro valore vale utente: il ruolo di trainer si ottiene solo
+  // dicendolo esplicitamente E con il codice d'invito giusto.
+  const vuoleFareIlTrainer = dati.get('ruolo') === 'trainer'
   if (
     typeof nome !== 'string' ||
     typeof utente !== 'string' ||
     typeof emailScritta !== 'string' ||
     typeof password !== 'string' ||
     typeof conferma !== 'string' ||
+    typeof palestraScritta !== 'string' ||
+    typeof codiceScritto !== 'string' ||
     nome.length > LUNGHEZZA_MAX_CAMPO ||
     utente.length > LUNGHEZZA_MAX_CAMPO ||
     emailScritta.length > LUNGHEZZA_MAX_CAMPO ||
+    palestraScritta.length > LUNGHEZZA_MAX_CAMPO ||
+    codiceScritto.length > LUNGHEZZA_MAX_CAMPO ||
     password.length > LUNGHEZZA_MAX_PASSWORD ||
     conferma.length > LUNGHEZZA_MAX_PASSWORD
   ) {
@@ -160,7 +180,14 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
 
   const fullName = normalizzaNomeCompleto(nome)
   const username = normalizzaUsername(utente)
-  const campi = { nome: fullName, utente: username, email: emailScritta.trim().slice(0, 254) }
+  const palestra = palestraDa(palestraScritta)
+  const campi = {
+    nome: fullName,
+    utente: username,
+    email: emailScritta.trim().slice(0, 254),
+    palestra: palestra ?? '',
+    trainer: vuoleFareIlTrainer,
+  }
 
   const problema = validaRegistrazione(fullName, username, password, conferma)
   if (problema) {
@@ -173,6 +200,30 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
     return registrazioneRifiutata(emailValida.errore, campi)
   }
 
+  // La palestra è facoltativa, ma se c'è deve essere una di quelle dell'elenco: sceglierla è anche il consenso a far vedere la
+  // scheda ai trainer di quella palestra, quindi un testo libero non è ammesso.
+  if (palestraScritta.trim() !== '' && palestra === null) {
+    await pausa(PAUSA_DOPO_ERRORE_MS)
+    return registrazioneRifiutata('Scegli la palestra dall’elenco', campi)
+  }
+
+  // Chi vuole fare il trainer ha bisogno del codice d'invito e della palestra. Il codice si controlla prima di calcolare l'hash
+  // della password e di creare l'account; ogni errore si conta, e un messaggio solo per tutti i casi sbagliati (codice, opzione
+  // spenta) non fa capire se l'opzione esiste.
+  if (vuoleFareIlTrainer) {
+    const limiteCodice = limiteCodiceTrainer.controlla(indirizzo)
+    if (!limiteCodice.consentito) return registrazioneRifiutata(testoLimite(limiteCodice.riprovaTraSec), campi)
+    if (palestra === null) {
+      await pausa(PAUSA_DOPO_ERRORE_MS)
+      return registrazioneRifiutata('Un personal trainer deve scegliere la sua palestra', campi)
+    }
+    if (!codiceTrainerConfigurato() || !codiceTrainerGiusto(codiceScritto, segreto.segreto)) {
+      limiteCodiceTrainer.conta(indirizzo)
+      await pausa(PAUSA_DOPO_ERRORE_MS)
+      return registrazioneRifiutata('Codice d’invito non valido', campi)
+    }
+  }
+
   // Il nome utente libero si controlla prima di calcolare l'hash della password, che costa tempo.
   if (await db.user.findUnique({ where: { username }, select: { id: true } })) {
     await pausa(PAUSA_DOPO_ERRORE_MS)
@@ -183,7 +234,15 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
   let userId: number
   try {
     const creato = await db.user.create({
-      data: { fullName, username, passwordHash, email: emailValida.email, giorni: { create: giornateVuote() } },
+      data: {
+        fullName,
+        username,
+        passwordHash,
+        email: emailValida.email,
+        palestra,
+        ruolo: vuoleFareIlTrainer ? 'trainer' : 'utente',
+        giorni: { create: giornateVuote() },
+      },
       select: { id: true },
     })
     userId = creato.id

@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import { EliminaAccount } from '@/components/EliminaAccount'
 import { FormEmail } from '@/components/FormEmail'
+import { FormPalestra } from '@/components/FormPalestra'
 import { stileCarta } from '@/components/stili'
 import { richiediUtente } from '@/lib/accesso'
 import { emailAttiva } from '@/lib/email'
 import { mascheraEmail } from '@/lib/indirizzo-email'
-import { leggiUtente } from '@/lib/utente'
+import { leggiTrainerDellaPalestra } from '@/lib/trainer-db'
+import { contaDatiAccount, leggiUtente } from '@/lib/utente'
 
 // Legge il database a ogni richiesta.
 export const dynamic = 'force-dynamic'
@@ -18,15 +22,79 @@ export default async function AccountPage() {
 
   const haEmail = utente.email !== null
   const attiva = emailAttiva()
+  const èTrainer = utente.ruolo === 'trainer'
+  // I nomi dei trainer che, grazie alla palestra scelta, possono vedere la scheda: chi ha dato il consenso deve sapere a chi.
+  const trainerDellaPalestra = utente.palestra && !èTrainer ? await leggiTrainerDellaPalestra(utente.palestra) : []
+  // Cosa sparirebbe eliminando l'account: lo mostra il pannello «Elimina account».
+  const dati = await contaDatiAccount(userId)
 
   return (
     <div className="space-y-5">
       <header>
         <h1 className="text-3xl font-extrabold tracking-tight">Account</h1>
-        <p className="text-muto">
-          {utente.fullName} · <span className="font-semibold text-testo">{utente.username}</span>
-        </p>
       </header>
+
+      {/* Il riepilogo di tutto ciò che l'app sa di te, in un posto solo. */}
+      <section aria-labelledby="titolo-profilo" className={`${stileCarta} space-y-3 p-4`}>
+        <h2 id="titolo-profilo" className="text-lg font-extrabold">
+          Il tuo profilo
+        </h2>
+        <dl className="divide-y divide-bordo text-sm">
+          <Riga etichetta="Tipo di account" valore={èTrainer ? 'Personal trainer' : 'Utente'} />
+          <Riga etichetta="Nome" valore={utente.fullName} />
+          <Riga etichetta="Nome utente" valore={utente.username} />
+          <Riga etichetta="Palestra" valore={utente.palestra ?? 'Nessuna'} spento={!utente.palestra} />
+          <Riga
+            etichetta="Email"
+            valore={haEmail ? mascheraEmail(utente.email!) : 'Nessuna email collegata'}
+            spento={!haEmail}
+          />
+        </dl>
+      </section>
+
+      <section className={`${stileCarta} space-y-3 p-4`}>
+        <h2 className="text-lg font-extrabold">{èTrainer ? 'La tua palestra' : 'Palestra e personal trainer'}</h2>
+        {èTrainer ? (
+          <>
+            <p className="text-sm text-muto">
+              Sei un personal trainer di <span className="font-semibold text-testo">{utente.palestra}</span>. Degli utenti che hanno
+              scelto questa palestra vedi il nome e la scheda, e puoi modificarla: giornate, esercizi, serie, ripetizioni, recuperi
+              e note. Non vedi i kg che sollevano, lo storico degli allenamenti, i grafici né l&apos;email.
+            </p>
+            <Link
+              href="/trainer"
+              className="flex items-center justify-between rounded-2xl bg-carta-alta px-4 py-3 font-semibold active:opacity-80"
+            >
+              I tuoi allievi
+              <span aria-hidden="true" className="text-muto">
+                ›
+              </span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-muto">
+              Scegliendo la tua palestra, i personal trainer di quella palestra possono vedere e modificare la tua{' '}
+              <span className="font-semibold">scheda</span>: giornate, esercizi, serie, ripetizioni, recuperi e note. Non vedono i
+              kg che sollevi, lo storico degli allenamenti, i grafici né l&apos;email, e il loro nome compare qui sotto. Puoi
+              cambiarla o toglierla quando vuoi: la scheda resta tua e puoi modificarla come sempre.
+            </p>
+            {utente.palestra && (
+              <p className="rounded-2xl bg-carta-alta p-3 text-sm text-muto">
+                {trainerDellaPalestra.length > 0 ? (
+                  <>
+                    Possono vedere la tua scheda:{' '}
+                    <span className="font-semibold text-testo">{trainerDellaPalestra.join(', ')}</span>.
+                  </>
+                ) : (
+                  'Nessun personal trainer è ancora registrato per questa palestra: per ora la tua scheda non la vede nessuno.'
+                )}
+              </p>
+            )}
+            <FormPalestra attuale={utente.palestra ?? ''} utenteId={userId} />
+          </>
+        )}
+      </section>
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Email per il recupero</h2>
@@ -55,6 +123,18 @@ export default async function AccountPage() {
           </p>
         )}
       </section>
+
+      <EliminaAccount utenteId={userId} dati={dati} èTrainer={èTrainer} />
+    </div>
+  )
+}
+
+// Una riga del profilo: etichetta a sinistra, valore a destra. `spento`: il valore è un "niente" (nessuna palestra, nessuna email).
+function Riga({ etichetta, valore, spento = false }: { etichetta: string; valore: string; spento?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 py-2 first:pt-0 last:pb-0">
+      <dt className="shrink-0 text-muto">{etichetta}</dt>
+      <dd className={`min-w-0 text-right font-semibold break-words ${spento ? 'text-muto' : 'text-testo'}`}>{valore}</dd>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { FormRegistrazione } from '@/components/FormRegistrazione'
 import { LogoGymPulse } from '@/components/Logo'
 import { stileCarta } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
+import { registrazioneTrainerAttiva } from '@/lib/codice-trainer'
 
 // Legge il cookie a ogni richiesta.
 export const dynamic = 'force-dynamic'
@@ -25,7 +26,7 @@ export default async function RegistratiPage() {
       </header>
 
       <section className={`${stileCarta} p-5`}>
-        <FormRegistrazione />
+        <FormRegistrazione trainerAttivo={registrazioneTrainerAttiva()} />
       </section>
 
       <p className="text-center text-sm text-muto">

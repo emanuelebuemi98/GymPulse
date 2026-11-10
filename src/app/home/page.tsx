@@ -8,6 +8,8 @@ import { formatDataLunga } from '@/lib/formato'
 import { leggiScheda } from '@/lib/scheda-db'
 import { riepilogoHome } from '@/lib/storico'
 import { richiediUtente } from '@/lib/accesso'
+import { leggiAllievi } from '@/lib/trainer-db'
+import { leggiUtente } from '@/lib/utente'
 
 // Legge il database a ogni richiesta: il giorno consigliato cambia dopo ogni seduta.
 export const dynamic = 'force-dynamic'
@@ -17,7 +19,9 @@ const ANTEPRIME_IN_HOME = 5
 
 export default async function HomePage() {
   const userId = await richiediUtente()
-  const [giorni, { totale, ultima }] = await Promise.all([leggiScheda(userId), riepilogoHome(userId)])
+  const [giorni, { totale, ultima }, utente] = await Promise.all([leggiScheda(userId), riepilogoHome(userId), leggiUtente(userId)])
+  // Solo per i personal trainer: quanti utenti della loro palestra hanno scelto di condividere la scheda.
+  const allievi = utente?.ruolo === 'trainer' && utente.palestra ? await leggiAllievi(utente.palestra) : null
 
   if (giorni.length === 0) {
     return (
@@ -43,6 +47,28 @@ export default async function HomePage() {
     <div className="space-y-7">
       {/* Se c'è una sessione lasciata a metà (anche dopo aver chiuso il browser), si riprende da qui. */}
       <SessioneInCorso utenteId={userId} giorni={giorni.map((giorno) => ({ id: giorno.id, titolo: giorno.titolo }))} />
+
+      {/* Per un personal trainer: gli allievi della sua palestra, la prima cosa per cui usa l'app. */}
+      {allievi && (
+        <Link
+          href="/trainer"
+          className={`${stileCarta} flex items-center justify-between gap-3 px-4 py-4 active:bg-carta-alta`}
+        >
+          <span>
+            <span className="block text-lg font-extrabold">I tuoi allievi</span>
+            <span className="block text-sm text-muto">
+              {allievi.length === 0
+                ? 'Nessun utente ha ancora scelto la tua palestra'
+                : allievi.length === 1
+                  ? '1 utente ha scelto la tua palestra'
+                  : `${allievi.length} utenti hanno scelto la tua palestra`}
+            </span>
+          </span>
+          <span aria-hidden="true" className="text-muto">
+            ›
+          </span>
+        </Link>
+      )}
 
       {/* Prima cosa: cosa fare oggi. */}
       <section className="relative overflow-hidden rounded-3xl bg-inchiostro p-6 text-su-inchiostro">
