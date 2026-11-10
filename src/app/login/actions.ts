@@ -12,7 +12,7 @@ import {
 } from '@/lib/codici-email'
 import { db } from '@/lib/db'
 import { emailAttiva, inviaEmail } from '@/lib/email'
-import { validaGmail } from '@/lib/indirizzo-email'
+import { validaEmail } from '@/lib/indirizzo-email'
 import { creaLimite, indirizzoClient, testoLimite } from '@/lib/limite'
 import { messaggioCodice, normalizzaCodiceOtp } from '@/lib/otp'
 import { creaHashPassword, hashFittizio, verificaPassword } from '@/lib/password'
@@ -108,7 +108,7 @@ export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<S
 }
 
 // ---------- Registrazione ----------
-// Un solo passo: nome, nome utente, email Gmail e password, e l'account nasce subito. L'email è obbligatoria ma alla
+// Un solo passo: nome, nome utente, email (di qualunque fornitore) e password, e l'account nasce subito. L'email è obbligatoria ma alla
 // registrazione NON si conferma con un codice: chi si iscrive non deve aspettare una posta e ricopiare un numero.
 // Serve a recuperare la password. Si può cambiare quando si vuole dalla pagina Account, dove la nuova si conferma con un
 // codice e serve la password.
@@ -167,10 +167,10 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
     await pausa(PAUSA_DOPO_ERRORE_MS)
     return registrazioneRifiutata(problema, campi)
   }
-  const gmail = validaGmail(emailScritta)
-  if (!gmail.ok) {
+  const emailValida = validaEmail(emailScritta)
+  if (!emailValida.ok) {
     await pausa(PAUSA_DOPO_ERRORE_MS)
-    return registrazioneRifiutata(gmail.errore, campi)
+    return registrazioneRifiutata(emailValida.errore, campi)
   }
 
   // Il nome utente libero si controlla prima di calcolare l'hash della password, che costa tempo.
@@ -183,7 +183,7 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
   let userId: number
   try {
     const creato = await db.user.create({
-      data: { fullName, username, passwordHash, email: gmail.email, giorni: { create: giornateVuote() } },
+      data: { fullName, username, passwordHash, email: emailValida.email, giorni: { create: giornateVuote() } },
       select: { id: true },
     })
     userId = creato.id

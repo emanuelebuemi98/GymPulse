@@ -94,7 +94,7 @@ async function invia(userId: number, dati: FormData): Promise<StatoEmail> {
 
   const scritto = dati.get('email')
   const email = typeof scritto === 'string' ? normalizzaEmail(scritto) : null
-  if (email === null) return errore('Scrivi un indirizzo email valido, per esempio nome@gmail.com')
+  if (email === null) return errore('Scrivi un indirizzo email valido, per esempio nome@icloud.com')
 
   const sbagliata = await controllaPassword(userId, dati)
   if (sbagliata) return errore(sbagliata)

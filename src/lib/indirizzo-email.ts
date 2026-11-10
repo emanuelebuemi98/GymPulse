@@ -24,39 +24,28 @@ export function normalizzaEmail(testo: string): string | null {
   return email
 }
 
-export type EsitoGmail = { ok: true; email: string } | { ok: false; errore: string }
+export type EsitoEmail = { ok: true; email: string } | { ok: false; errore: string }
 
-// Parte locale di un indirizzo Gmail: solo lettere, numeri e punti, e il punto non può stare all'inizio, alla fine né
-// doppio (sono le regole che Google dà per i nomi Gmail: "puoi usare lettere, numeri e punti"). Il "+" non è un carattere di
-// un nome Gmail, è un alias che porta nella stessa casella: qui si chiede l'indirizzo vero. La lunghezza non si controlla:
-// non ho trovato il limite scritto da Google, e i conti più vecchi possono non rispettare quelli di oggi.
-const PARTE_LOCALE_GMAIL = /^[a-z0-9]+(?:\.[a-z0-9]+)*$/
-
-// Un indirizzo Gmail come lo scrive una persona, in forma normale, oppure la frase che spiega cosa non va. Serve a
-// registrazione e Account: l'email non si può confermare alla registrazione (non c'è nessun codice da ricopiare), quindi
-// almeno si pretende un indirizzo che abbia la forma di un Gmail vero.
-export function validaGmail(testo: string): EsitoGmail {
+// Un indirizzo email come lo scrive una persona, in forma normale, oppure la frase che spiega cosa non va. Va bene qualunque
+// fornitore (Gmail, iCloud, Outlook, Libero, un dominio proprio): si controlla solo la forma, con le regole strette di
+// `normalizzaEmail`. Dal solo indirizzo non si può sapere se la casella esiste ed è di chi lo scrive, e alla registrazione
+// non parte nessun codice di conferma.
+export function validaEmail(testo: string): EsitoEmail {
   const pulito = testo.trim().toLowerCase()
-  const generico = 'Scrivi un indirizzo Gmail, per esempio nome@gmail.com'
-  if (pulito === '') return { ok: false, errore: generico }
+  const esempio = 'Scrivi un indirizzo email, per esempio nome@icloud.com'
+  if (pulito === '') return { ok: false, errore: esempio }
+  if (/\s/.test(pulito)) return { ok: false, errore: 'L’indirizzo email non può contenere spazi' }
 
   const parti = pulito.split('@')
-  if (parti.length !== 2) return { ok: false, errore: generico }
-  const [locale, dominio] = parti
-  if (locale === '' || dominio === '') return { ok: false, errore: generico }
-  if (dominio !== 'gmail.com') {
-    return { ok: false, errore: 'Per ora si può usare solo un indirizzo Gmail, che finisce con @gmail.com' }
-  }
-  if (locale.includes('+')) return { ok: false, errore: 'Scrivi l’indirizzo Gmail senza il segno +' }
-  if (!PARTE_LOCALE_GMAIL.test(locale)) {
-    return {
-      ok: false,
-      errore: 'Un indirizzo Gmail ha solo lettere, numeri e punti, e non comincia né finisce con un punto',
-    }
+  if (parti.length !== 2 || parti[0] === '') return { ok: false, errore: esempio }
+  if (!parti[1].includes('.')) {
+    return { ok: false, errore: 'Dopo la @ manca il dominio completo, per esempio gmail.com o icloud.com' }
   }
 
   const email = normalizzaEmail(pulito)
-  return email === null ? { ok: false, errore: generico } : { ok: true, email }
+  return email === null
+    ? { ok: false, errore: 'Questo indirizzo email non sembra valido: controllalo e riprova' }
+    : { ok: true, email }
 }
 
 // La casella a cui arriva davvero un indirizzo: serve ai limiti, non all'invio. Senza "+qualcosa" (name+1@ e name+2@

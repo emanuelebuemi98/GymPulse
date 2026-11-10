@@ -27,7 +27,7 @@ export function FormEmail({ haEmail, utenteId }: { haEmail: boolean; utenteId: n
               autoCorrect="off"
               spellCheck={false}
               maxLength={254}
-              placeholder="nome@gmail.com"
+              placeholder="nome@esempio.it"
               className={`${stileTesto} text-left`}
             />
             <span className="block text-xs font-normal">Ti mando un codice per confermarlo.</span>

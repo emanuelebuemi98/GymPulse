@@ -56,7 +56,7 @@ const schermate = [
   },
   {
     titolo: 'Il catalogo',
-    testo: 'Cerchi un esercizio per nome o filtri per categoria: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento.',
+    testo: 'Tutti i 246 esercizi divisi per categoria (Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento), con la foto di ognuno, la ricerca per nome e le linguette per scegliere.',
     schermata: <SchermataCatalogo />,
   },
   {
@@ -95,8 +95,8 @@ const schermate = [
     schermata: <SchermataRecord />,
   },
   {
-    titolo: 'Le sedute in Excel',
-    testo: 'Esporti tutte le sedute in un file e le reimporti quando vuoi, senza doppioni.',
+    titolo: 'La scheda in Excel',
+    testo: 'Scarichi il catalogo in un file, tieni solo gli esercizi che ti servono, scrivi la lettera della giornata e lo importi: la scheda è fatta.',
     schermata: <SchermataCsv />,
   },
 ]
@@ -105,7 +105,7 @@ const passi = [
   {
     titolo: 'Costruisci la scheda',
     testo:
-      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 246, con ricerca per nome e filtro per categoria. Per ognuno decidi serie, ripetizioni e recupero.',
+      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 246, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni e recupero.',
   },
   {
     titolo: 'Allenati',
@@ -122,7 +122,7 @@ const funzioni = [
   {
     icona: IconaScheda,
     titolo: 'Catalogo di 246 esercizi',
-    testo: 'In nove categorie: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio e Riscaldamento.',
+    testo: 'In nove categorie: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio e Riscaldamento. Ognuno ha la sua foto, i passi dell\'esecuzione e gli errori da evitare.',
   },
   {
     icona: IconaPlay,
@@ -141,8 +141,8 @@ const funzioni = [
   },
   {
     icona: IconaCarica,
-    titolo: 'Le tue sedute in Excel',
-    testo: 'Le esporti in un file CSV e le reimporti quando vuoi. Importare due volte lo stesso file non duplica niente.',
+    titolo: 'La scheda in Excel',
+    testo: 'Costruisci la scheda da un file CSV partendo dal catalogo completo, e prima di salvare vedi cosa cambia. Puoi anche scaricare la tua scheda, modificarla in Excel e reimportarla.',
   },
   {
     icona: IconaScudo,
@@ -246,7 +246,7 @@ export default async function BenvenutoPage() {
 
       <section className="space-y-4 rounded-3xl bg-inchiostro p-6 text-su-inchiostro">
         <h2 className="text-2xl font-extrabold tracking-tight">Pronto per la prima seduta?</h2>
-        <p className="text-su-inchiostro/80">Ti servono un nome utente, un indirizzo Gmail per il recupero della password e un minuto.</p>
+        <p className="text-su-inchiostro/80">Ti servono un nome utente, un indirizzo email (va bene Gmail, iCloud, Outlook…) per il recupero della password e un minuto.</p>
         <div className="flex flex-wrap gap-3">
           <Link
             href="/registrati"

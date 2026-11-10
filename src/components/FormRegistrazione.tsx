@@ -6,7 +6,7 @@ import { stileBottonePrimario, stileTesto } from './stili'
 
 const iniziale: StatoRegistrazione = { errore: null, nome: '', utente: '', email: '' }
 
-// Un solo passo: nome, nome utente, email Gmail e password. L'account nasce subito, senza nessun codice da ricopiare.
+// Un solo passo: nome, nome utente, email e password. L'account nasce subito, senza nessun codice da ricopiare.
 export function FormRegistrazione() {
   const [stato, azione, inCorso] = useActionState(registrati, iniziale)
 
@@ -46,7 +46,7 @@ export function FormRegistrazione() {
       </label>
 
       <label className="block space-y-1 text-sm font-semibold text-muto">
-        <span>Email Gmail</span>
+        <span>Email</span>
         <input
           name="email"
           defaultValue={stato.email}
@@ -58,11 +58,11 @@ export function FormRegistrazione() {
           spellCheck={false}
           required
           maxLength={254}
-          placeholder="nome@gmail.com"
+          placeholder="nome@esempio.it"
           className={`${stileTesto} text-left`}
         />
         <span className="block text-xs font-normal">
-          Controlla di averla scritta giusta: serve a recuperare la password se la dimentichi, e puoi cambiarla dalla pagina Account.
+          Va bene qualsiasi email (Gmail, iCloud, Outlook…). Serve a recuperare la password se la dimentichi: controlla di averla scritta giusta. Puoi cambiarla dalla pagina Account.
         </span>
       </label>
 
