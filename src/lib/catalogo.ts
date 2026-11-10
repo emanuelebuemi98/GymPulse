@@ -35,27 +35,48 @@ export async function esercizioDalCatalogo(
   return creato.id
 }
 
-// Ritrova un esercizio da un nome scritto in un file (il CSV): prima tra gli esercizi della persona, poi nel catalogo per
-// nome italiano, nome inglese o alias (senza badare alle maiuscole). Restituisce null se non c'è: l'importazione non crea
-// esercizi nuovi, quindi chi chiama deve dirlo all'utente.
-export async function trovaEsercizioPerNome(
+// Dove sta un esercizio scritto per nome in un file: `esercizioId` se la persona lo ha già, altrimenti `catalogoId` (e
+// l'esercizio nasce al salvataggio, con esercizioDalCatalogo). Uno dei due è sempre pieno.
+export type EsercizioTrovato = { esercizioId: number | null; catalogoId: number | null; nome: string }
+
+// Cerca molti nomi insieme senza scrivere niente: serve all'anteprima dell'importazione della scheda. Prima tra gli esercizi
+// della persona (nome italiano), poi nel catalogo per nome italiano o inglese, senza badare alle maiuscole. Un nome che non si
+// trova non compare nel risultato. Se la persona ha già l'esercizio del catalogo trovato, si restituisce il suo.
+export async function cercaPerNome(
   tx: Prisma.TransactionClient,
   userId: number,
-  nome: string,
-): Promise<number | null> {
-  const proprio = await tx.esercizio.findFirst({
-    where: { userId, nome: { equals: nome.trim(), mode: 'insensitive' } },
-    select: { id: true },
-  })
-  if (proprio) return proprio.id
+  nomi: string[],
+): Promise<Map<string, EsercizioTrovato>> {
+  const [propri, catalogo] = await Promise.all([
+    tx.esercizio.findMany({ where: { userId }, select: { id: true, nome: true, catalogoId: true } }),
+    tx.catalogoEsercizio.findMany({ select: { id: true, nomeIt: true, nomeEn: true } }),
+  ])
+  const perNomeProprio = new Map(propri.map((riga) => [minuscolo(riga.nome), riga]))
+  const proprioDelCatalogo = new Map(propri.flatMap((riga) => (riga.catalogoId === null ? [] : [[riga.catalogoId, riga] as const])))
+  const perNomeCatalogo = new Map<string, (typeof catalogo)[number]>()
+  for (const riga of catalogo) {
+    perNomeCatalogo.set(minuscolo(riga.nomeEn), riga)
+    perNomeCatalogo.set(minuscolo(riga.nomeIt), riga)
+  }
 
-  const chiave = minuscolo(nome)
-  const catalogo = await tx.catalogoEsercizio.findMany({ select: { id: true, nomeIt: true, nomeEn: true, alias: true } })
-  const riga = catalogo.find(
-    (voce) =>
-      minuscolo(voce.nomeIt) === chiave ||
-      minuscolo(voce.nomeEn) === chiave ||
-      (voce.alias ?? '').split('\n').some((a) => minuscolo(a) === chiave),
-  )
-  return riga ? esercizioDalCatalogo(tx, userId, riga.id) : null
+  const trovati = new Map<string, EsercizioTrovato>()
+  for (const nome of nomi) {
+    const chiave = minuscolo(nome)
+    if (trovati.has(chiave)) continue
+    const proprio = perNomeProprio.get(chiave)
+    if (proprio) {
+      trovati.set(chiave, { esercizioId: proprio.id, catalogoId: null, nome: proprio.nome })
+      continue
+    }
+    const voce = perNomeCatalogo.get(chiave)
+    if (!voce) continue
+    const giaSuo = proprioDelCatalogo.get(voce.id)
+    trovati.set(
+      chiave,
+      giaSuo
+        ? { esercizioId: giaSuo.id, catalogoId: null, nome: giaSuo.nome }
+        : { esercizioId: null, catalogoId: voce.id, nome: voce.nomeIt },
+    )
+  }
+  return trovati
 }

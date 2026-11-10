@@ -17,8 +17,8 @@ import { trovaImmagini } from './immagini'
 // esterna si aggiorna a cascata. Alla fine rimette a posto il contatore dei numeri.
 //
 // Alla fine collega al catalogo gli esercizi delle persone che non lo sono ancora, se il loro nome coincide con il nome
-// italiano, il nome inglese o un alias di una voce del catalogo (senza badare alle maiuscole). L'esercizio prende il nome
-// e la categoria del catalogo: per esempio "Curl con manubri alternato" diventa "Curl in piedi con manubri alternati". Le
+// italiano o con il nome inglese di una voce del catalogo (senza badare alle maiuscole). L'esercizio prende il nome
+// e la categoria del catalogo. Le
 // serie già registrate e le voci della scheda restano agganciate allo stesso esercizio, quindi storico e progressi non
 // cambiano: cambia solo il nome. Quello che non si riconosce resta com'è e viene elencato alla fine.
 //
@@ -56,7 +56,6 @@ type Voce = {
   immagine?: string | null
   esecuzione?: string | null
   accortezze?: string | null
-  alias?: string[]
 }
 
 const voci = JSON.parse(readFileSync(new URL('./dati/catalogo-esercizi.json', import.meta.url), 'utf8')) as Voce[]
@@ -82,8 +81,8 @@ for (const voce of voci) {
   if (!voce.esecuzione?.trim() || !voce.accortezze?.trim()) problemi.push(`${dove}: mancano esecuzione o accortezze`)
   if (slug.has(voce.slug)) problemi.push(`${dove}: slug ripetuto`)
   slug.add(voce.slug)
-  // Un nome (italiano, inglese o alias) non può servire a due voci: il collegamento per nome sarebbe ambiguo.
-  for (const nome of [voce.nomeIt, voce.nomeEn, ...(voce.alias ?? [])]) {
+  // Un nome (italiano o inglese) non può servire a due voci: il collegamento per nome sarebbe ambiguo.
+  for (const nome of [voce.nomeIt, voce.nomeEn]) {
     const k = chiave(nome)
     const altro = nomiUsati.get(k)
     if (altro && altro !== voce.slug) problemi.push(`${dove}: il nome "${nome}" è già usato da ${altro}`)
@@ -168,7 +167,6 @@ async function main() {
             immagine: immagini.perSlug.get(voce.slug) ?? null,
             esecuzione: voce.esecuzione?.trim() ? voce.esecuzione.trim() : null,
             accortezze: voce.accortezze?.trim() ? voce.accortezze.trim() : null,
-            alias: voce.alias && voce.alias.length > 0 ? voce.alias.map((a) => a.trim()).join('\n') : null,
           }
           await tx.catalogoEsercizio.upsert({
             where: { slug: voce.slug },
@@ -177,13 +175,13 @@ async function main() {
           })
         }
 
-        // 3. Il collegamento degli esercizi delle persone. Per ogni nome (italiano, inglese, alias) la riga del catalogo a cui appartiene.
+        // 3. Il collegamento degli esercizi delle persone. Per ogni nome (italiano, inglese) la riga del catalogo a cui appartiene.
         const righe = await tx.catalogoEsercizio.findMany({ select: { id: true, slug: true, nomeIt: true, categoria: true } })
         const perSlug = new Map(righe.map((riga) => [riga.slug, riga]))
         const perNome = new Map<string, (typeof righe)[number]>()
         for (const voce of voci) {
           const riga = perSlug.get(voce.slug)!
-          for (const nome of [voce.nomeIt, voce.nomeEn, ...(voce.alias ?? [])]) perNome.set(chiave(nome), riga)
+          for (const nome of [voce.nomeIt, voce.nomeEn]) perNome.set(chiave(nome), riga)
         }
 
         // I nomi della voce a cui un esercizio è collegato: servono a riconoscere un collegamento finito su una voce sbagliata
@@ -192,7 +190,7 @@ async function main() {
         for (const voce of voci) {
           nomiDellaVoce.set(
             perSlug.get(voce.slug)!.id,
-            new Set([voce.nomeIt, voce.nomeEn, ...(voce.alias ?? [])].map(chiave)),
+            new Set([voce.nomeIt, voce.nomeEn].map(chiave)),
           )
         }
 

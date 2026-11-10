@@ -62,7 +62,7 @@ npx prisma migrate status
 ```
 
 - [ ] La riga `Datasource "db"` contiene l'indirizzo di Neon (`...neon.tech`), **non** `localhost`.
-- [ ] Le migrazioni da applicare sono quelle che ti aspetti (nell'ultimo rilascio erano 4: `catalogo_esercizi`, `categorie_riscaldamento`, `registrazione_senza_codice`, `categoria_glutei`).
+- [ ] Le migrazioni da applicare sono quelle che ti aspetti (in questo rilascio è 1: `catalogo_senza_alias`, che toglie la colonna `alias` dal catalogo; nel rilascio precedente erano 4).
 
 Se il numero è diverso da quello atteso, ci si ferma.
 
@@ -89,7 +89,7 @@ set PROVA=
 - [ ] Compare `*** PROVA: non è stato scritto niente ***`.
 - [ ] Nessun errore tipo "qualcuno li usa".
 - [ ] Immagini trovate: tutte (nell'ultimo rilascio 246 su 246).
-- [ ] Gli esercizi personali non riconosciuti sono **0**. Se ne resta qualcuno, ci si ferma e si aggiunge il suo nome come nome alternativo nel catalogo.
+- [ ] Gli esercizi personali non riconosciuti sono **0**. Se ne resta qualcuno, ci si ferma: il suo nome non coincide con il nome italiano o inglese di nessuna voce, e va corretto.
 - [ ] Gli esercizi collegati al catalogo e il numero di voci nuove sono quelli attesi (nell'ultimo rilascio: 23 collegati, 246 nuovi).
 
 ## 7. Carica il catalogo per davvero
