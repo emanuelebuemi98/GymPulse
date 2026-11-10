@@ -217,32 +217,37 @@ export function SchermataGiornate() {
   )
 }
 
-// Il catalogo: ricerca per nome e filtro per categoria.
+// Il catalogo: tutti gli esercizi per categoria, con la foto, la ricerca e le linguette.
 export function SchermataCatalogo() {
   const voci = [
-    ['Hip Thrust con bilanciere', 'Barbell Hip Thrust'],
-    ['Hip Thrust alla macchina', 'Machine Hip Thrust'],
-    ['Slanci ad ascia al cavo basso', 'Cable Diagonal Glute Kickback'],
-    ['Abduttori alla macchina', 'Abductor Machine'],
-    ['Frog Pump a terra', 'Frog Pump'],
+    ['Hip Thrust con bilanciere', 'Barbell Hip Thrust', '154_barbell-hip-thrust'],
+    ['Hip Thrust alla macchina', 'Machine Hip Thrust', '153_machine-hip-thrust'],
+    ['Slanci ad ascia al cavo basso', 'Cable Diagonal Glute Kickback', '241_cable-diagonal-glute-kickback'],
+    ['Abduttori alla macchina', 'Abductor Machine', '137_abductor-machine'],
   ]
   return (
     <Telefono>
-      <p className="text-[13px] font-extrabold">Aggiungi esercizio</p>
+      <Barra attiva="Scheda" />
+      <p className="text-[13px] font-extrabold">Catalogo esercizi</p>
       <div className="rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px] text-suggerito">Cerca un esercizio</div>
-      <div className="flex items-center justify-between rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px]">
-        <span>Glutei</span>
-        <span className="text-muto">⌄</span>
+      <div className="flex gap-1 overflow-hidden text-[9px] font-semibold">
+        {['Tutte 246', 'Petto 39', 'Dorsali 37', 'Glutei 17'].map((voce) => (
+          <span
+            key={voce}
+            className={`shrink-0 rounded-full border px-2 py-1 ${voce.startsWith('Glutei') ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta'}`}
+          >
+            {voce}
+          </span>
+        ))}
       </div>
-      <p className="text-[9px] text-muto">17 esercizi</p>
       <div className="divide-y divide-bordo overflow-hidden rounded-xl border border-bordo">
-        {voci.map(([nome, inglese]) => (
-          <div key={nome} className="flex items-center justify-between gap-1 px-2 py-1.5">
+        {voci.map(([nome, inglese, file]) => (
+          <div key={nome} className="flex items-center gap-2 px-1.5 py-1">
+            <Miniatura nome={nome} file={file} className="size-9 border-0" />
             <span className="min-w-0">
               <span className="block truncate text-[10.5px] leading-tight font-bold">{nome}</span>
               <span className="block truncate text-[8.5px] text-muto">{inglese}</span>
             </span>
-            <span className="shrink-0 rounded-full bg-carta-alta px-1.5 py-0.5 text-[8px] font-semibold text-muto">Glutei</span>
           </div>
         ))}
       </div>
@@ -390,22 +395,31 @@ export function SchermataRecord() {
   )
 }
 
-// L'esportazione e l'importazione delle sedute in un file che si apre in Excel.
+// La scheda da un file CSV: si scarica il catalogo, si tengono le righe che servono, si scrive la lettera della giornata e si
+// importa. Prima di scrivere l'app fa vedere cosa cambia.
 export function SchermataCsv() {
   return (
     <Telefono>
-      <Barra attiva="Home" />
-      <div className="space-y-2 rounded-2xl border border-bordo bg-carta p-2.5">
-        <p className="text-[12px] font-extrabold">Sedute in CSV</p>
-        <p className="text-[9.5px] text-muto">
-          Esporta le tue sedute in un file che si apre anche in Excel. Importando un file, le sedute nuove si aggiungono e quelle
-          già presenti non si duplicano.
-        </p>
-        <div className="grid grid-cols-2 gap-1.5 text-center text-[10px] font-semibold">
-          <span className="rounded-full border border-bordo bg-carta py-1.5">↓ Esporta</span>
-          <span className="rounded-full border border-bordo bg-carta py-1.5">↑ Importa</span>
+      <Barra attiva="Scheda" />
+      <div className="space-y-1.5 rounded-2xl border border-bordo bg-carta p-2.5">
+        <p className="text-[12px] font-extrabold">Crea la scheda da un file CSV</p>
+        <ol className="list-decimal space-y-0.5 pl-3.5 text-[9px] text-muto">
+          <li>Scarica il catalogo completo.</li>
+          <li>In Excel cancella gli esercizi che non ti servono.</li>
+          <li>Al posto di &lt;A/B/C/D/E/F/G&gt; scrivi la lettera della giornata.</li>
+          <li>Importa il file: vedi cosa cambia e confermi.</li>
+        </ol>
+        <div className="grid grid-cols-2 gap-1.5 text-center text-[9.5px] font-semibold">
+          <span className="rounded-full border border-bordo bg-carta py-1">↓ Catalogo</span>
+          <span className="rounded-full border border-bordo bg-carta py-1">↓ La mia scheda</span>
         </div>
-        <p className="rounded-lg bg-ok/10 px-2 py-1 text-[9.5px] font-semibold text-ok">Importate 3 sedute (2 erano già presenti)</p>
+        <span className="block rounded-full border border-bordo bg-carta py-1 text-center text-[9.5px] font-semibold">↑ Importa un file</span>
+      </div>
+      <div className="space-y-0.5 rounded-xl bg-carta-alta p-2 text-[9.5px]">
+        <p className="font-semibold">Con questo file succede così:</p>
+        <p><span className="font-extrabold">A</span> · Petto e tricipiti: giornata nuova con 6 esercizi</p>
+        <p><span className="font-extrabold">B</span> · Gambe e glutei: giornata nuova con 7 esercizi</p>
+        <span className="mt-1 inline-block rounded-full bg-accento px-2.5 py-0.5 text-[9.5px] font-extrabold text-su-accento">Conferma</span>
       </div>
     </Telefono>
   )

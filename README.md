@@ -259,7 +259,7 @@ GymPulse/
 │   │   ├── EliminaSessione.tsx                       # pulsante per eliminare una seduta
 │   │   ├── Logo.tsx, PiePagina.tsx                   # logo e piè di pagina con il nome dell'autore
 │   │   ├── TemaPulsante.tsx                          # il pulsante sole/luna che cambia il tema
-│   │   ├── benvenuto/Telefono.tsx                    # le schermate da telefono della presentazione
+│   │   ├── benvenuto/Index.tsx                       # la cornice del telefono e le dodici schermate d'esempio della pagina iniziale
 │   │   ├── benvenuto/GalleriaSchermate.tsx           # le quattro schede da toccare e la finestra con la schermata ingrandita
 │   │   ├── icone.tsx                                 # icone SVG
 │   │   └── stili.ts                                  # classi condivise (carte, campi, pulsanti)

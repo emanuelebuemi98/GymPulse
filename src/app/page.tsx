@@ -15,7 +15,7 @@ import {
   SchermataSeduta,
   SchermataSessione,
   SchermataStorico,
-} from '@/components/benvenuto/Telefono'
+} from '@/components/benvenuto/Index'
 import {
   IconaCarica,
   IconaChevronGiu,

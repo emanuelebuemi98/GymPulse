@@ -6,7 +6,7 @@ import { stileBottoneChiaro } from '../stili'
 
 export type VoceGalleria = { titolo: string; testo: string; schermata: ReactNode }
 
-// Misure del telefono disegnato in Telefono.tsx, in punti: la cornice è larga 240 e alta 352 più 16 di bordo.
+// Misure del telefono disegnato in Index.tsx, in punti: la cornice è larga 240 e alta 352 più 16 di bordo.
 const LARGHEZZA_TELEFONO = 240
 const ALTEZZA_TELEFONO = 368
 // Quello che sta nella finestra oltre al telefono: riga in alto, titolo, testo, pulsanti e margini.
