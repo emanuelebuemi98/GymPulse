@@ -25,16 +25,25 @@ datasource db {
 // al login (passwordHash è un hash scrypt, mai la password). email è un indirizzo Gmail: è dove arrivano i codici per
 // reimpostare la password. Alla registrazione si scrive e basta (non si conferma con un codice); cambiandola dalla pagina
 // Account, invece, la nuova si conferma con un codice. Vuota solo negli account molto vecchi.
+// palestra: facoltativa, una di quelle di src/lib/palestre.ts scritta in maiuscolo. Sceglierla è anche il consenso: i personal
+// trainer della stessa palestra possono vedere e modificare la scheda (mai sedute, kg, grafici o email) di chi l'ha scelta.
+// ruolo: 'utente' o 'trainer' (vincolo User_ruolo, scritto a mano nella migrazione). Un trainer ha sempre la palestra (vincolo
+// User_trainer_palestra) e si registra solo con il codice d'invito.
 model User {
   id           Int            @id @default(autoincrement())
   fullName     String
   username     String         @unique
   passwordHash String
   email        String?
-  giorni       GiornoScheda[]
+  giorni       GiornoScheda[] @relation("SchedaDi")
   esercizi     Esercizio[]
   sessioni     Sessione[]
   codiciEmail  CodiceEmail[]
+  modificate   GiornoScheda[] @relation("ModificataDa")
+  palestra     String?
+  ruolo        String         @default("utente")
+
+  @@index([palestra, ruolo])
 }
 
 // Codice monouso mandato per email: serve a confermare un indirizzo (scopo "email") e a reimpostare la password
@@ -65,14 +74,19 @@ model CodiceEmail {
 // attiva = false: la giornata è stata tolta dalla scheda ma ha delle sedute registrate, che non si possono perdere.
 // Resta nel database solo per lo storico (nome e sigla), non compare più nella scheda e non si propone più.
 // Una giornata senza sedute, quando la si toglie, si cancella davvero.
+// modificatoDaId / modificatoIl: chi ha modificato la giornata per ultimo (l'utente stesso o un personal trainer della sua
+// palestra) e quando. Servono a far leggere all'utente «Modificata da NOME» e a non sovrascrivere un salvataggio più recente.
 model GiornoScheda {
-  id       String
-  userId   Int
-  titolo   String
-  attiva   Boolean      @default(true)
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  voci     VoceScheda[]
-  sessioni Sessione[]
+  id             String
+  userId         Int
+  titolo         String
+  attiva         Boolean      @default(true)
+  user           User         @relation("SchedaDi", fields: [userId], references: [id], onDelete: Cascade)
+  voci           VoceScheda[]
+  sessioni       Sessione[]
+  modificatoDaId Int?
+  modificatoIl   DateTime?
+  modificatoDa   User?        @relation("ModificataDa", fields: [modificatoDaId], references: [id], onDelete: SetNull)
 
   @@id([userId, id])
 }
