@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { CsvSedute } from '@/components/CsvSedute'
 import { IconaPlay } from '@/components/icone'
 import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { SessioneInCorso } from '@/components/SessioneInCorso'
@@ -138,8 +137,6 @@ export default async function HomePage() {
           })}
         </ul>
       </section>
-
-      <CsvSedute utenteId={userId} />
     </div>
   )
 }

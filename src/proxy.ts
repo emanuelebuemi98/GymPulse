@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { COOKIE_SESSIONE, INTESTAZIONE_PERCORSO, tokenValido } from '@/lib/sessione-auth'
 
 // Prima porta dell'app: senza un cookie di sessione valido si vedono solo le pagine pubbliche.
-// Gli stessi controlli si ripetono in pagine, azioni e /api/export (vedi lib/accesso.ts).
+// Gli stessi controlli si ripetono in pagine, azioni e /api/scheda-csv (vedi lib/accesso.ts).
 export function proxy(richiesta: NextRequest) {
   const { pathname, search } = richiesta.nextUrl
 

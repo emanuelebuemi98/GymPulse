@@ -3,11 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { utenteDellaPagina } from '@/lib/accesso'
-import { esercizioDalCatalogo, trovaEsercizioPerNome } from '@/lib/catalogo'
-import { LIMITE_CSV, leggiCsv } from '@/lib/csv'
+import { esercizioDalCatalogo } from '@/lib/catalogo'
+import { LIMITE_CSV } from '@/lib/csv'
 import { db } from '@/lib/db'
 import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from '@/lib/giornate'
-import { campiObiettivo } from '@/lib/voci'
+import { pianoImportScheda } from '@/lib/import-scheda'
+import { scriviVoci } from '@/lib/scheda-scrittura'
 import { validaScheda } from '@/lib/scheda-schema'
 import { validaSessione } from '@/lib/sessione-schema'
 
@@ -103,30 +104,73 @@ export async function salvaScheda(utenteId: number, input: unknown): Promise<{ o
   }
 
   // La storia non si tocca: le serie già registrate puntano agli esercizi, non alle voci della scheda.
-  await db.$transaction(async (tx) => {
-    await tx.giornoScheda.update({ where: { userId_id: { userId, id: giornoId } }, data: { titolo } })
-    await tx.voceScheda.deleteMany({ where: { userId, giornoId } })
-
-    let ordine = 0
-    for (const voce of voci) {
-      // Un esercizio è della persona oppure del catalogo (lo garantisce la validazione): quello del catalogo nasce qui.
-      const esercizioId = voce.esercizioId ?? (await esercizioDalCatalogo(tx, userId, voce.catalogoId!))
-      await tx.voceScheda.create({
-        data: {
-          userId,
-          giornoId,
-          esercizioId,
-          ordine: ++ordine,
-          nota: voce.nota,
-          incrementoKg: voce.incrementoKg,
-          ...campiObiettivo(voce.obiettivo),
-        },
-      })
-    }
-  })
+  await db.$transaction((tx) => scriviVoci(tx, userId, giornoId, titolo, voci))
 
   aggiornaPagine()
   return { ok: true }
+}
+
+export type AnteprimaScheda = {
+  giornate: { id: string; titolo: string; nuova: boolean; eserciziPrima: number; eserciziDopo: number }[]
+}
+
+// Fa vedere cosa cambierebbe importando un file CSV della scheda, senza scrivere niente. Se il file ha un problema lo dice
+// qui, prima di chiedere conferma.
+export async function anteprimaImportScheda(utenteId: number, testo: unknown): Promise<AnteprimaScheda | { errore: string }> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return { errore: utente.errore }
+  if (typeof testo !== 'string') return { errore: 'File non valido' }
+  if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
+
+  const piano = await pianoImportScheda(db, utente.userId, testo)
+  if (!piano.ok) return { errore: piano.errore }
+  return {
+    giornate: piano.giornate.map((g) => ({
+      id: g.id,
+      titolo: g.titolo,
+      nuova: g.nuova,
+      eserciziPrima: g.eserciziPrima,
+      eserciziDopo: g.voci.length,
+    })),
+  }
+}
+
+// Rifà le giornate scritte nel file CSV della scheda (vedi lib/import-scheda.ts per le regole). Tutto o niente: se qualcosa
+// non va non cambia niente. Il blocco (advisory lock) per persona fa passare una richiesta alla volta, così due importazioni
+// insieme non creano la stessa giornata due volte. Chi chiama deve aver fatto vedere l'anteprima e chiesto conferma.
+export async function importaScheda(
+  utenteId: number,
+  testo: unknown,
+): Promise<{ giornate: number; esercizi: number; nuove: number } | { errore: string }> {
+  const utente = await utenteDellaPagina(utenteId)
+  if ('errore' in utente) return { errore: utente.errore }
+  const userId = utente.userId
+  if (typeof testo !== 'string') return { errore: 'File non valido' }
+  if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
+
+  const esito = await db.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${userId}::bigint)`
+
+      // Il piano si rifà qui dentro, con i dati di questo momento: tra l'anteprima e la conferma la scheda può essere cambiata.
+      const piano = await pianoImportScheda(tx, userId, testo)
+      if (!piano.ok) return { errore: piano.errore } as const
+
+      for (const giornata of piano.giornate) {
+        if (giornata.nuova) await tx.giornoScheda.create({ data: { userId, id: giornata.id, titolo: giornata.titolo } })
+        await scriviVoci(tx, userId, giornata.id, giornata.titolo, giornata.voci)
+      }
+      return {
+        giornate: piano.giornate.length,
+        esercizi: piano.giornate.reduce((somma, g) => somma + g.voci.length, 0),
+        nuove: piano.giornate.filter((g) => g.nuova).length,
+      } as const
+    },
+    { timeout: 30_000 },
+  )
+
+  if (!('errore' in esito)) aggiornaPagine()
+  return esito
 }
 
 // Aggiunge una giornata in fondo alla scheda, con la sigla successiva (A, B, C, D, ...), fino a 7. Parte vuota: gli
@@ -209,106 +253,4 @@ export async function eliminaSessione(utenteId: number, id: unknown): Promise<{ 
 
   aggiornaPagine()
   redirect('/storico')
-}
-
-// Aggiunge alle sedute DI CHI LA ESEGUE quelle scritte nel file CSV. Non cancella nulla: una seduta con la
-// stessa data e la stessa giornata di una già presente viene saltata, così importare due volte lo stesso file
-// non duplica niente. Gli esercizi si ritrovano per nome (senza badare alle maiuscole) tra i tuoi e nel catalogo; se un
-// nome non c'è in nessuno dei due l'importazione si ferma e li elenca, perché gli esercizi non si creano più a mano.
-// Le giornate invece devono esistere già: l'importazione non ne inventa. Contano anche quelle tolte dalla scheda e
-// rimaste per lo storico, perché le sedute di un file esportato un tempo ci appartengono ancora.
-export async function importaCsv(
-  utenteId: number,
-  testo: unknown,
-): Promise<{ aggiunte: number; giaPresenti: number } | { errore: string }> {
-  const utente = await utenteDellaPagina(utenteId)
-  if ('errore' in utente) return { errore: utente.errore }
-  const userId = utente.userId
-  if (typeof testo !== 'string') return { errore: 'File non valido' }
-  if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
-
-  const esito = leggiCsv(testo)
-  if (!esito.ok) return { errore: esito.errore }
-  const { sedute } = esito
-
-  const giornate = new Set((await db.giornoScheda.findMany({ where: { userId }, select: { id: true } })).map((g) => g.id))
-  const senzaGiornata = sedute.find((seduta) => !giornate.has(seduta.giornoId))
-  if (senzaGiornata) {
-    return { errore: `Riga ${senzaGiornata.riga}: la giornata "${senzaGiornata.giornoId}" non esiste nella tua scheda` }
-  }
-
-  const chiave = (data: Date, giornoId: string) => `${data.getTime()}|${giornoId}`
-  const esistenti = await db.sessione.findMany({
-    where: { userId, data: { in: sedute.map((seduta) => seduta.data) } },
-    select: { data: true, giornoId: true },
-  })
-  const presenti = new Set(esistenti.map((seduta) => chiave(seduta.data, seduta.giornoId)))
-  const nuove = sedute.filter((seduta) => !presenti.has(chiave(seduta.data, seduta.giornoId)))
-  if (nuove.length === 0) return { aggiunte: 0, giaPresenti: sedute.length }
-
-  // Se mancano esercizi si ferma prima di scrivere: nell'errore ci sono tutti i nomi che non si trovano.
-  let mancanti: string[] = []
-
-  try {
-    await db.$transaction(
-    async (tx) => {
-      // Un esercizio si cerca una volta sola, anche se compare in cento sedute.
-      const esercizi = new Map<string, number>()
-      const nonTrovati = new Map<string, string>()
-      for (const seduta of nuove) {
-        for (const serie of seduta.serie) {
-          const nome = serie.esercizio.toLowerCase()
-          if (esercizi.has(nome) || nonTrovati.has(nome)) continue
-          const id = await trovaEsercizioPerNome(tx, userId, serie.esercizio)
-          if (id === null) nonTrovati.set(nome, serie.esercizio)
-          else esercizi.set(nome, id)
-        }
-      }
-      if (nonTrovati.size > 0) {
-        mancanti = [...nonTrovati.values()]
-        throw new Error('ESERCIZI_MANCANTI')
-      }
-
-      const create = await tx.sessione.createManyAndReturn({
-        data: nuove.map(({ data, giornoId, note, durataMinuti, datiIniziali }) => ({
-          userId,
-          giornoId,
-          data,
-          note,
-          durataMinuti,
-          datiIniziali,
-        })),
-        select: { id: true, data: true, giornoId: true },
-      })
-      if (create.length !== nuove.length) throw new Error('Importazione interrotta: le sedute create non corrispondono al file')
-      const idSedute = new Map(create.map((seduta) => [chiave(seduta.data, seduta.giornoId), seduta.id]))
-
-      await tx.serieEseguita.createMany({
-        data: nuove.flatMap((seduta) => {
-          const sessioneId = idSedute.get(chiave(seduta.data, seduta.giornoId))!
-          return seduta.serie.map((serie, indice) => ({
-            userId,
-            sessioneId,
-            esercizioId: esercizi.get(serie.esercizio.toLowerCase())!,
-            ordine: indice + 1,
-            pesoKg: serie.pesoKg,
-            ripetizioni: serie.ripetizioni,
-          }))
-        }),
-      })
-    },
-    { timeout: 30_000 },
-    )
-  } catch (errore) {
-    if (mancanti.length > 0) {
-      const elenco = mancanti.slice(0, 10).map((nome) => `"${nome}"`).join(', ')
-      return {
-        errore: `Questi esercizi non ci sono né tra i tuoi né nel catalogo: ${elenco}${mancanti.length > 10 ? ` e altri ${mancanti.length - 10}` : ''}. Non importo niente: correggi i nomi nel file e riprova.`,
-      }
-    }
-    throw errore
-  }
-
-  aggiornaPagine()
-  return { aggiunte: nuove.length, giaPresenti: sedute.length - nuove.length }
 }

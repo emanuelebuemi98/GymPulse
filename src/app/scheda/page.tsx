@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AggiungiGiornata } from '@/components/AggiungiGiornata'
+import { CsvScheda } from '@/components/CsvScheda'
 import { IconaPlay, IconaRegolazioni } from '@/components/icone'
 import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { RimuoviGiornata } from '@/components/RimuoviGiornata'
@@ -121,6 +122,22 @@ export default async function SchedaPage({ searchParams }: Props) {
       </ol>
 
       {giorni.length > 1 && <RimuoviGiornata utenteId={userId} id={giorno.id} titolo={giorno.titolo} sedute={sedute} />}
+
+      {/* Il catalogo intero per categoria e la scheda da un file CSV: stanno in fondo, sono usi meno frequenti. */}
+      <Link
+        href="/catalogo"
+        className={`${stileCarta} flex items-center justify-between gap-3 px-4 py-3.5 active:bg-carta-alta`}
+      >
+        <span>
+          <span className="block font-extrabold">Catalogo degli esercizi</span>
+          <span className="block text-sm text-muto">Tutti gli esercizi per categoria, con foto e istruzioni</span>
+        </span>
+        <span aria-hidden="true" className="text-muto">
+          ›
+        </span>
+      </Link>
+
+      <CsvScheda utenteId={userId} />
     </div>
   )
 }

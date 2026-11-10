@@ -1,4 +1,3 @@
-import type { SedutaEsportata } from './csv'
 import { db } from './db'
 import type { SerieConGruppo } from './panoramica'
 import { calcolaRecord, massimoKg, pesoTotaleKg, volumeSerie, type RecordEsercizio } from './progressi'
@@ -221,21 +220,4 @@ export async function recordPerEsercizio(userId: number): Promise<RecordEsercizi
       data: riga.sessione.data,
     })),
   )
-}
-
-// Tutte le sedute, dalla più vecchia, con il nome dell'esercizio al posto del suo id: il file CSV non porta id.
-export async function sedutePerCsv(userId: number): Promise<SedutaEsportata[]> {
-  const sessioni = await db.sessione.findMany({
-    where: { userId },
-    orderBy: { data: 'asc' },
-    include: { serie: { orderBy: { ordine: 'asc' }, include: { esercizio: { select: { nome: true } } } } },
-  })
-  return sessioni.map((sessione) => ({
-    data: sessione.data,
-    giornoId: sessione.giornoId,
-    durataMinuti: sessione.durataMinuti,
-    note: sessione.note,
-    datiIniziali: sessione.datiIniziali,
-    serie: sessione.serie.map((s) => ({ esercizio: s.esercizio.nome, pesoKg: s.pesoKg, ripetizioni: s.ripetizioni })),
-  }))
 }
