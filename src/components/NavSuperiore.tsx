@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const voci = [
   { href: '/home', etichetta: 'Home', radici: [] as string[] },
-  { href: '/scheda', etichetta: 'Scheda', radici: ['/sessione'] },
+  { href: '/scheda', etichetta: 'Scheda', radici: ['/sessione', '/catalogo'] },
   { href: '/storico', etichetta: 'Storico', radici: [] },
   { href: '/progressi', etichetta: 'Progressi', radici: [] },
 ]

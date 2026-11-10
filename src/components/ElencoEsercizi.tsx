@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { CATEGORIE, etichettaCategoria, categoriaDa, type Categoria } from '@/lib/categorie'
 import type { VoceElenco } from '@/lib/tipi'
 import { IconaPiu } from './icone'
+import { ImmagineEsercizio } from './ImmagineEsercizio'
 import { stileTesto } from './stili'
 
 type Props = {
@@ -31,7 +32,7 @@ export function ElencoEsercizi({ elenco, esclusi, alScelto }: Props) {
       if (esclusi.has(voce.chiave)) return false
       if (categoria !== '' && voce.categoria !== categoria) return false
       if (cerca === '') return true
-      return [voce.nome, voce.nomeEn, voce.alias].some((campo) => senzaAccenti(campo).includes(cerca))
+      return [voce.nome, voce.nomeEn].some((campo) => senzaAccenti(campo).includes(cerca))
     })
   }, [elenco, esclusi, testo, categoria])
 
@@ -78,9 +79,13 @@ export function ElencoEsercizi({ elenco, esclusi, alScelto }: Props) {
               <button
                 type="button"
                 onClick={() => alScelto(voce)}
-                className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left active:bg-carta-alta"
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left active:bg-carta-alta"
               >
-                <span className="min-w-0">
+                {/* Quadrato che riserva lo spazio anche per gli esercizi senza foto, così i nomi restano allineati. */}
+                <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-carta-alta">
+                  <ImmagineEsercizio src={voce.immagine} nome={voce.nome} className="size-14 !border-0" />
+                </span>
+                <span className="min-w-0 flex-1">
                   <span className="block font-semibold leading-tight">{voce.nome}</span>
                   {voce.nomeEn !== '' && <span className="block text-xs text-muto">{voce.nomeEn}</span>}
                 </span>

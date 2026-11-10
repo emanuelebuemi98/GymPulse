@@ -25,8 +25,6 @@ export type VoceElenco = {
   immagine: string
   categoria: string
   muscolo: string
-  // Altri nomi con cui si può cercare l'esercizio ("curl in piedi"), separati da a capo. Non si mostrano.
-  alias: string
 }
 
 // Quello che il database dice di un esercizio quando lo si sceglie: i testi su come farlo non viaggiano con l'elenco, si

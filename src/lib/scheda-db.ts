@@ -48,10 +48,10 @@ export async function leggiElenco(userId: number): Promise<VoceElenco[]> {
   const [propri, catalogo] = await Promise.all([
     db.esercizio.findMany({
       where: { userId },
-      include: { catalogo: { select: { nomeEn: true, immagine: true, muscoloPrincipale: true, alias: true } } },
+      include: { catalogo: { select: { nomeEn: true, immagine: true, muscoloPrincipale: true } } },
     }),
     db.catalogoEsercizio.findMany({
-      select: { id: true, nomeIt: true, nomeEn: true, immagine: true, categoria: true, muscoloPrincipale: true, alias: true },
+      select: { id: true, nomeIt: true, nomeEn: true, immagine: true, categoria: true, muscoloPrincipale: true },
     }),
   ])
   const giaUsati = new Set(propri.flatMap((riga) => (riga.catalogoId === null ? [] : [riga.catalogoId])))
@@ -67,7 +67,6 @@ export async function leggiElenco(userId: number): Promise<VoceElenco[]> {
       immagine: riga.catalogo?.immagine ?? '',
       categoria: riga.categoria,
       muscolo: riga.catalogo?.muscoloPrincipale ?? '',
-      alias: riga.catalogo?.alias ?? '',
     })),
     ...catalogo
       .filter((riga) => !giaUsati.has(riga.id) && !nomiPropri.has(riga.nomeIt.toLowerCase()))
@@ -80,7 +79,6 @@ export async function leggiElenco(userId: number): Promise<VoceElenco[]> {
         immagine: riga.immagine ?? '',
         categoria: riga.categoria,
         muscolo: riga.muscoloPrincipale,
-        alias: riga.alias ?? '',
       })),
   ]
   return elenco.sort((a, b) => a.nome.localeCompare(b.nome, 'it'))

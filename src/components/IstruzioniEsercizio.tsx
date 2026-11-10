@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { leggiDettaglio } from '@/app/esercizi/actions'
 import type { DettaglioEsercizio } from '@/lib/tipi'
+import { DettaglioEsercizioVista } from './DettaglioEsercizio'
 import { IconaChevronGiu } from './icone'
-import { ImmagineEsercizio } from './ImmagineEsercizio'
 import { OminoDomanda } from './OminoDomanda'
 
 type Props = {
@@ -38,8 +38,6 @@ export function IstruzioniEsercizio({ catalogoId, esercizioId, nome }: Props) {
     }
   }
 
-  const vuoto = dettaglio !== null && dettaglio.esecuzione.length === 0 && dettaglio.accortezze.length === 0
-
   return (
     <div className="space-y-2">
       {/* Un vero pulsante, con l'omino che si chiede come si fa e la freccia che dice che si apre e si chiude. */}
@@ -58,50 +56,7 @@ export function IstruzioniEsercizio({ catalogoId, esercizioId, nome }: Props) {
         <IconaChevronGiu className={`size-5 shrink-0 text-muto transition-transform motion-reduce:transition-none ${aperto ? 'rotate-180' : ''}`} />
       </button>
 
-      {aperto && (
-        <div className="space-y-3 rounded-2xl bg-carta-alta p-3 text-sm">
-          {inCorso && <p className="text-muto">Carico…</p>}
-          {errore && <p className="text-errore">Non sono riuscito a leggere le istruzioni: riprova.</p>}
-
-          {dettaglio && !vuoto && (
-            <>
-              {dettaglio.immagine && (
-                <ImmagineEsercizio src={dettaglio.immagine} nome={nome} className="aspect-square w-full max-w-[200px]" />
-              )}
-              <p className="text-xs text-muto">
-                {[dettaglio.attrezzatura, dettaglio.muscoloPrincipale && `muscoli: ${dettaglio.muscoloPrincipale}`]
-                  .filter(Boolean)
-                  .join(' · ')}
-                {dettaglio.muscoliSecondari && ` (secondari: ${dettaglio.muscoliSecondari})`}
-              </p>
-
-              {dettaglio.esecuzione.length > 0 && (
-                <section className="space-y-1">
-                  <h4 className="font-bold">Come si esegue</h4>
-                  <ol className="list-decimal space-y-1 pl-5">
-                    {dettaglio.esecuzione.map((passo, i) => (
-                      <li key={i}>{passo}</li>
-                    ))}
-                  </ol>
-                </section>
-              )}
-
-              {dettaglio.accortezze.length > 0 && (
-                <section className="space-y-1">
-                  <h4 className="font-bold">Accortezze</h4>
-                  <ul className="list-disc space-y-1 pl-5">
-                    {dettaglio.accortezze.map((a, i) => (
-                      <li key={i}>{a}</li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-            </>
-          )}
-
-          {vuoto && <p className="text-muto">Per questo esercizio non c&apos;è ancora una descrizione.</p>}
-        </div>
-      )}
+      {aperto && <DettaglioEsercizioVista nome={nome} dettaglio={dettaglio} inCorso={inCorso} errore={errore} />}
     </div>
   )
 }
