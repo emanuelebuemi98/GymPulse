@@ -20,6 +20,8 @@ import {
   IconaCarica,
   IconaChevronGiu,
   IconaPlay,
+  IconaProgressi,
+  IconaRegolazioni,
   IconaScheda,
   IconaScudo,
   IconaSpunta,
@@ -28,6 +30,7 @@ import {
 import { SimboloGymPulse } from '@/components/Logo'
 import { stileBottoneChiaro } from '@/components/stili'
 import { haAccesso } from '@/lib/accesso'
+import { primoParametro } from '@/lib/url'
 
 // Legge il cookie a ogni richiesta: chi è già dentro non vede la presentazione.
 export const dynamic = 'force-dynamic'
@@ -147,15 +150,38 @@ const funzioni = [
   {
     icona: IconaScudo,
     titolo: 'Account personale',
-    testo: 'Ognuno vede solo i propri dati. Se dimentichi la password la recuperi con un codice per email.',
+    testo:
+      'Ognuno vede solo i propri dati. Se dimentichi la password la recuperi con un codice per email, e dalla pagina Account puoi eliminare l’account con tutti i suoi dati.',
+  },
+  {
+    icona: IconaProgressi,
+    titolo: 'Grafici e progressi',
+    testo:
+      'Per ogni esercizio il carico massimo nel tempo, e poi le sedute per settimana, i kg per categoria, i record e quante volte hai fatto ogni giornata.',
+  },
+  {
+    icona: IconaRegolazioni,
+    titolo: 'Il tuo personal trainer',
+    testo:
+      'Se vuoi, indica la tua palestra: i personal trainer di quella palestra potranno preparare e modificare la tua scheda, cioè giornate, esercizi, serie, ripetizioni, recuperi e note. Non vedono i kg che sollevi, lo storico, i grafici né l’email, e puoi cambiare o togliere la palestra quando vuoi. Se sei un personal trainer, ti registri con il codice d’invito.',
   },
 ]
 
-export default async function BenvenutoPage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function BenvenutoPage({ searchParams }: Props) {
   if (await haAccesso()) redirect('/home')
+  // Dopo aver eliminato l'account si arriva qui con ?account=eliminato: una riga che conferma che è andata a buon fine.
+  const eliminato = primoParametro((await searchParams).account) === 'eliminato'
 
   return (
     <div className="space-y-14">
+      {eliminato && (
+        <p role="status" className="rounded-2xl bg-ok/10 p-4 text-center font-semibold text-ok">
+          Il tuo account è stato eliminato, con tutti i suoi dati.
+        </p>
+      )}
+
       {/* Prima cosa: che cos'è e come entrare. */}
       <section className="space-y-5 pt-2">
         <SimboloGymPulse className="size-14" />
