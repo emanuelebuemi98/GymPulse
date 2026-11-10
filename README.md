@@ -17,7 +17,9 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Piè di pagina** | In fondo a tutte le pagine, anche dentro l'app, c'è «App ideata e creata da Emanuele Buemi». Sta nel layout (`PiePagina.tsx`), quindi si cambia in un posto solo. Sotto il piè di pagina resta lo spazio per il timer di recupero, fisso in basso durante la sessione, che altrimenti coprirebbe il nome. |
 | **Logo e icone** | Una kettlebell con il battito dentro. Il disegno è in `public/icon.svg`, da cui sono ricavate le icone PNG (192, 512, "maskable" per Android e 180 per la schermata Home di iPhone); il componente `Logo.tsx` lo riusa con i colori del tema. |
 | **Account personali** | Ti registri dall'app con nome e cognome, nome utente, **email** e password: sono tutti obbligatori, in un solo modulo e **senza nessun codice da ricopiare**: l'account nasce subito. Va bene l'email di qualunque fornitore (Gmail, iCloud, Outlook, Libero, un dominio proprio): si controlla solo che abbia la forma di un indirizzo vero, e che sia davvero di chi la scrive non si verifica. Ogni persona vede solo i propri dati. |
+| **Personal trainer e palestre** | Alla registrazione scegli se essere **Utente** o **Personal trainer**. L'utente può indicare, facoltativamente, la **palestra** a cui appartiene (`NEW LIGHTWEIGHT GYM 24H` o `THE IRON PARADISE`, elenco fisso in `src/lib/palestre.ts`); può cambiarla o toglierla in qualsiasi momento dalla pagina **Account**. **Scegliere la palestra è il consenso**: i personal trainer di quella palestra possono **vedere e modificare la sua scheda** (creare giornate, cambiare gli esercizi, anche toglierle) e **solo quella**, intesa come giornate, esercizi, serie, ripetizioni, recuperi, incrementi di carico e note. Del trainer non sono visibili i **kg sollevati**, lo **storico degli allenamenti** (le sedute già fatte), i **grafici**, l'email e il nome utente; dell'utente vede solo il nome completo. La giornata cambiata dal trainer porta «Modificata da NOME, il giorno» e l'utente la può ricambiare come vuole. Il trainer si registra con un **codice d'invito** (variabile `CODICE_TRAINER`) che dà il titolare dell'app: senza, l'opzione «Personal trainer» non compare nemmeno. La palestra del trainer si sceglie alla registrazione e non si cambia dall'app. Più trainer nella stessa palestra vedono tutti gli stessi utenti. Dalla Home e da Account il trainer apre **I tuoi allievi** (`/trainer`). |
 | **Recupero della password** | Dalla pagina di accesso ("Password dimenticata?") scrivi il nome utente: arriva un'email con un codice a 6 cifre, valido 10 minuti, e scegli una password nuova. Dalla pagina **Account** l'email si può cambiare (servono la password e un codice di conferma all'indirizzo nuovo) ma **non togliere**, perché serve al recupero. |
+| **Eliminare l'account** | Dalla pagina **Account**, in fondo, «Elimina il mio account» cancella **per sempre** l'account e tutto ciò che gli appartiene: la scheda (giornate ed esercizi), le **sedute e le serie** e quindi anche lo **storico, i grafici e i progressi**, che si calcolano da quei dati, più nome, nome utente, email e password. Il pannello dice prima, con i numeri veri, cosa sparisce; poi c'è **una finestra di conferma** (niente password) e, dopo, si torna alla pagina iniziale. Si può scaricare prima la propria scheda in CSV. Le bozze di sessioni in corso salvate nel browser di quell'account vengono tolte. Il nome utente si può registrare di nuovo, ma come account nuovo e vuoto. Se a eliminarsi è un **personal trainer**, le schede degli utenti che ha modificato **restano** e sparisce solo il suo nome da «Modificata da». **I backup già fatti non vengono toccati.** Non esiste «annulla». |
 | **Riepilogo della giornata** | Nella pagina Scheda, sopra l'elenco, vedi quanti esercizi e serie ha la giornata, **quanto può durare** (una stima: 40 secondi a serie più il recupero previsto) e le categorie che allena. |
 | **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. La pagina della giornata mostra per ogni esercizio serie × ripetizioni **e il tempo di recupero**  e l'ultimo carico usato. |
 | **Catalogo degli esercizi** | Gli esercizi **non si scrivono più a mano**: si scelgono da un catalogo di **246 esercizi**, diviso in nove categorie (**Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento**). Nell'elenco «Aggiungi esercizio» si cerca per nome (italiano o inglese, senza badare agli accenti) e si filtra per categoria; ogni riga ha la sua **miniatura**. Il nome italiano è in evidenza e l'inglese, più piccolo, sta sotto. Dalla pagina **Scheda** si apre anche il **Catalogo degli esercizi** (`/catalogo`): tutti gli esercizi divisi per categoria, con foto, ricerca, linguette per categoria e, toccando un esercizio, passi e accortezze. La categoria è quella del catalogo e non si cambia. Il catalogo è nel database (tabella `CatalogoEsercizio`) e si carica dal file `prisma/dati/catalogo-esercizi.json` con `npm run db:catalogo`: per aggiungere un esercizio si aggiunge una voce al file e si rilancia il comando. |
@@ -116,6 +118,14 @@ git checkout dev
 
    Con questa riga l'email non parte: il messaggio, con il codice, compare nel terminale dove gira `npm run dev` (riga `[email:console]`). **Non si accende su Vercel**, dove la variabile `VERCEL` lo impedisce. Per mandare email vere serve un account di posta con SMTP (vedi "Email vere con Gmail" più sotto).
 
+   **Personal trainer (codice d'invito).** Nella registrazione l'opzione «Personal trainer» compare **solo se** esiste questa variabile; senza, c'è soltanto «Utente». Il valore è il codice che dai a chi vuoi come trainer: almeno 12 caratteri, e se è più corto l'opzione resta spenta.
+
+   ```env
+   CODICE_TRAINER="scegli-un-codice-lungo-e-tuo"
+   ```
+
+   Dopo averla aggiunta al `.env` **riavvia** `npm run dev`: Next legge le variabili solo all'avvio. Su Vercel si imposta nelle variabili di Production (vedi `RILASCIO.md`). Per rendere trainer un account già esistente, senza il codice, c'è `npm run db:utente` con `NUOVO_RUOLO=trainer` e `NUOVA_PALESTRA`.
+
 3. **Database**: `docker compose up -d` (ascolta solo su `127.0.0.1:5432`).
 
 4. **Tabelle**: `npm run db:deploy` applica le migrazioni. Quando modifichi lo schema in sviluppo si usa `npm run db:migrate`.
@@ -176,7 +186,7 @@ Tutti i comandi si lanciano dalla cartella del progetto. Su PowerShell, se `npm`
 | `npm run typecheck` | Controlla i tipi TypeScript, senza compilare | **da lanciare prima di ogni commit** | già fatto dalla build |
 | `npm run db:deploy` | Applica al database le migrazioni già scritte | applica al database locale | **l'unico per la produzione**: non crea nulla, applica solo |
 | `npm run db:migrate` | Crea una nuova migrazione dallo schema e la applica | **solo qui**, quando modifichi `schema.prisma` | **mai** in produzione |
-| `npm run db:utente` | Crea un account o ne cambia la password | per l'account di prova | per recuperare una password in produzione, con le variabili di produzione |
+| `npm run db:utente` | Crea un account, ne cambia la password, la palestra o il ruolo (`NUOVA_PALESTRA`, `NUOVO_RUOLO=trainer`) | per l'account di prova | per recuperare una password in produzione, con le variabili di produzione |
 | `npm run db:catalogo` | Carica il catalogo degli esercizi (`prisma/dati/catalogo-esercizi.json`) e collega agli esercizi delle persone quelli con lo stesso nome. Con `PROVA=1` non scrive niente e mostra cosa cambierebbe | dopo ogni migrazione che tocca il catalogo, e quando se ne modifica il file | con le variabili di produzione, dopo il backup |
 | `npm run db:studio` | Apre Prisma Studio per vedere e modificare le righe | database locale | **con cautela**: modifica dati veri |
 
@@ -209,7 +219,7 @@ GymPulse/
 │   │   ├── 20261108180000_categoria_glutei/          # nasce la categoria "glutei", separata da "gambe": nove categorie
 │   │   └── migration_lock.toml
 │   ├── schema.prisma                                 # modello dei dati
-│   └── utente.ts                                     # script: crea un account o cambia la password
+│   └── utente.ts                                     # script: crea un account, cambia password, palestra o ruolo
 ├── public/
 │   ├── icon.svg                                      # logo e icona dell'app (kettlebell con il battito)
 │   ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-icon.png  # icone PNG ricavate dal logo
@@ -231,7 +241,11 @@ GymPulse/
 │   │   │   ├── registrati/page.tsx                   # creazione dell'account
 │   │   │   └── recupera/page.tsx                     # password dimenticata
 │   │   ├── account/
-│   │   │   ├── page.tsx                              # il tuo account e l'email per il recupero
+│   │   │   ├── page.tsx                              # il tuo profilo, la palestra e l'email per il recupero
+│   │   │   ├── palestra.ts                           # sceglie o toglie la palestra (il consenso ai trainer)
+│   │   │   ├── actions.ts                        # email di recupero e eliminazione dell'account (eliminaAccount)
+│   │   ├── trainer/                              # le pagine del personal trainer: allievi, scheda, editor
+│   │   │   ├── actions.ts                        # azioni del trainer: salva, aggiungi e togli giornata (con allievoDelTrainer)
 │   │   │   └── actions.ts                            # collega, conferma e cambia l'email (non si toglie)
 │   │   ├── scheda/
 │   │   │   ├── page.tsx                              # la scheda: scelta A/B/C e avvio della sessione
@@ -281,7 +295,7 @@ Dentro `src/lib/` (33 file):
 
 | Gruppo | File |
 |---|---|
-| Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account) |
+| Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `account-eliminazione.ts` (cancella un account con tutti i suoi dati, in una transazione), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account) |
 | Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (i codici nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi e di quelli Gmail) |
 | Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `catalogo-db.ts` (il catalogo intero), `scheda-scrittura.ts` (scrive gli esercizi di una giornata), `import-scheda.ts` (dal CSV al piano di importazione della scheda), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (regole comuni dei file CSV), `csv-scheda.ts` (scrive e legge il CSV del catalogo e della scheda), `numeri.ts`, `url.ts` |
@@ -296,8 +310,8 @@ In ogni tabella l'`id` è la prima colonna.
 
 | Tabella | Colonne, nell'ordine | Id |
 |---|---|---|
-| `User` | `id`, `fullName`, `username`, `passwordHash`, `email` | numero progressivo |
-| `GiornoScheda` | `id`, `userId`, `titolo`, `attiva` | chiave primaria composta (id, userId); coppia unica per persona |
+| `User` | `id`, `fullName`, `username`, `passwordHash`, `email`, `palestra` (una di quelle di `palestre.ts`, vuota se non ne ha), `ruolo` (`utente` o `trainer`) | numero progressivo; un trainer ha sempre la palestra (vincolo `User_trainer_palestra`) |
+| `GiornoScheda` | `id`, `userId`, `titolo`, `attiva`, `modificatoDaId`, `modificatoIl` (chi l'ha cambiata per ultimo e quando) | chiave primaria composta (id, userId); coppia unica per persona |
 | `Esercizio` | `id`, `userId`, `nome`, `categoria` (una delle nove chiavi, es. `petto`, oppure vuota), `catalogoId` (la voce del catalogo, vuoto per gli esercizi personali di prima) | numero progressivo |
 | `CatalogoEsercizio` | `id`, `slug`, `nomeIt`, `nomeEn`, `categoria`, `attrezzatura`, `muscoloPrincipale`, `muscoliSecondari`, `tipoMovimento`, `immagine`, `esecuzione`, `accortezze` | numero progressivo; uguale per tutti, non modificabile dall'app |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
@@ -316,6 +330,7 @@ Una tabella serve solo ai codici per email e non ha dati della scheda:
 - **Password** salvate come hash scrypt. Lo stesso messaggio d'errore per utente inesistente e password sbagliata, con una breve pausa, così non si scoprono i nomi esistenti.
 - **L'utente si ricava sempre dal cookie**, mai da un id mandato dal browser. Il proxy chiude le pagine, e ogni pagina e ogni azione ricontrolla da sola.
 - **Più account nello stesso browser.** Un browser ha un solo cookie di accesso per tutte le sue schede: se in una scheda si entra con un altro account, una scheda rimasta aperta sul primo scriverebbe nel secondo (era un difetto vero: la scheda di una persona finiva in quella di un'altra). Ora ogni pagina che scrive manda l'id dell'account per cui è stata disegnata, e il server **rifiuta** se non coincide con quello del cookie. L'id mandato dalla pagina serve solo a rifiutare: l'account su cui si scrive resta sempre quello del cookie. In pratica, in un browser si usa un account alla volta; per due account insieme servono due browser o una finestra in incognito.
+- **Eliminare l'account** non chiede la password, solo una finestra di conferma: chi avesse rubato il cookie di accesso di una persona potrebbe quindi cancellarne l'account. È una scelta di comodità, fatta di proposito; se non ti basta, il costo è un campo password in più (come per cambiare l'email). La cancellazione è in una transazione sola e con il blocco per persona; dopo, ogni cookie ancora in giro smette di valere perché l'utente non esiste più. I backup non si toccano.
 - **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
 - **CSV**: ognuno scarica solo la propria scheda (il catalogo è uguale per tutti, ma serve l'accesso). La scheda da CSV si importa in una sola transazione, con un blocco per persona, dopo un'anteprima: l'importazione controlla ogni riga (giornata, nome dell'esercizio, numeri), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
 - **Registrazione aperta a chiunque** conosca l'indirizzo, con l'email obbligatoria (di qualunque fornitore) ma **non confermata**: si controlla solo la forma, e un indirizzo sbagliato rende la password non recuperabile mentre uno altrui può ricevere codici di recupero che non ha chiesto (al massimo 3 all'ora, vedi sotto). Nessuno entra nell'account di un altro per questo: il codice arriva alla casella scritta, non a chi lo chiede. Ci sono limiti per indirizzo di rete (3 account all'ora, 10 accessi ogni 15 minuti, 5 email di recupero all'ora) tenuti **in memoria**: su Vercel valgono per ogni istanza e rallentano senza bloccare del tutto.

@@ -62,13 +62,13 @@ npx prisma migrate status
 ```
 
 - [ ] La riga `Datasource "db"` contiene l'indirizzo di Neon (`...neon.tech`), **non** `localhost`.
-- [ ] Le migrazioni da applicare sono quelle che ti aspetti (in questo rilascio è 1: `catalogo_senza_alias`, che toglie la colonna `alias` dal catalogo; nel rilascio precedente erano 4).
+- [ ] Le migrazioni da applicare sono quelle che ti aspetti (in questo rilascio è **1**: `ruoli_e_palestre`, che aggiunge le colonne `palestra` e `ruolo` a `User` e `modificatoDaId`/`modificatoIl` a `GiornoScheda`. `catalogo_senza_alias` è già stata applicata nel rilascio precedente).
 
 Se il numero è diverso da quello atteso, ci si ferma.
 
 ## 5. Applica le migrazioni
 
-Da qui fino al passo 9 il sito online, ancora con il codice vecchio, può dare errori (le migrazioni rinominano colonne e tolgono tabelle). Sono pochi minuti: i passi 5, 6, 7 e 9 si fanno uno dopo l'altro, senza pause.
+Questa migrazione **aggiunge soltanto colonne**: il codice vecchio, ancora online, continua a funzionare sul database nuovo. (Le migrazioni che rinominano colonne o tolgono tabelle, come in passato, possono invece dare errori al sito vecchio per qualche minuto: in quel caso i passi 5, 6, 7 e 9 vanno fatti uno dopo l'altro, senza pause.)
 
 ```bat
 npm run db:deploy
@@ -132,6 +132,10 @@ Le impostazioni si fanno una volta sola; a ogni rilascio basta controllare che s
 - [ ] Facoltative: `SMTP_HOST`, `SMTP_PORTA`, `EMAIL_LIMITE_GIORNALIERO`.
 - [ ] Dopo aver cambiato una variabile serve un nuovo deploy perché abbia effetto.
 
+**Personal trainer (nuovo)**
+- [ ] `CODICE_TRAINER`: il codice d'invito per registrarsi come personal trainer, **almeno 12 caratteri**, solo per **Production**. Lo dai tu a chi vuoi come trainer, a voce o in privato; **non va scritto in chat, nel codice o in Git**. Senza, o se è più corto di 12 caratteri, l'opzione «Personal trainer» non compare nella registrazione. Cambiarlo non toglie il ruolo a chi è già trainer. Dopo averlo impostato serve un nuovo deploy.
+- [ ] Il primo trainer: registrati dall'app con il codice, oppure rendi trainer un account esistente da terminale (con le variabili di Neon): `set NUOVO_USERNAME=...` e `set NUOVA_PALESTRA=THE IRON PARADISE`, `set NUOVO_RUOLO=trainer`, poi `npm run db:utente`; la password non cambia se `NUOVA_PASSWORD` è vuota.
+
 **Altre impostazioni**
 - [ ] **Git → Production Branch**: `main`.
 - [ ] **Build and Deployment → Ignored Build Step**: "Only build production", così `dev` non genera deploy.
@@ -151,6 +155,7 @@ Aprendo l'indirizzo online (meglio anche dal telefono):
 - [ ] Il pulsante sole/luna cambia il tema e dopo il ricaricamento resta.
 - [ ] Una sessione di prova: conferma una serie e parte il timer di recupero.
 - [ ] "Esci" porta alla presentazione.
+- [ ] **Palestra e trainer**: in Account compare «Palestra e personal trainer» con il menu; la registrazione offre «Utente» e «Personal trainer». Con un account di prova scegli una palestra, entra come trainer di quella palestra e controlla che veda **solo il nome e la scheda**; poi togli la palestra e controlla che la scheda sparisca dall'elenco del trainer.
 - [ ] **Recupero password**: arriva davvero l'email col codice? (Da verificare: non so se Gmail consegna da Vercel.)
 
 ---
