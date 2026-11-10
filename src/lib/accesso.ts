@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { cookies, headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { db } from './db'
 import {
   COOKIE_SESSIONE,
@@ -74,4 +74,31 @@ export async function richiediUtente(): Promise<number> {
     redirect(percorso ? `/login?da=${encodeURIComponent(percorso)}` : '/login')
   }
   return id
+}
+
+// Per le pagine del personal trainer: come richiediUtente, e poi pagina non trovata per chi non lo è (una pagina del trainer non
+// deve nemmeno farsi riconoscere da un utente qualunque). Restituisce l'id e la palestra del trainer.
+export async function richiediTrainer(): Promise<{ userId: number; palestra: string }> {
+  const userId = await richiediUtente()
+  const riga = await db.user.findUnique({ where: { id: userId }, select: { ruolo: true, palestra: true } })
+  if (!riga || riga.ruolo !== 'trainer' || !riga.palestra) notFound()
+  return { userId, palestra: riga.palestra }
+}
+
+// L'UNICO punto che dice se un personal trainer può toccare la scheda di una persona. Vero solo se chi chiede è un trainer, la
+// persona è un utente (non un trainer, e non lui stesso) e ha scelto la stessa palestra: sceglierla è il consenso. Si usa in ogni
+// pagina e in ogni azione del trainer, a ogni richiesta, e mai si fida di un id arrivato dal browser senza passare di qui: se la
+// persona toglie la palestra, la richiesta successiva viene rifiutata. Restituisce solo il nome completo, che è tutto ciò
+// che il trainer può sapere dell'allievo.
+export async function allievoDelTrainer(trainerId: number, allievoId: number): Promise<{ fullName: string } | null> {
+  if (!Number.isSafeInteger(trainerId) || !Number.isSafeInteger(allievoId) || trainerId === allievoId) return null
+
+  const trainer = await db.user.findUnique({ where: { id: trainerId }, select: { ruolo: true, palestra: true } })
+  if (!trainer || trainer.ruolo !== 'trainer' || !trainer.palestra) return null
+
+  const allievo = await db.user.findFirst({
+    where: { id: allievoId, ruolo: 'utente', palestra: trainer.palestra },
+    select: { fullName: true },
+  })
+  return allievo ?? null
 }

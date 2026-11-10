@@ -4,10 +4,39 @@ import type { VoceElenco } from './tipi'
 import { esercizioDaVoce } from './voci'
 
 const includeVoci = {
+  modificatoDa: { select: { fullName: true } },
   voci: {
     orderBy: { ordine: 'asc' as const },
     include: { esercizio: { include: { catalogo: { select: { nomeEn: true, immagine: true } } } } },
   },
+}
+
+type RigaGiorno = {
+  id: string
+  userId: number
+  titolo: string
+  modificatoIl: Date | null
+  modificatoDaId: number | null
+  modificatoDa: { fullName: string } | null
+  voci: Parameters<typeof esercizioDaVoce>[0][]
+}
+
+// Dalla riga del database alla giornata che usa l'app, con chi l'ha modificata per ultimo.
+function giornoDaRiga(riga: RigaGiorno): Giorno {
+  return {
+    id: riga.id,
+    titolo: riga.titolo,
+    esercizi: riga.voci.map(esercizioDaVoce),
+    ...(riga.modificatoIl
+      ? {
+          modificata: {
+            da: riga.modificatoDa?.fullName ?? null,
+            il: riga.modificatoIl.toISOString(),
+            daAltri: riga.modificatoDaId !== null && riga.modificatoDaId !== riga.userId,
+          },
+        }
+      : {}),
+  }
 }
 
 // Le giornate della scheda di una persona con i loro esercizi, nell'ordine delle sigle (A, B, C, ...). Quelle tolte dalla
@@ -18,21 +47,13 @@ export async function leggiScheda(userId: number): Promise<Giorno[]> {
     orderBy: { id: 'asc' },
     include: includeVoci,
   })
-  return righe.map((riga) => ({
-    id: riga.id,
-    titolo: riga.titolo,
-    esercizi: riga.voci.map(esercizioDaVoce),
-  }))
+  return righe.map(giornoDaRiga)
 }
 
 export async function leggiGiorno(userId: number, id: string): Promise<Giorno | null> {
   const riga = await db.giornoScheda.findUnique({ where: { userId_id: { userId, id } }, include: includeVoci })
   if (!riga || !riga.attiva) return null
-  return {
-    id: riga.id,
-    titolo: riga.titolo,
-    esercizi: riga.voci.map(esercizioDaVoce),
-  }
+  return giornoDaRiga(riga)
 }
 
 // Quante sedute sono state registrate su una giornata: serve a dire, prima di toglierla, cosa succede allo storico.

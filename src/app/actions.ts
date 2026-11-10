@@ -6,9 +6,8 @@ import { utenteDellaPagina } from '@/lib/accesso'
 import { esercizioDalCatalogo } from '@/lib/catalogo'
 import { LIMITE_CSV } from '@/lib/csv'
 import { db } from '@/lib/db'
-import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from '@/lib/giornate'
 import { pianoImportScheda } from '@/lib/import-scheda'
-import { scriviVoci } from '@/lib/scheda-scrittura'
+import { creaGiornata, salvaGiornata, scriviVoci, togliGiornata } from '@/lib/scheda-scrittura'
 import { validaScheda } from '@/lib/scheda-schema'
 import { validaSessione } from '@/lib/sessione-schema'
 
@@ -83,28 +82,24 @@ export async function salvaSessione(
   return { id }
 }
 
-export async function salvaScheda(utenteId: number, input: unknown): Promise<{ ok: true } | { errore: string }> {
+// `versione` è il momento dell'ultima modifica che la pagina ha letto: serve a non sovrascrivere un salvataggio più recente (per
+// esempio quello di un personal trainer della tua palestra). Vedi lib/scheda-scrittura.ts.
+export async function salvaScheda(
+  utenteId: number,
+  input: unknown,
+  versione: unknown = null,
+): Promise<{ ok: true } | { errore: string }> {
   const utente = await utenteDellaPagina(utenteId)
   if ('errore' in utente) return { errore: utente.errore }
   const userId = utente.userId
 
   const esito = validaScheda(input)
   if (!esito.ok) return { errore: esito.errore }
-  const { giornoId, titolo, voci } = esito.dati
-
-  const giorno = await db.giornoScheda.findFirst({ where: { userId, id: giornoId, attiva: true }, select: { id: true } })
-  if (!giorno) return { errore: 'Giornata non trovata' }
-
-  const idPropri = voci.flatMap((voce) => (voce.esercizioId !== null ? [voce.esercizioId] : []))
-  const trovati = await db.esercizio.count({ where: { userId, id: { in: idPropri } } })
-  if (trovati !== idPropri.length) return { errore: 'Un esercizio non esiste più' }
-  const idCatalogo = voci.flatMap((voce) => (voce.catalogoId !== null ? [voce.catalogoId] : []))
-  if ((await db.catalogoEsercizio.count({ where: { id: { in: idCatalogo } } })) !== idCatalogo.length) {
-    return { errore: 'Un esercizio del catalogo non esiste più' }
-  }
+  if (versione !== null && typeof versione !== 'string') return { errore: 'Dati non validi' }
 
   // La storia non si tocca: le serie già registrate puntano agli esercizi, non alle voci della scheda.
-  await db.$transaction((tx) => scriviVoci(tx, userId, giornoId, titolo, voci))
+  const salvata = await db.$transaction((tx) => salvaGiornata(tx, userId, userId, esito.dati, versione))
+  if (!salvata.ok) return { errore: salvata.errore }
 
   aggiornaPagine()
   return { ok: true }
@@ -180,25 +175,11 @@ export async function aggiungiGiornata(utenteId: number): Promise<{ id: string }
   if ('errore' in utente) return { errore: utente.errore }
   const userId = utente.userId
 
-  // Il blocco (advisory lock) per persona fa passare una richiesta alla volta: due "Aggiungi" insieme non sforano il limite
-  // né scelgono la stessa sigla.
-  const esito = await db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${userId}::bigint)`
+  const esito = await db.$transaction((tx) => creaGiornata(tx, userId, userId))
+  if (!esito.ok) return { errore: esito.errore }
 
-    // Si contano solo le attive per il limite; le sigle invece si guardano tutte, tolte comprese, perché non si riusano.
-    const tutte = await tx.giornoScheda.findMany({ where: { userId }, select: { id: true, attiva: true } })
-    if (tutte.filter((g) => g.attiva).length >= GIORNATE_MASSIME) {
-      return { errore: `Una scheda può avere al massimo ${GIORNATE_MASSIME} giornate` } as const
-    }
-    const sigla = prossimaSigla(tutte.map((g) => g.id))
-    if (sigla === null) return { errore: 'Non ci sono più sigle disponibili' } as const
-
-    await tx.giornoScheda.create({ data: { userId, id: sigla, titolo: titoloGiornata(sigla) } })
-    return { id: sigla } as const
-  })
-
-  if ('id' in esito) aggiornaPagine()
-  return esito
+  aggiornaPagine()
+  return { id: esito.id }
 }
 
 // Toglie una giornata dalla scheda. Una scheda ha sempre almeno una giornata. Se la giornata non ha sedute si cancella; se
@@ -214,26 +195,10 @@ export async function rimuoviGiornata(
   if (typeof id !== 'string' || !/^[A-Z]$/.test(id)) return { errore: 'Giornata non valida' }
 
   try {
-    const esito = await db.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${userId}::bigint)`
-
-      const attive = await tx.giornoScheda.findMany({ where: { userId, attiva: true }, select: { id: true } })
-      if (!attive.some((g) => g.id === id)) return { errore: 'Giornata non trovata' } as const
-      if (attive.length <= 1) return { errore: 'Una scheda ha sempre almeno una giornata' } as const
-
-      // Le voci della giornata tolta non servono più in nessun caso.
-      await tx.voceScheda.deleteMany({ where: { userId, giornoId: id } })
-      const sedute = await tx.sessione.count({ where: { userId, giornoId: id } })
-      if (sedute > 0) {
-        await tx.giornoScheda.update({ where: { userId_id: { userId, id } }, data: { attiva: false } })
-        return { ok: true, archiviata: true } as const
-      }
-      await tx.giornoScheda.delete({ where: { userId_id: { userId, id } } })
-      return { ok: true, archiviata: false } as const
-    })
-
-    if ('ok' in esito) aggiornaPagine()
-    return esito
+    const esito = await db.$transaction((tx) => togliGiornata(tx, userId, id))
+    if (!esito.ok) return { errore: esito.errore }
+    aggiornaPagine()
+    return { ok: true, archiviata: esito.archiviata }
   } catch (errore) {
     // Succede solo se una seduta è stata salvata su questa giornata tra il conteggio e la cancellazione: la chiave
     // esterna la protegge e la transazione torna indietro. Riprovando, la giornata resta per lo storico.

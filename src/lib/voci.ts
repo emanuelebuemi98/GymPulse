@@ -12,7 +12,13 @@ export type VoceDb = {
   serieMax: number | null
   nota: string | null
   incrementoKg: number | null
-  esercizio: { id: number; nome: string; categoria: string; catalogo: { nomeEn: string; immagine: string | null } | null }
+  esercizio: {
+    id: number
+    nome: string
+    categoria: string
+    catalogoId: number | null
+    catalogo: { nomeEn: string; immagine: string | null } | null
+  }
 }
 
 export type CampiObiettivo = Pick<
@@ -45,6 +51,7 @@ export function esercizioDaVoce(voce: VoceDb): Esercizio {
     nome: voce.esercizio.nome,
     nomeEn: voce.esercizio.catalogo?.nomeEn ?? '',
     immagine: voce.esercizio.catalogo?.immagine ?? '',
+    catalogoRif: voce.esercizio.catalogoId,
     categoria: voce.esercizio.categoria,
     obiettivo,
     ...(voce.nota ? { nota: voce.nota } : {}),

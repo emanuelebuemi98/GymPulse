@@ -12,6 +12,8 @@ export type VoceForm = {
   chiave: string
   esercizioId: number | null
   catalogoId: number | null
+  // Il catalogo a cui l'esercizio è collegato, solo per mostrare «Come si fa»; non si invia al server.
+  catalogoRif: number | null
   nome: string
   nomeEn: string
   immagine: string
@@ -63,6 +65,7 @@ export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
     chiave: `e${esercizio.id}`,
     esercizioId: esercizio.id,
     catalogoId: null,
+    catalogoRif: esercizio.catalogoRif,
     nome: esercizio.nome,
     nomeEn: esercizio.nomeEn,
     immagine: esercizio.immagine,
@@ -90,6 +93,7 @@ export function nuovaVoceForm(chiave: string, scelta: VoceElenco): VoceForm {
     chiave,
     esercizioId: scelta.id,
     catalogoId: scelta.id === null ? scelta.catalogoId : null,
+    catalogoRif: scelta.catalogoId,
     nome: scelta.nome,
     nomeEn: scelta.nomeEn,
     immagine: scelta.immagine,
