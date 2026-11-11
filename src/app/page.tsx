@@ -163,7 +163,7 @@ const funzioni = [
     icona: IconaRegolazioni,
     titolo: 'Il tuo personal trainer',
     testo:
-      'Se vuoi, indica la tua palestra: i personal trainer di quella palestra potranno preparare e modificare la tua scheda, cioè giornate, esercizi, serie, ripetizioni, recuperi e note. Non vedono i kg che sollevi, lo storico, i grafici né l’email, e puoi cambiare o togliere la palestra quando vuoi. Se sei un personal trainer, ti registri con il codice d’invito.',
+      'Se vuoi, indica la tua palestra: il suo personal trainer potrà preparare e modificare la tua scheda, cioè giornate, esercizi, serie, ripetizioni, recuperi e note. Non vede i kg che sollevi, lo storico, i grafici né l’email, e puoi cambiare o togliere la palestra quando vuoi. Se sei un personal trainer, ti registri con il codice d’invito: ogni palestra ne ha uno solo.',
   },
 ]
 

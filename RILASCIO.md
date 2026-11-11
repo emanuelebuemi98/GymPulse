@@ -62,9 +62,17 @@ npx prisma migrate status
 ```
 
 - [ ] La riga `Datasource "db"` contiene l'indirizzo di Neon (`...neon.tech`), **non** `localhost`.
-- [ ] Le migrazioni da applicare sono quelle che ti aspetti (in questo rilascio è **1**: `ruoli_e_palestre`, che aggiunge le colonne `palestra` e `ruolo` a `User` e `modificatoDaId`/`modificatoIl` a `GiornoScheda`. `catalogo_senza_alias` è già stata applicata nel rilascio precedente).
+- [ ] Le migrazioni da applicare sono quelle che ti aspetti (in questo rilascio sono **2**: `ruoli_e_palestre`, che aggiunge le colonne `palestra` e `ruolo` a `User` e `modificatoDaId`/`modificatoIl` a `GiornoScheda`, e `un_trainer_per_palestra`, che impedisce a due trainer di avere la stessa palestra. `catalogo_senza_alias` è già stata applicata nel rilascio precedente).
 
 Se il numero è diverso da quello atteso, ci si ferma.
+
+**Controllo per `un_trainer_per_palestra`** (solo se prima dell'aggiornamento su Neon c'erano già dei trainer, cosa che la prima volta non succede perché la funzione non è ancora online). Con la stessa `DATABASE_URL`:
+
+```bat
+docker run --rm postgres:18 psql "%DATABASE_URL%" -c "SELECT palestra, count(*) FROM \"User\" WHERE ruolo = 'trainer' GROUP BY palestra HAVING count(*) > 1"
+```
+
+- [ ] Risponde `(0 rows)`. Se elenca una palestra, ci sono due trainer nella stessa palestra e la migrazione si fermerebbe con un errore: se ne riporta uno a utente (`set NUOVO_RUOLO=utente`, `npm run db:utente`) e si rifà il controllo.
 
 ## 5. Applica le migrazioni
 
@@ -134,6 +142,7 @@ Le impostazioni si fanno una volta sola; a ogni rilascio basta controllare che s
 
 **Personal trainer (nuovo)**
 - [ ] `CODICE_TRAINER`: il codice d'invito per registrarsi come personal trainer, **almeno 12 caratteri**, solo per **Production**. Lo dai tu a chi vuoi come trainer, a voce o in privato; **non va scritto in chat, nel codice o in Git**. Senza, o se è più corto di 12 caratteri, l'opzione «Personal trainer» non compare nella registrazione. Cambiarlo non toglie il ruolo a chi è già trainer. Dopo averlo impostato serve un nuovo deploy.
+- [ ] **Una palestra, un solo trainer.** Chi si registra per primo con il codice occupa la palestra. Se il codice finisse a una persona sbagliata, potrebbe occupare la palestra di un altro trainer prima di lui: dai il codice solo a chi deve diventare trainer, e cambiarlo su Vercel non toglie il ruolo a chi lo è già. Per liberare una palestra: il trainer elimina il suo account, oppure da terminale `set NUOVO_USERNAME=...` e `set NUOVO_RUOLO=utente`, poi `npm run db:utente`.
 - [ ] Il primo trainer: registrati dall'app con il codice, oppure rendi trainer un account esistente da terminale (con le variabili di Neon): `set NUOVO_USERNAME=...` e `set NUOVA_PALESTRA=THE IRON PARADISE`, `set NUOVO_RUOLO=trainer`, poi `npm run db:utente`; la password non cambia se `NUOVA_PASSWORD` è vuota.
 
 **Altre impostazioni**

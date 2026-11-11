@@ -10,8 +10,8 @@ export type StatoPalestra = { errore: string | null; messaggio: string | null }
 
 const errore = (testo: string): StatoPalestra => ({ errore: testo, messaggio: null })
 
-// Sceglie o toglie la palestra di chi è entrato. Scegliere una palestra è il consenso: da quel momento i personal trainer di quella
-// palestra possono vedere e modificare la scheda (mai sedute, kg, grafici, email). Toglierla ritira il consenso subito: alla
+// Sceglie o toglie la palestra di chi è entrato. Scegliere una palestra è il consenso: da quel momento il personal trainer di quella
+// palestra può vedere e modificare la scheda (mai sedute, kg, grafici, email). Toglierla ritira il consenso subito: alla
 // richiesta successiva il trainer non vede più la scheda. Solo gli utenti: un personal trainer ha la palestra scelta alla
 // registrazione e non la cambia da qui (altrimenti potrebbe spostarsi nella palestra di chiunque per leggerne le schede).
 export async function salvaPalestra(_precedente: StatoPalestra, dati: FormData): Promise<StatoPalestra> {
@@ -33,7 +33,7 @@ export async function salvaPalestra(_precedente: StatoPalestra, dati: FormData):
   return {
     errore: null,
     messaggio: palestra
-      ? `Palestra salvata: ${palestra}. I personal trainer di questa palestra possono ora vedere e modificare la tua scheda.`
+      ? `Palestra salvata: ${palestra}. Il personal trainer di questa palestra può ora vedere e modificare la tua scheda.`
       : 'Palestra tolta. Nessun personal trainer può più vedere la tua scheda.',
   }
 }

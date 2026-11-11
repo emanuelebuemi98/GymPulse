@@ -20,7 +20,7 @@ const ANTEPRIME_IN_HOME = 5
 export default async function HomePage() {
   const userId = await richiediUtente()
   const [giorni, { totale, ultima }, utente] = await Promise.all([leggiScheda(userId), riepilogoHome(userId), leggiUtente(userId)])
-  // Solo per i personal trainer: quanti utenti della loro palestra hanno scelto di condividere la scheda.
+  // Solo per il personal trainer: quanti utenti della sua palestra hanno scelto di condividere la scheda.
   const allievi = utente?.ruolo === 'trainer' && utente.palestra ? await leggiAllievi(utente.palestra) : null
 
   if (giorni.length === 0) {

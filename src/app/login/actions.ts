@@ -16,6 +16,7 @@ import { codiceTrainerConfigurato, codiceTrainerGiusto } from '@/lib/codice-trai
 import { validaEmail } from '@/lib/indirizzo-email'
 import { creaLimite, indirizzoClient, testoLimite } from '@/lib/limite'
 import { palestraDa } from '@/lib/palestre'
+import { palestraHaTrainer } from '@/lib/trainer-db'
 import { messaggioCodice, normalizzaCodiceOtp } from '@/lib/otp'
 import { creaHashPassword, hashFittizio, verificaPassword } from '@/lib/password'
 import {
@@ -56,6 +57,7 @@ export type StatoRegistrazione = {
   trainer: boolean
 }
 
+const MESSAGGIO_PALESTRA_OCCUPATA = 'Questa palestra ha già un personal trainer'
 const PAUSA_DOPO_ERRORE_MS = 800
 const LUNGHEZZA_MAX_USERNAME = 100
 const LUNGHEZZA_MAX_CAMPO = 200
@@ -222,6 +224,13 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
       await pausa(PAUSA_DOPO_ERRORE_MS)
       return registrazioneRifiutata('Codice d’invito non valido', campi)
     }
+    // Un solo trainer per palestra. Si controlla DOPO il codice: chi non ha il codice non deve poter usare il modulo per scoprire
+    // quali palestre sono occupate. Il controllo vero sta nel database (indice unico parziale): questo serve a dare subito un
+    // messaggio chiaro senza calcolare l'hash, e quello dopo la creazione copre chi arriva nello stesso istante.
+    if (await palestraHaTrainer(palestra)) {
+      await pausa(PAUSA_DOPO_ERRORE_MS)
+      return registrazioneRifiutata(MESSAGGIO_PALESTRA_OCCUPATA, campi)
+    }
   }
 
   // Il nome utente libero si controlla prima di calcolare l'hash della password, che costa tempo.
@@ -248,8 +257,17 @@ export async function registrati(_precedente: StatoRegistrazione, dati: FormData
     userId = creato.id
   } catch (errore) {
     if (èViolazioneUnicita(errore)) {
-      // Qualcun altro ha preso lo stesso nome utente un attimo prima.
-      return registrazioneRifiutata('Questo nome utente è già in uso', campi)
+      // Due vincoli diversi rispondono con lo stesso codice (P2002): il nome utente e la palestra del trainer. Non si indovina dal
+      // messaggio: si guarda nel database cosa è successo. Se il nome utente c'è, è quello; altrimenti, per un trainer, la
+      // palestra è stata presa da qualcuno arrivato un attimo prima.
+      if (await db.user.findUnique({ where: { username }, select: { id: true } })) {
+        return registrazioneRifiutata('Questo nome utente è già in uso', campi)
+      }
+      if (vuoleFareIlTrainer && palestra !== null && (await palestraHaTrainer(palestra))) {
+        return registrazioneRifiutata(MESSAGGIO_PALESTRA_OCCUPATA, campi)
+      }
+      console.error('[registrazione] violazione di unicità non riconosciuta', errore)
+      return registrazioneRifiutata('Non è stato possibile creare l’account. Riprova.', campi)
     }
     console.error('[registrazione] errore imprevisto', errore)
     return registrazioneRifiutata('Non è stato possibile creare l’account. Riprova.', campi)

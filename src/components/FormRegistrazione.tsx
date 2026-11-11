@@ -110,7 +110,7 @@ export function FormRegistrazione({ trainerAttivo }: { trainerAttivo: boolean })
         {/* Sceglierla è il consenso: questa frase deve restare. Il resto (cosa vedono e cosa no) sta nella pagina Account. */}
         {!trainer && (
           <span className="block text-xs font-normal">
-            I personal trainer della palestra potranno vedere e modificare la tua scheda (non i kg né lo storico). La togli da Account.
+            Il personal trainer della palestra potrà vedere e modificare la tua scheda (non i kg né lo storico). La togli da Account.
           </span>
         )}
       </label>

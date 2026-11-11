@@ -24,7 +24,7 @@ export default async function AccountPage() {
   const attiva = emailAttiva()
   const èTrainer = utente.ruolo === 'trainer'
   // I nomi dei trainer che, grazie alla palestra scelta, possono vedere la scheda: chi ha dato il consenso deve sapere a chi.
-  const trainerDellaPalestra = utente.palestra && !èTrainer ? await leggiTrainerDellaPalestra(utente.palestra) : []
+  const trainerDellaPalestra = utente.palestra && !èTrainer ? await leggiTrainerDellaPalestra(utente.palestra) : null
   // Cosa sparirebbe eliminando l'account: lo mostra il pannello «Elimina account».
   const dati = await contaDatiAccount(userId)
 
@@ -74,17 +74,16 @@ export default async function AccountPage() {
         ) : (
           <>
             <p className="text-sm text-muto">
-              Scegliendo la tua palestra, i personal trainer di quella palestra possono vedere e modificare la tua{' '}
-              <span className="font-semibold">scheda</span>: giornate, esercizi, serie, ripetizioni, recuperi e note. Non vedono i
-              kg che sollevi, lo storico degli allenamenti, i grafici né l&apos;email, e il loro nome compare qui sotto. Puoi
+              Scegliendo la tua palestra, il suo personal trainer può vedere e modificare la tua{' '}
+              <span className="font-semibold">scheda</span>: giornate, esercizi, serie, ripetizioni, recuperi e note. Non vede i
+              kg che sollevi, lo storico degli allenamenti, i grafici né l&apos;email, e il suo nome compare qui sotto. Puoi
               cambiarla o toglierla quando vuoi: la scheda resta tua e puoi modificarla come sempre.
             </p>
             {utente.palestra && (
               <p className="rounded-2xl bg-carta-alta p-3 text-sm text-muto">
-                {trainerDellaPalestra.length > 0 ? (
+                {trainerDellaPalestra ? (
                   <>
-                    Possono vedere la tua scheda:{' '}
-                    <span className="font-semibold text-testo">{trainerDellaPalestra.join(', ')}</span>.
+                    Può vedere la tua scheda: <span className="font-semibold text-testo">{trainerDellaPalestra}</span>.
                   </>
                 ) : (
                   'Nessun personal trainer è ancora registrato per questa palestra: per ora la tua scheda non la vede nessuno.'

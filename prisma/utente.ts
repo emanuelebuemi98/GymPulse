@@ -63,6 +63,14 @@ async function main() {
   const ruolo = ruoloScritto === '' ? (esistente?.ruolo ?? 'utente') : ruoloScritto
   const palestraFinale = togliPalestra ? null : (palestra ?? esistente?.palestra ?? null)
   if (ruolo === 'trainer' && palestraFinale === null) esci('Un personal trainer deve avere la palestra: imposta NUOVA_PALESTRA.')
+  // Un solo trainer per palestra (indice unico nel database): se la palestra è di un altro, si ferma prima e dice di chi.
+  if (ruolo === 'trainer' && palestraFinale !== null) {
+    const altro = await db.user.findFirst({
+      where: { ruolo: 'trainer', palestra: palestraFinale, NOT: esistente ? { id: esistente.id } : undefined },
+      select: { username: true },
+    })
+    if (altro) esci(`La palestra "${palestraFinale}" ha già un personal trainer (${altro.username}). Una palestra ne ha uno solo.`)
+  }
 
   if (esistente) {
     await db.user.update({
