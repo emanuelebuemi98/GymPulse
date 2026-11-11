@@ -2,7 +2,7 @@
 
 Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per rilascio. La procedura da seguire è in `DEPLOY.md`; questo file è il registro di quello che è già successo. A ogni rilascio si aggiunge una voce (vedi «Come aggiungere una voce», in fondo).
 
-**Da dove vengono i dati.** Date, commit, migrazioni e catalogo vengono dalla cronologia di Git. Gli esiti dei deploy vengono dagli stati che Vercel scrive su GitHub; sono dati da Vercel in UTC e qui sono convertiti in **ora italiana** (un'ora avanti). Quello che Git non può dire, per esempio cosa è stato eseguito su Neon, c'è solo se è stato detto durante il lavoro e in quel caso è segnato come tale. Dove non si sa, c'è scritto «non registrato». I rilasci con la data «non registrata» sono ricostruiti dai commit.
+**Da dove vengono i dati.** Date, commit, migrazioni e catalogo vengono dalla cronologia di Git. Gli esiti dei deploy vengono dagli stati che Vercel scrive su GitHub; sono dati da Vercel in UTC e qui sono convertiti in **ora italiana** (un'ora avanti). Quello che Git non può dire, per esempio cosa è stato eseguito su Neon, c'è solo se è stato detto durante il lavoro e in quel caso è segnato come tale. Dove non si sa, c'è scritto «non registrato».
 
 ---
 
@@ -13,7 +13,7 @@ Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per ri
 | 1 | 2 nov 2026 | `36439bd` | Primo collegamento di Vercel (una prova) | nessuna | 2 falliti, poi riuscito |
 | 2 | 8 nov 2026 | `17eda64` | **Primo rilascio vero**: catalogo di 246 esercizi, tema chiaro e scuro, presentazione, registrazione in un passo | 4 | riuscito (e un nuovo deploy il 9 nov) |
 | 3 | 10 nov 2026 | `b62c6a5` | Email di qualunque fornitore, catalogo per categoria, scheda da file CSV | 1 | riuscito (e un nuovo deploy l'11 nov) |
-| 4 | 11 nov 2026 (circa) | l'ultimo di `dev` al momento del merge | **Personal trainer e palestre**, un solo trainer per palestra, eliminazione dell'account, note in sessione | 2 | non registrato |
+| 4 | 11 nov 2026 | `1e6cce2` | **Personal trainer e palestre**, un solo trainer per palestra, eliminazione dell'account, note in sessione | 2 | riuscito |
 
 Nei rilasci 2, 3 e 4 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata.
 
@@ -95,7 +95,7 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 
 ## Rilascio 4 — 11 novembre 2026: personal trainer e palestre
 
-- **Commit:** quelli del ramo `dev` portati su `main` con il merge: 12 commit dal rilascio 3, più quello dei file di documentazione. La data e l'hash esatti del merge non sono registrati (i commit sono del 10 e 11 novembre; all'11 novembre l'ultimo di `dev` era `32db206`).
+- **Commit:** `1e6cce2` (14 commit dal rilascio 3). Il merge è stato un avanzamento semplice: `main` e `dev` sono finiti sullo stesso commit, senza un commit di merge.
 - **Cosa conteneva:**
   - **personal trainer e palestre**: registrazione come utente o come trainer con un codice d'invito; l'utente sceglie, se vuole, la palestra e quella scelta è il consenso a far vedere la scheda al trainer; il trainer vede solo il nome e la scheda e la può modificare; «Modificata da NOME, il giorno» sulla giornata cambiata;
   - **un solo trainer per palestra**, anche se due persone si registrano nello stesso istante (indice unico nel database);
@@ -106,9 +106,13 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 - **Migrazioni (2):** `ruoli_e_palestre` (colonne `palestra` e `ruolo` su `User`, `modificatoDaId` e `modificatoIl` su `GiornoScheda`) e `un_trainer_per_palestra` (indice unico). Aggiungono solo colonne e un indice: il codice vecchio funziona anche sul database nuovo.
 - **Catalogo e immagini:** invariati (passi 6 e 7 saltati).
 - **Variabile nuova su Vercel:** `CODICE_TRAINER` (almeno 12 caratteri, solo Production).
-- **Provato prima del rilascio, in locale e su copie del database:** permessi e privacy del trainer, codice d'invito e limite di tentativi, consenso ritirato con la pagina rimasta aperta, salvataggi simultanei, due registrazioni di trainer insieme per la stessa palestra, eliminazione dell'account (nessuna riga rimasta, gli altri account identici), migrazioni sulle copie. Le migrazioni non erano mai state provate su Neon.
-- **Da verificare dopo la pubblicazione** (con un account di prova, mai il proprio): catalogo, note in sessione, trainer e palestre, secondo trainer respinto («Questa palestra ha già un personal trainer»), eliminazione dell'account, scheda da CSV.
-- **Esiti di Vercel e problemi incontrati:** non registrati.
+- **Passi eseguiti** (dichiarati eseguiti, nessun problema segnalato): backup di Neon con `pg_dump` 18 (file di 88.563 byte, con i dati di tutte e nove le tabelle; salvato alle 11:58), `migrate status`, `db:deploy` con le 2 migrazioni, catalogo saltato, `CODICE_TRAINER` aggiunta su Vercel **prima** del merge, merge su `main`. L'esito scritto di `migrate status` e di `db:deploy` non è registrato.
+- **Provato prima del rilascio, in locale e su copie del database:** permessi e privacy del trainer, codice d'invito e limite di tentativi, consenso ritirato con la pagina rimasta aperta, salvataggi simultanei, due registrazioni di trainer insieme per la stessa palestra, eliminazione dell'account (nessuna riga rimasta, gli altri account identici), migrazioni sulle copie. Su Neon sono state applicate per la prima volta in questo rilascio.
+- **Vercel** (ora italiana):
+  - 11 nov 11:46, push di `dev`: **annullata** («Canceled by Ignored Build Step»), com'è voluto;
+  - 11 nov 12:06, merge su `main`: deploy **riuscito** (partito alle 12:06:22, finito alle 12:06:52).
+- **Problemi incontrati:** nessuno segnalato.
+- **Controlli online del passo 11** (catalogo, note in sessione, trainer e palestre, secondo trainer respinto con «Questa palestra ha già un personal trainer», eliminazione dell'account di prova, scheda da CSV): esito non registrato.
 
 ---
 
@@ -127,7 +131,7 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 
 A rilascio finito, nella sezione «Cosa cambia in questo deploy» di `DEPLOY.md` c'è già quasi tutto. Si copia qui come nuova sezione «Rilascio N — data», in questo ordine, e si svuota il riquadro di `DEPLOY.md`:
 
-1. **Commit** su `main` e quanti ne contiene (`git log --oneline origin/main..dev`, prima del merge).
+1. **Commit** su `main` (`git log --oneline -1 main`, dopo il merge) e quanti ne contiene (`git log --oneline origin/main..dev`, prima del merge).
 2. **Cosa conteneva**, in poche righe.
 3. **Migrazioni** applicate (`git diff --name-only origin/main..dev -- prisma/migrations`).
 4. **Catalogo e immagini**: cambiati o no.

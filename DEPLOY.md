@@ -79,18 +79,19 @@ Tutto il blocco Neon (passi 2-8) si fa **nella stessa finestra** del terminale. 
 ```bat
 set "DATABASE_URL=postgresql://UTENTE:PASSWORD@HOST-SENZA-POOLER.neon.tech/neondb?sslmode=require"
 set "CARTELLA_BACKUP=PERCORSO-DELLA-CARTELLA-DEI-BACKUP"
+set "NOME_BACKUP=neon-AAAA-MM-GG.dump"
 ```
 
-Sostituisci i due valori. La seconda riga è la cartella dove metti i backup (vedi il passo 0); se non esiste, creala con `mkdir "%CARTELLA_BACKUP%"`. Se chiudi la finestra, le variabili spariscono e vanno reimpostate.
+Sostituisci i tre valori. La seconda riga è la cartella dove metti i backup (vedi il passo 0); se non esiste, creala con `mkdir "%CARTELLA_BACKUP%"`. La terza è il nome del file di backup: **scrivici la data di oggi** (per esempio `neon-2026-11-11.dump`), così un backup nuovo non sovrascrive quello vecchio, e lo scrivi una volta sola invece che nei tre comandi del passo 3. Se chiudi la finestra, le variabili spariscono e vanno reimpostate.
 
 ## 3. Backup del database online
 
 Neon usa **PostgreSQL 18**, mentre il `pg_dump` del tuo contenitore locale è il 17 e si rifiuta ("server version mismatch"). Si usa un contenitore temporaneo `postgres:18`:
 
 ```bat
-docker run --rm -v "%CARTELLA_BACKUP%":/out postgres:18 pg_dump --format=custom --no-owner --file=/out/neon-prima-aggiornamento.dump "%DATABASE_URL%"
-dir "%CARTELLA_BACKUP%\neon-prima-aggiornamento.dump"
-docker run --rm -v "%CARTELLA_BACKUP%":/out postgres:18 pg_restore --list /out/neon-prima-aggiornamento.dump
+docker run --rm -v "%CARTELLA_BACKUP%":/out postgres:18 pg_dump --format=custom --no-owner --file=/out/%NOME_BACKUP% "%DATABASE_URL%"
+dir "%CARTELLA_BACKUP%\%NOME_BACKUP%"
+docker run --rm -v "%CARTELLA_BACKUP%":/out postgres:18 pg_restore --list /out/%NOME_BACKUP%
 ```
 
 - [ ] `dir` mostra una dimensione **maggiore di zero** (un file da 0 byte non è un backup: è già successo).
@@ -150,10 +151,12 @@ npm run db:catalogo
 ```bat
 npx prisma migrate status
 set DATABASE_URL=
+set CARTELLA_BACKUP=
+set NOME_BACKUP=
 ```
 
 - [ ] Il primo dice che il database è aggiornato.
-- [ ] Il secondo toglie la stringa di Neon dal terminale.
+- [ ] Gli altri tre tolgono dal terminale la stringa di Neon e le due variabili del backup.
 
 ## 9. Vercel: variabili e impostazioni, **prima** del merge
 
@@ -213,11 +216,11 @@ git checkout dev
 
 **Il database dopo un ritorno indietro:** se le migrazioni del deploy aggiungevano solo colonne o indici (lo dice il riquadro «Cosa cambia»), il codice vecchio funziona anche sul database nuovo e **non serve ripristinare il database**: basta ripubblicare il deploy precedente. I dati nuovi restano nel database, semplicemente la versione vecchia non li usa. Se invece una migrazione rinominava colonne o toglieva tabelle, il codice vecchio non funziona più sul database nuovo, e serve il ripristino qui sotto.
 
-**Riportare il database com'era:** solo in emergenza, perché **cancella tutto quello che è stato scritto dopo il backup**. Provato su una copia locale (migrazioni applicate, poi ripristino: stato identico a prima), **non** provato su Neon. Con `DATABASE_URL` e `CARTELLA_BACKUP` impostate come al passo 2:
+**Riportare il database com'era:** solo in emergenza, perché **cancella tutto quello che è stato scritto dopo il backup**. Provato su una copia locale (migrazioni applicate, poi ripristino: stato identico a prima), **non** provato su Neon. Con `DATABASE_URL`, `CARTELLA_BACKUP` e `NOME_BACKUP` (qui il nome del backup da ripristinare) impostate come al passo 2:
 
 ```bat
 docker run --rm postgres:18 psql "%DATABASE_URL%" -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE" -c "CREATE SCHEMA public"
-docker run --rm -v "%CARTELLA_BACKUP%":/out postgres:18 pg_restore --no-owner --exit-on-error -d "%DATABASE_URL%" /out/neon-prima-aggiornamento.dump
+docker run --rm -v "%CARTELLA_BACKUP%":/out postgres:18 pg_restore --no-owner --exit-on-error -d "%DATABASE_URL%" /out/%NOME_BACKUP%
 npx prisma migrate status
 ```
 
@@ -231,6 +234,6 @@ Se il passo A non mostra migrazioni e il catalogo non è cambiato, i passi 2-8 s
 
 ## Dopo il deploy
 
-- [ ] Chiudi il terminale (o controlla con `echo %DATABASE_URL%` che sia vuota). Se lo tieni aperto, `set DATABASE_URL=` e `set CARTELLA_BACKUP=` le svuotano.
+- [ ] Chiudi il terminale (o controlla con `echo %DATABASE_URL%` che sia vuota). Se lo tieni aperto, `set DATABASE_URL=`, `set CARTELLA_BACKUP=` e `set NOME_BACKUP=` le svuotano.
 - [ ] **Aggiungi una voce a `STORICO_RILASCI.md`** (come si fa è scritto in fondo a quel file), poi **svuota** il riquadro «Cosa cambia in questo deploy» e l'elenco delle prove di questo file, così è pronto per il prossimo.
 - [ ] Tieni l'ultimo backup finché non sei sicuro che tutto funzioni, poi puoi cancellare i vecchi (nella cartella dei backup).
