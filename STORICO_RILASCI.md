@@ -1,6 +1,6 @@
 # Storico dei rilasci di GymPulse
 
-Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per rilascio. La procedura da seguire è in `RILASCIO.md`; questo file è il registro di quello che è già successo. A ogni rilascio si aggiunge una voce (vedi «Come aggiungere una voce», in fondo).
+Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per rilascio. La procedura da seguire è in `DEPLOY.md`; questo file è il registro di quello che è già successo. A ogni rilascio si aggiunge una voce (vedi «Come aggiungere una voce», in fondo).
 
 **Da dove vengono i dati.** Date, commit, migrazioni e catalogo vengono dalla cronologia di Git. Gli esiti dei deploy vengono dagli stati che Vercel scrive su GitHub; sono dati da Vercel in UTC e qui sono convertiti in **ora italiana** (un'ora avanti). Quello che Git non può dire, per esempio cosa è stato eseguito su Neon, c'è solo se è stato detto durante il lavoro e in quel caso è segnato come tale. Dove non si sa, c'è scritto «non registrato». I rilasci con la data «non registrata» sono ricostruiti dai commit.
 
@@ -54,7 +54,7 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
   - **pagina iniziale** con le schermate da toccare (dodici), pagina `/registrati`;
   - **registrazione in un solo passo**, senza codice per email;
   - categoria Glutei separata da Gambe; «Come si fa» come pulsante con l'omino; card più ricche in Home, Storico e Scheda;
-  - il promemoria `RILASCIO.md`.
+  - il promemoria dei passi (oggi `DEPLOY.md`).
 - **Migrazioni (4):** `catalogo_esercizi`, `categorie_riscaldamento`, `registrazione_senza_codice`, `categoria_glutei`.
 - **Catalogo:** caricato con `db:catalogo`. Il promemoria di allora si aspettava **23 esercizi personali collegati e 246 voci nuove**, con 246 immagini trovate su 246.
 - **Variabili su Vercel** (solo Production), come da promemoria: `DATABASE_URL` (con pooler), `AUTH_SECRET` diverso da quello locale, `SMTP_UTENTE` e `SMTP_PASSWORD`.
@@ -64,7 +64,7 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
   - 8 nov 21:06, merge su `main`: deploy **riuscito**.
   - 9 nov 14:15: nuovo deploy **riuscito**. Il motivo non è registrato; è probabile che sia seguito al cambio di regione delle funzioni da Washington a Francoforte (`fra1`). *Da confermare.*
 - **Problemi incontrati e come si sono risolti:**
-  - **Backup da 0 byte.** Il `pg_dump` del contenitore locale è la versione 17, Neon è la 18: "server version mismatch". Si usa un contenitore `postgres:18` (ora è nel passo 3 di `RILASCIO.md`).
+  - **Backup da 0 byte.** Il `pg_dump` del contenitore locale è la versione 17, Neon è la 18: "server version mismatch". Si usa un contenitore `postgres:18` (ora è nel passo 3 di `DEPLOY.md`).
   - **Comandi del promemoria in PowerShell.** Il promemoria è scritto per il Prompt dei comandi (`cmd`): la sintassi di `set` è diversa in PowerShell e dava «La sintassi del nome del file… non è corretta».
   - **Build di `dev` fallita su Vercel.** Si è impostato *Build and Deployment → Ignored Build Step → Only build production*: da allora `dev` non genera build (compare «Canceled by Ignored Build Step»).
 - **Non verificato:** l'arrivo del codice di recupero password via email da Vercel (consegna da Gmail).
@@ -102,7 +102,7 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
   - **eliminazione dell'account** con tutto ciò che contiene (scheda, sedute, serie, storico e progressi), con una finestra di conferma nei colori dell'app;
   - **nota della scheda** visibile sotto ogni esercizio nella sessione di allenamento;
   - pagina Account con profilo, palestra ed email;
-  - la pagina iniziale con otto funzioni, e il promemoria `RILASCIO.md` riorganizzato con un riquadro «Cosa cambia».
+  - la pagina iniziale con otto funzioni, e il promemoria dei passi (`DEPLOY.md`) riorganizzato con un riquadro «Cosa cambia».
 - **Migrazioni (2):** `ruoli_e_palestre` (colonne `palestra` e `ruolo` su `User`, `modificatoDaId` e `modificatoIl` su `GiornoScheda`) e `un_trainer_per_palestra` (indice unico). Aggiungono solo colonne e un indice: il codice vecchio funziona anche sul database nuovo.
 - **Catalogo e immagini:** invariati (passi 6 e 7 saltati).
 - **Variabile nuova su Vercel:** `CODICE_TRAINER` (almeno 12 caratteri, solo Production).
@@ -114,8 +114,8 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 
 ## Problemi che si ripresentano
 
-- **Backup di Neon:** serve `pg_dump` 18, non quello del Docker locale. Un file da 0 byte non è un backup. La cartella dei backup si indica con la variabile `CARTELLA_BACKUP` (passo 2 di `RILASCIO.md`).
-- **Prompt dei comandi, non PowerShell:** i comandi di `RILASCIO.md` usano la sintassi di `cmd`.
+- **Backup di Neon:** serve `pg_dump` 18, non quello del Docker locale. Un file da 0 byte non è un backup. La cartella dei backup si indica con la variabile `CARTELLA_BACKUP` (passo 2 di `DEPLOY.md`).
+- **Prompt dei comandi, non PowerShell:** i comandi di `DEPLOY.md` usano la sintassi di `cmd`.
 - **`dev` non va compilato su Vercel:** vale l'«Ignored Build Step»; se un giorno compare una build di `dev` fallita per `DATABASE_URL`, è l'impostazione che è saltata.
 - **Variabili nuove:** vanno messe in Vercel **prima** del merge su `main`, altrimenti serve un secondo deploy.
 - **Mai committare file di backup o di dump** (`.sql`, `.dump`): il repository è pubblico e contengono l'hash delle password e le email. Ora il `.gitignore` li esclude nella cartella principale del progetto, e i backup si tengono in una cartella fuori dal progetto.
@@ -125,7 +125,7 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 
 ## Come aggiungere una voce
 
-A rilascio finito, nella sezione «Cosa cambia in questo rilascio» di `RILASCIO.md` c'è già quasi tutto. Si copia qui come nuova sezione «Rilascio N — data», in questo ordine, e si svuota il riquadro di `RILASCIO.md`:
+A rilascio finito, nella sezione «Cosa cambia in questo deploy» di `DEPLOY.md` c'è già quasi tutto. Si copia qui come nuova sezione «Rilascio N — data», in questo ordine, e si svuota il riquadro di `DEPLOY.md`:
 
 1. **Commit** su `main` e quanti ne contiene (`git log --oneline origin/main..dev`, prima del merge).
 2. **Cosa conteneva**, in poche righe.

@@ -1,4 +1,4 @@
-# Rilascio di GymPulse: promemoria passo per passo
+# Deploy di GymPulse: promemoria passo per passo
 
 Per portare una versione nuova online: database su **Neon** e app su **Vercel**.
 Scritto per il **Prompt dei comandi** (`cmd`). In PowerShell la sintassi delle variabili è diversa.
@@ -11,15 +11,15 @@ Scritto per il **Prompt dei comandi** (`cmd`). In PowerShell la sintassi delle v
 
 **L'ordine in una riga:** commit e push di `dev` → cosa cambia → stringa diretta di Neon → backup → controllo migrazioni → `db:deploy` → `db:catalogo` (solo se il catalogo è cambiato) → variabili su Vercel → merge su `main` → controllo su Vercel.
 
-Cosa è già stato pubblicato, rilascio per rilascio, è in `STORICO_RILASCI.md`. I passi qui sotto sono gli stessi a ogni rilascio. **Quello che cambia da un rilascio all'altro sta tutto in «Cosa cambia in questo rilascio» qui sotto**, e si ricava da Git (passo A): non ci sono altri numeri da aggiornare nel resto del file.
+Cosa è già stato pubblicato, deploy per deploy, è in `STORICO_RILASCI.md`. I passi qui sotto sono gli stessi a ogni deploy. **Quello che cambia da un deploy all'altro sta tutto in «Cosa cambia in questo deploy» qui sotto**, e si ricava da Git (passo A): non ci sono altri numeri da aggiornare nel resto del file.
 
 ---
 
-## Cosa cambia in questo rilascio
+## Cosa cambia in questo deploy
 
-*Si riscrive a ogni rilascio, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
+*Si riscrive a ogni deploy, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
 
-**Nessun rilascio in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
+**Nessun deploy in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
 - **Migrazioni:** i nomi, e se aggiungono soltanto colonne o indici (il codice vecchio funziona ancora) oppure rinominano o tolgono qualcosa (passi 5-9 di fila).
 - **Catalogo:** cambiato o no (passi 6 e 7).
 - **Variabili nuove su Vercel:** i nomi (passo 9).
@@ -48,7 +48,7 @@ git diff origin/main..dev -U0 -- src prisma | findstr /C:"env."
 
 Il quarto comando non vede le variabili lette in altri modi (per esempio `env.NOME` dentro una funzione): controlla comunque la lista del passo 9.
 
-Poi **riscrivi il riquadro «Cosa cambia in questo rilascio»** con quello che hai trovato: così sai sempre cosa stai portando online, e il prossimo rilascio parte da un riquadro pulito.
+Poi **riscrivi il riquadro «Cosa cambia in questo deploy»** con quello che hai trovato: così sai sempre cosa stai portando online, e il prossimo deploy parte da un riquadro pulito.
 
 ---
 
@@ -111,7 +111,7 @@ Se i due elenchi non coincidono, ci si ferma.
 
 ## 5. Applica le migrazioni
 
-Una migrazione che **aggiunge soltanto colonne o indici** non rompe il codice vecchio, ancora online: tra la migrazione e la pubblicazione non c'è una finestra di errori, e per tornare indietro non serve ripristinare il database. Una che **rinomina colonne o toglie tabelle** può dare errori al sito vecchio per qualche minuto: in quel caso i passi 5, 6, 7 e 9 si fanno uno dopo l'altro, senza pause. Il riquadro «Cosa cambia» dice di che tipo sono quelle di questo rilascio.
+Una migrazione che **aggiunge soltanto colonne o indici** non rompe il codice vecchio, ancora online: tra la migrazione e la pubblicazione non c'è una finestra di errori, e per tornare indietro non serve ripristinare il database. Una che **rinomina colonne o toglie tabelle** può dare errori al sito vecchio per qualche minuto: in quel caso i passi 5, 6, 7 e 9 si fanno uno dopo l'altro, senza pause. Il riquadro «Cosa cambia» dice di che tipo sono quelle di questo deploy.
 
 ```bat
 npm run db:deploy
@@ -157,7 +157,7 @@ set DATABASE_URL=
 
 ## 9. Vercel: variabili e impostazioni, **prima** del merge
 
-Le impostazioni si fanno una volta sola; a ogni rilascio basta controllare che siano ancora giuste e aggiungere le **variabili nuove** emerse dal passo A. Pannello del progetto → **Settings**. Una variabile cambiata ha effetto solo con un nuovo deploy: aggiungerla **prima** del merge (passo 10) evita di farne due.
+Le impostazioni si fanno una volta sola; a ogni deploy basta controllare che siano ancora giuste e aggiungere le **variabili nuove** emerse dal passo A. Pannello del progetto → **Settings**. Una variabile cambiata ha effetto solo con un nuovo deploy: aggiungerla **prima** del merge (passo 10) evita di farne due.
 
 **Environment Variables** (solo per **Production**)
 - [ ] `DATABASE_URL`: la stringa di Neon **con** pooler (`-pooler` nell'indirizzo).
@@ -199,9 +199,9 @@ git checkout dev
 - [ ] "Esci" porta alla presentazione.
 - [ ] **Recupero password**: arriva davvero l'email col codice? (Da verificare: non so se Gmail consegna da Vercel.)
 
-**Solo per le novità di questo rilascio**: una riga per ogni cosa elencata nel riquadro «Cosa cambia», con la prova che la funzione si veda e funzioni. Per le funzioni che scrivono o cancellano dati, **si usa un account di prova creato apposta, mai il tuo**, e a fine controllo si elimina (dall'app, con «Elimina il mio account»).
+**Solo per le novità di questo deploy**: una riga per ogni cosa elencata nel riquadro «Cosa cambia», con la prova che la funzione si veda e funzioni. Per le funzioni che scrivono o cancellano dati, **si usa un account di prova creato apposta, mai il tuo**, e a fine controllo si elimina (dall'app, con «Elimina il mio account»).
 
-- [ ] *(Le prove di questo rilascio: si scrivono qui, una riga per novità, e si cancellano a fine rilascio. Per le funzioni che scrivono o cancellano dati, solo con un account di prova.)*
+- [ ] *(Le prove di questo deploy: si scrivono qui, una riga per novità, e si cancellano a fine deploy. Per le funzioni che scrivono o cancellano dati, solo con un account di prova.)*
 
 ---
 
@@ -209,9 +209,9 @@ git checkout dev
 
 **La build di Vercel fallisce:** niente di grave, il sito resta alla versione precedente. Si legge l'errore nel log del deploy.
 
-**Il sito dà errore dopo il rilascio:** prima si guardano i log del deploy su Vercel. Per tornare alla versione di prima del codice, dal pannello **Deployments** si ripubblica il deploy precedente (Promote to Production / Rollback, i nomi dipendono dal piano).
+**Il sito dà errore dopo il deploy:** prima si guardano i log su Vercel. Per tornare alla versione di prima del codice, dal pannello **Deployments** si ripubblica il deploy precedente (Promote to Production / Rollback, i nomi dipendono dal piano).
 
-**Il database dopo un ritorno indietro:** se le migrazioni del rilascio aggiungevano solo colonne o indici (lo dice il riquadro «Cosa cambia»), il codice vecchio funziona anche sul database nuovo e **non serve ripristinare il database**: basta ripubblicare il deploy precedente. I dati nuovi restano nel database, semplicemente la versione vecchia non li usa. Se invece una migrazione rinominava colonne o toglieva tabelle, il codice vecchio non funziona più sul database nuovo, e serve il ripristino qui sotto.
+**Il database dopo un ritorno indietro:** se le migrazioni del deploy aggiungevano solo colonne o indici (lo dice il riquadro «Cosa cambia»), il codice vecchio funziona anche sul database nuovo e **non serve ripristinare il database**: basta ripubblicare il deploy precedente. I dati nuovi restano nel database, semplicemente la versione vecchia non li usa. Se invece una migrazione rinominava colonne o toglieva tabelle, il codice vecchio non funziona più sul database nuovo, e serve il ripristino qui sotto.
 
 **Riportare il database com'era:** solo in emergenza, perché **cancella tutto quello che è stato scritto dopo il backup**. Provato su una copia locale (migrazioni applicate, poi ripristino: stato identico a prima), **non** provato su Neon. Con `DATABASE_URL` e `CARTELLA_BACKUP` impostate come al passo 2:
 
@@ -229,8 +229,8 @@ Dopo il ripristino, `migrate status` deve di nuovo elencare le migrazioni da app
 
 Se il passo A non mostra migrazioni e il catalogo non è cambiato, i passi 2-8 si saltano: bastano il passo 9 (variabili, se ce ne sono di nuove), il 10 e i controlli dell'11. Se è cambiato solo il catalogo (`prisma/dati/catalogo-esercizi.json`), servono i passi 2, 3, 6, 7 e 8.
 
-## Dopo il rilascio
+## Dopo il deploy
 
 - [ ] Chiudi il terminale (o controlla con `echo %DATABASE_URL%` che sia vuota). Se lo tieni aperto, `set DATABASE_URL=` e `set CARTELLA_BACKUP=` le svuotano.
-- [ ] **Aggiungi una voce a `STORICO_RILASCI.md`** (come si fa è scritto in fondo a quel file), poi **svuota** il riquadro «Cosa cambia in questo rilascio» e l'elenco delle prove di questo file, così è pronto per il prossimo.
+- [ ] **Aggiungi una voce a `STORICO_RILASCI.md`** (come si fa è scritto in fondo a quel file), poi **svuota** il riquadro «Cosa cambia in questo deploy» e l'elenco delle prove di questo file, così è pronto per il prossimo.
 - [ ] Tieni l'ultimo backup finché non sei sicuro che tutto funzioni, poi puoi cancellare i vecchi (nella cartella dei backup).

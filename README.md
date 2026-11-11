@@ -48,7 +48,7 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | Interfaccia | React | 19.3.1 | Libreria per la costruzione dell'interfaccia utente tramite componenti riutilizzabili e gestione dello stato |
 | Linguaggio | TypeScript | 7.0.2 | Superset tipizzato di JavaScript; controllo statico dei tipi per un codice più sicuro e manutenibile |
 | Stile | Tailwind CSS | 4.3.3 | Font Bricolage Grotesque, tema chiaro e scuro |
-| Database | PostgreSQL | 17 in locale, 18 su Neon | Docker in locale; Neon (cloud) online. Per il backup di Neon serve `pg_dump` 18 (vedi `RILASCIO.md`) |
+| Database | PostgreSQL | 17 in locale, 18 su Neon | Docker in locale; Neon (cloud) online. Per il backup di Neon serve `pg_dump` 18 (vedi `DEPLOY.md`) |
 | ORM | Prisma | 7.10.1 | Con driver `pg` 8.23.1 e `@prisma/adapter-pg` 7.10.1 |
 | Validazione | Zod | 4.6.7 | I dati arrivati dal browser si ricontrollano sempre sul server |
 | Accesso | Scritto nel progetto | — | Cookie firmato (HMAC-SHA256) e password con scrypt, entrambi di Node.js: nessuna libreria in più |
@@ -116,7 +116,7 @@ git checkout dev
    CODICE_TRAINER="scegli-un-codice-lungo-e-tuo"
    ```
 
-   Dopo averla aggiunta al `.env` **riavvia** `npm run dev`: Next legge le variabili solo all'avvio. Su Vercel si imposta nelle variabili di Production (vedi `RILASCIO.md`). Per rendere trainer un account già esistente, senza il codice, c'è `npm run db:utente` con `NUOVO_RUOLO=trainer` e `NUOVA_PALESTRA`.
+   Dopo averla aggiunta al `.env` **riavvia** `npm run dev`: Next legge le variabili solo all'avvio. Su Vercel si imposta nelle variabili di Production (vedi `DEPLOY.md`). Per rendere trainer un account già esistente, senza il codice, c'è `npm run db:utente` con `NUOVO_RUOLO=trainer` e `NUOVA_PALESTRA`.
 
 3. **Database**: `docker compose up -d` (ascolta solo su `127.0.0.1:5432`).
 
@@ -163,7 +163,7 @@ npm.cmd start             # avvia su http://localhost:3000
 
 Le variabili della shell valgono solo per quella finestra e vincono sul file `.env`, quindi la build di produzione non usa per sbaglio il database locale. Chiusa la finestra, spariscono. **Non scrivere le credenziali di produzione nel `.env`.**
 
-**Su Vercel** si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo), `AUTH_SECRET`, le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`) e `CODICE_TRAINER` (il codice d'invito dei personal trainer, almeno 12 caratteri). Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema. Il promemoria completo, con backup e controlli, è in `RILASCIO.md`; cosa è già stato pubblicato, rilascio per rilascio, è in `STORICO_RILASCI.md`.
+**Su Vercel** si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo), `AUTH_SECRET`, le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`) e `CODICE_TRAINER` (il codice d'invito dei personal trainer, almeno 12 caratteri). Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema. Il promemoria completo, con backup e controlli, è in `DEPLOY.md`; cosa è già stato pubblicato, rilascio per rilascio, è in `STORICO_RILASCI.md`.
 
 ## Script disponibili
 
@@ -395,7 +395,7 @@ Se un giorno questi punti ti pesano, basta cambiare le due variabili con quelle 
 
 **Perché Neon e non Supabase.** L'app usa funzioni di PostgreSQL (blocchi `pg_advisory_xact_lock`, vincoli `CHECK`, chiavi esterne composte), quindi serve un database Postgres. Dalle pagine dei piani gratuiti: Neon dà 1 GB per progetto, si sospende dopo 5 minuti di inattività e riparte alla prima query, senza carta; Supabase dà 500 MB, **mette in pausa il progetto dopo una settimana di inattività** e non include i backup automatici. Non ho verificato i backup di Neon.
 
-1. **Neon** per il database: progetto in una regione europea (Francoforte). Neon usa **Postgres 18**, il Docker locale la 17: per il backup serve `pg_dump` 18 (vedi `RILASCIO.md`). Servono due stringhe di connessione: quella **con pooler** (`-pooler` nell'indirizzo) per l'app e quella **diretta** per le migrazioni e per portarci i dati.
+1. **Neon** per il database: progetto in una regione europea (Francoforte). Neon usa **Postgres 18**, il Docker locale la 17: per il backup serve `pg_dump` 18 (vedi `DEPLOY.md`). Servono due stringhe di connessione: quella **con pooler** (`-pooler` nell'indirizzo) per l'app e quella **diretta** per le migrazioni e per portarci i dati.
 2. **I dati**: si porta una copia del database locale con solo il proprio account (vedi sotto), non quello di tutti i giorni.
 3. **Vercel** per l'app, collegato al ramo `main`, piano Hobby (gratuito, solo uso personale e non commerciale). Variabili d'ambiente **solo per Production**: `DATABASE_URL` (la stringa con pooler), un `AUTH_SECRET` **nuovo**, diverso da quello locale (almeno 32 caratteri), le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`) e `CODICE_TRAINER`. Senza `AUTH_SECRET` l'accesso resta chiuso; senza le variabili dell'email il recupero della password resta spento (la registrazione funziona comunque); senza `CODICE_TRAINER` l'opzione «Personal trainer» non compare.
 4. **Regione delle funzioni**: per i nuovi progetti Vercel usa Washington (`iad1`); su Hobby se ne sceglie una sola, e conviene quella più vicina al database, cioè Francoforte (`fra1`), in *Settings → Functions*, oppure `regions` in `vercel.json`.
