@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { eliminaAccount } from '@/app/account/actions'
 import { eliminaBozzeDi } from '@/lib/bozza'
+import { FinestraConferma } from './FinestraConferma'
 import { IconaCestino, IconaScarica } from './icone'
 import { stileBottoneChiaro } from './stili'
 
@@ -16,25 +17,24 @@ type Props = {
 const quanti = (n: number, uno: string, molti: string) => `${n} ${n === 1 ? uno : molti}`
 
 // Elimina l'account per sempre. Un pannello che si apre con un tocco, il riepilogo di cosa sparisce, e una finestra di conferma
-// del browser prima di procedere: niente password. Dopo la cancellazione si tolgono dal browser anche le bozze delle sessioni in
+// con i colori dell'app (FinestraConferma, non quella del browser) prima di procedere: niente password. Dopo la cancellazione si tolgono dal browser anche le bozze delle sessioni in
 // corso di questo account e si torna alla pagina iniziale con una navigazione completa (non router.push), così la cache
 // di Next non conserva nulla della persona che non c'è più.
 export function EliminaAccount({ utenteId, dati, èTrainer }: Props) {
   const [aperto, setAperto] = useState(false)
+  const [conferma, setConferma] = useState(false)
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
 
   function elimina() {
-    const riepilogo = `${quanti(dati.sedute, 'seduta', 'sedute')}, ${quanti(dati.serie, 'serie registrata', 'serie registrate')}, ${quanti(dati.giornate, 'giornata', 'giornate')} di scheda`
-    const conferma = window.confirm(
-      `Eliminare definitivamente il tuo account?\n\nSpariscono per sempre: ${riepilogo}, lo storico e i progressi. Non si può annullare.\n\nVuoi procedere?`,
-    )
-    if (!conferma) return
-
     setErrore(null)
     startTransition(async () => {
       const esito = await eliminaAccount(utenteId)
-      if (!esito.ok) return setErrore(esito.errore)
+      if (!esito.ok) {
+        // Non è stato cancellato niente: si chiude la finestra e l'errore si legge nel pannello.
+        setConferma(false)
+        return setErrore(esito.errore)
+      }
       eliminaBozzeDi(utenteId)
       window.location.assign('/?account=eliminato')
     })
@@ -91,15 +91,26 @@ export function EliminaAccount({ utenteId, dati, èTrainer }: Props) {
 
           <button
             type="button"
-            onClick={elimina}
+            onClick={() => setConferma(true)}
             disabled={inCorso}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-errore px-5 py-3.5 text-base font-extrabold text-su-accento transition active:opacity-80 disabled:opacity-50"
           >
             <IconaCestino className="size-4" />
-            {inCorso ? 'Elimino…' : 'Elimina definitivamente'}
+            Elimina definitivamente
           </button>
         </div>
       )}
+
+      <FinestraConferma
+        aperta={conferma}
+        titolo="Vuoi eliminare definitivamente il tuo account?"
+        testoConferma="Elimina"
+        testoInCorso="Elimino…"
+        pericolo
+        inCorso={inCorso}
+        alConferma={elimina}
+        alAnnulla={() => setConferma(false)}
+      />
     </section>
   )
 }
