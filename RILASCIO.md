@@ -9,14 +9,16 @@ Scritto per il **Prompt dei comandi** (`cmd`). In PowerShell la sintassi delle v
 - Senza un backup che si legge davvero, non si applica nessuna migrazione.
 - I backup contengono l'hash della password e l'email: restano in `C:\Backup\gympulse`, fuori dal progetto e da cartelle sincronizzate.
 
-**L'ordine in una riga:** commit e push di `dev` → stringa diretta di Neon → backup → controllo migrazioni → `db:deploy` → `db:catalogo` → merge su `main` → controllo su Vercel.
+**L'ordine in una riga:** commit e push di `dev` → stringa diretta di Neon → backup → controllo migrazioni → `db:deploy` → `db:catalogo` (solo se il catalogo è cambiato) → merge su `main` → controllo su Vercel.
+
+**In questo rilascio** (personal trainer, palestre, catalogo per categoria, scheda da CSV, note in sessione, eliminazione dell'account): servono **due migrazioni** (solo colonne e un indice), la variabile **`CODICE_TRAINER`** su Vercel e nessun caricamento del catalogo, perché `prisma/dati/catalogo-esercizi.json` e le immagini sono identici a `main` (si controlla con `git diff --stat main..dev -- prisma/dati public`: nessuna riga).
 
 ---
 
 ## 0. Prima di cominciare
 
 - [ ] Docker Desktop è acceso (serve per il backup, che usa `pg_dump` versione 18).
-- [ ] `git status` non mostra file modificati che non vuoi pubblicare.
+- [ ] `git status` non mostra file modificati che non vuoi pubblicare, e `git log origin/dev..dev` non elenca commit: tutto quello che vuoi pubblicare è già su GitHub.
 - [ ] `npm run typecheck` non dà errori.
 - [ ] La cartella `C:\Backup\gympulse` esiste (se no: `mkdir C:\Backup\gympulse`).
 - [ ] Hai sotto mano la stringa **diretta** di Neon, quella **senza** `-pooler` nell'indirizzo (dal pannello di Neon o dal tuo `.env.prod`).
@@ -62,29 +64,33 @@ npx prisma migrate status
 ```
 
 - [ ] La riga `Datasource "db"` contiene l'indirizzo di Neon (`...neon.tech`), **non** `localhost`.
-- [ ] Le migrazioni da applicare sono quelle che ti aspetti (in questo rilascio sono **2**: `ruoli_e_palestre`, che aggiunge le colonne `palestra` e `ruolo` a `User` e `modificatoDaId`/`modificatoIl` a `GiornoScheda`, e `un_trainer_per_palestra`, che impedisce a due trainer di avere la stessa palestra. `catalogo_senza_alias` è già stata applicata nel rilascio precedente).
+- [ ] Le migrazioni da applicare sono quelle che ti aspetti. **In questo rilascio sono 2, e solo queste:** `ruoli_e_palestre`, che aggiunge le colonne `palestra` e `ruolo` a `User` e `modificatoDaId`/`modificatoIl` a `GiornoScheda`, e `un_trainer_per_palestra`, che impedisce a due trainer di avere la stessa palestra. `catalogo_senza_alias` è già stata applicata nel rilascio precedente: se invece compare anche lei, nell'elenco ce ne sono 3 e va applicata insieme alle altre, nell'ordine in cui le elenca Prisma).
 
 Se il numero è diverso da quello atteso, ci si ferma.
 
-**Controllo per `un_trainer_per_palestra`** (solo se prima dell'aggiornamento su Neon c'erano già dei trainer, cosa che la prima volta non succede perché la funzione non è ancora online). Con la stessa `DATABASE_URL`:
+**Controllo per `un_trainer_per_palestra` — in questo rilascio non serve.** Su Neon non esistono ancora né la colonna `ruolo` né dei trainer, e `db:deploy` applica le due migrazioni una dopo l'altra, quindi l'indice unico nasce su una tabella senza trainer. **Non lanciare questa query adesso**: la colonna `ruolo` non c'è ancora e darebbe errore.
+
+Serve soltanto se `ruoli_e_palestre` fosse già stata applicata da sola e qualcuno si fosse già registrato come trainer prima dell'indice: allora la creazione dell'indice si fermerebbe se due trainer avessero la stessa palestra. In quel caso (non provato su Neon):
 
 ```bat
 docker run --rm postgres:18 psql "%DATABASE_URL%" -c "SELECT palestra, count(*) FROM \"User\" WHERE ruolo = 'trainer' GROUP BY palestra HAVING count(*) > 1"
 ```
 
-- [ ] Risponde `(0 rows)`. Se elenca una palestra, ci sono due trainer nella stessa palestra e la migrazione si fermerebbe con un errore: se ne riporta uno a utente (`set NUOVO_RUOLO=utente`, `npm run db:utente`) e si rifà il controllo.
+- [ ] Risponde `(0 rows)`. Se elenca una palestra, si riporta uno dei due trainer a utente (`set NUOVO_RUOLO=utente`, `npm run db:utente`) e si rifà il controllo.
 
 ## 5. Applica le migrazioni
 
-Questa migrazione **aggiunge soltanto colonne**: il codice vecchio, ancora online, continua a funzionare sul database nuovo. (Le migrazioni che rinominano colonne o tolgono tabelle, come in passato, possono invece dare errori al sito vecchio per qualche minuto: in quel caso i passi 5, 6, 7 e 9 vanno fatti uno dopo l'altro, senza pause.)
+Queste migrazioni **aggiungono soltanto colonne e un indice**: il codice vecchio, ancora online, continua a funzionare sul database nuovo (le colonne nuove hanno un valore di partenza e il codice vecchio non le legge). Non c'è quindi una finestra di errori tra la migrazione e la pubblicazione, e per tornare indietro non serve ripristinare il database (vedi «Se qualcosa va storto»). (Le migrazioni che rinominano colonne o tolgono tabelle, come in passato, possono invece dare errori al sito vecchio per qualche minuto: in quel caso i passi 5, 6, 7 e 9 vanno fatti uno dopo l'altro, senza pause.)
 
 ```bat
 npm run db:deploy
 ```
 
-- [ ] Dice che le migrazioni sono state applicate con successo.
+- [ ] Dice che le migrazioni sono state applicate con successo (due, nell'ordine: `ruoli_e_palestre`, poi `un_trainer_per_palestra`).
 
-## 6. Carica il catalogo, prima in prova
+## 6. Carica il catalogo, prima in prova — solo se il catalogo è cambiato
+
+**In questo rilascio si salta (passi 6 e 7)**: il catalogo non è cambiato. Si fa solo quando cambia `prisma/dati/catalogo-esercizi.json`, o quando si aggiungono immagini in `public/esercizi`, o quando una migrazione tocca il catalogo.
 
 `set PROVA=1` si scrive **su una riga da solo**: con `&&` il valore diventerebbe `"1 "` e la prova scriverebbe davvero.
 
@@ -98,9 +104,9 @@ set PROVA=
 - [ ] Nessun errore tipo "qualcuno li usa".
 - [ ] Immagini trovate: tutte (nell'ultimo rilascio 246 su 246).
 - [ ] Gli esercizi personali non riconosciuti sono **0**. Se ne resta qualcuno, ci si ferma: il suo nome non coincide con il nome italiano o inglese di nessuna voce, e va corretto.
-- [ ] Gli esercizi collegati al catalogo e il numero di voci nuove sono quelli attesi (nell'ultimo rilascio: 23 collegati, 246 nuovi).
+- [ ] Gli esercizi collegati al catalogo e il numero di voci nuove sono quelli attesi (la prima volta: 23 collegati e 246 nuovi; a catalogo già caricato e invariato, la prova dice 0 e 0).
 
-## 7. Carica il catalogo per davvero
+## 7. Carica il catalogo per davvero — solo se il catalogo è cambiato
 
 Se Neon era "addormentato" la prima richiesta può essere lenta. Se va in timeout non scrive niente e si rilancia.
 
@@ -141,7 +147,7 @@ Le impostazioni si fanno una volta sola; a ogni rilascio basta controllare che s
 - [ ] Dopo aver cambiato una variabile serve un nuovo deploy perché abbia effetto.
 
 **Personal trainer (nuovo)**
-- [ ] `CODICE_TRAINER`: il codice d'invito per registrarsi come personal trainer, **almeno 12 caratteri**, solo per **Production**. Lo dai tu a chi vuoi come trainer, a voce o in privato; **non va scritto in chat, nel codice o in Git**. Senza, o se è più corto di 12 caratteri, l'opzione «Personal trainer» non compare nella registrazione. Cambiarlo non toglie il ruolo a chi è già trainer. Dopo averlo impostato serve un nuovo deploy.
+- [ ] `CODICE_TRAINER` (**nuova, da aggiungere prima del merge**): il codice d'invito per registrarsi come personal trainer, **almeno 12 caratteri**, solo per **Production**. Lo dai tu a chi vuoi come trainer, a voce o in privato; **non va scritto in chat, nel codice o in Git**. Senza, o se è più corto di 12 caratteri, l'opzione «Personal trainer» non compare nella registrazione. Cambiarlo non toglie il ruolo a chi è già trainer. Dopo averlo impostato serve un nuovo deploy: se lo aggiungi **prima** del merge su `main` (passo 9), il deploy del merge lo prende da solo e non ne servono due.
 - [ ] **Una palestra, un solo trainer.** Chi si registra per primo con il codice occupa la palestra. Se il codice finisse a una persona sbagliata, potrebbe occupare la palestra di un altro trainer prima di lui: dai il codice solo a chi deve diventare trainer, e cambiarlo su Vercel non toglie il ruolo a chi lo è già. Per liberare una palestra: il trainer elimina il suo account, oppure da terminale `set NUOVO_USERNAME=...` e `set NUOVO_RUOLO=utente`, poi `npm run db:utente`.
 - [ ] Il primo trainer: registrati dall'app con il codice, oppure rendi trainer un account esistente da terminale (con le variabili di Neon): `set NUOVO_USERNAME=...` e `set NUOVA_PALESTRA=THE IRON PARADISE`, `set NUOVO_RUOLO=trainer`, poi `npm run db:utente`; la password non cambia se `NUOVA_PASSWORD` è vuota.
 
@@ -164,7 +170,12 @@ Aprendo l'indirizzo online (meglio anche dal telefono):
 - [ ] Il pulsante sole/luna cambia il tema e dopo il ricaricamento resta.
 - [ ] Una sessione di prova: conferma una serie e parte il timer di recupero.
 - [ ] "Esci" porta alla presentazione.
-- [ ] **Palestra e trainer**: in Account compare «Palestra e personal trainer» con il menu; la registrazione offre «Utente» e «Personal trainer». Con un account di prova scegli una palestra, entra come trainer di quella palestra e controlla che veda **solo il nome e la scheda**; poi togli la palestra e controlla che la scheda sparisca dall'elenco del trainer.
+- [ ] **Catalogo**: dalla pagina Scheda, «Catalogo degli esercizi» si apre, mostra le nove categorie con le foto e, toccando un esercizio, i passi.
+- [ ] **Note in sessione**: apri una sessione e controlla che sotto gli esercizi con una nota compaia «Nota: …».
+- [ ] **Scheda da CSV** (non sul tuo account vero: rifà le giornate che compaiono nel file): scarica «La mia scheda» e controlla che il file si apra in Excel con le colonne `giornata;titolo;esercizio;…`. Per provare l'importazione usa un account di prova.
+- [ ] **Palestra e trainer**: in Account compare «Palestra e personal trainer» con il menu; la registrazione offre «Utente» e «Personal trainer» (solo se `CODICE_TRAINER` è impostata). Con **due** account di prova: uno utente con una palestra, uno trainer di quella palestra (con il codice). Controlla che il trainer veda **solo il nome e la scheda**, che possa modificarla e che l'utente legga «Modificata da NOME»; poi togli la palestra all'utente e controlla che la scheda sparisca dall'elenco del trainer. Infine prova a registrare un **secondo** trainer per la stessa palestra: deve rispondere «Questa palestra ha già un personal trainer».
+- [ ] **Eliminare l'account**: solo con un account di prova creato apposta, mai con il tuo. In Account, «Elimina il mio account» → «Elimina definitivamente» → «Elimina»: torni alla pagina iniziale con «Il tuo account è stato eliminato», e riaccedere con quel nome utente non funziona. Se era il trainer di una palestra, la palestra torna libera.
+- [ ] **Pulizia**: elimina gli account di prova creati online (anche loro dall'app, con «Elimina il mio account»).
 - [ ] **Recupero password**: arriva davvero l'email col codice? (Da verificare: non so se Gmail consegna da Vercel.)
 
 ---
@@ -174,6 +185,8 @@ Aprendo l'indirizzo online (meglio anche dal telefono):
 **La build di Vercel fallisce:** niente di grave, il sito resta alla versione precedente. Si legge l'errore nel log del deploy.
 
 **Il sito dà errore dopo il rilascio:** prima si guardano i log del deploy su Vercel. Per tornare alla versione di prima del codice, dal pannello **Deployments** si ripubblica il deploy precedente (Promote to Production / Rollback, i nomi dipendono dal piano).
+
+**Tornare alla versione di prima del codice è sicuro:** le due migrazioni di questo rilascio aggiungono solo colonne e un indice, quindi il codice vecchio funziona anche sul database nuovo e **non serve ripristinare il database**. Basta ripubblicare il deploy precedente da Vercel. I trainer e le palestre già registrati restano nel database, semplicemente la versione vecchia non li usa.
 
 **Riportare il database com'era:** solo in emergenza, perché **cancella tutto quello che è stato scritto dopo il backup**. Provato su una copia locale (migrazioni applicate, poi ripristino: stato identico a prima), **non** provato su Neon. Con `DATABASE_URL` impostata come al passo 2:
 

@@ -1,6 +1,6 @@
 # GymPulse
 
-**Il diario di allenamento in palestra.** Ognuno ha il proprio account e la propria scheda, con da 1 a 7 giornate di allenamento a scelta. In palestra registri ogni serie con kg e ripetizioni, l'app ti suggerisce i valori dell'ultima volta e fa partire il timer di recupero. A casa guardi lo storico e i progressi.
+**Il diario di allenamento in palestra.** Ognuno ha il proprio account e la propria scheda, con da 1 a 7 giornate di allenamento a scelta, e chi vuole può condividerla con il personal trainer della propria palestra. In palestra registri ogni serie con kg e ripetizioni, l'app ti suggerisce i valori dell'ultima volta e fa partire il timer di recupero. A casa guardi lo storico e i progressi.
 
 Si usa dal browser del telefono e funziona anche in locale sul PC.
 
@@ -8,11 +8,9 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 
 ## Cosa può fare l'app
 
-### Già disponibile
-
 | Cosa | Come funziona |
 |---|---|
-| **Presentazione prima dell'accesso** | La pagina iniziale (`/`) spiega l'app a chi non è ancora entrato: dodici schede piccole (home, giornate, scheda, catalogo per categoria con foto, sessione, "Come si fa", storico, dettaglio di una seduta, andamento, progressi, record, scheda da file Excel) da toccare: si apre la schermata ingrandita, con i pulsanti avanti e indietro (si può anche scorrere col dito o usare le frecce della tastiera) e si chiude con la X, con Esc o toccando fuori, come si usa in tre passi, l'elenco delle funzioni e i pulsanti per creare l'account o accedere. Chi è già entrato viene mandato alla sua home, che sta in `/home`; uscendo con «Esci» si torna alla presentazione. Le immagini degli esercizi si vedono anche qui, quindi `public/esercizi` non è protetta dall'accesso. |
+| **Presentazione prima dell'accesso** | La pagina iniziale (`/`) spiega l'app a chi non è ancora entrato: dodici schede piccole (home, giornate, scheda, catalogo per categoria con foto, sessione, "Come si fa", storico, dettaglio di una seduta, andamento, progressi, record, scheda da file Excel) da toccare: si apre la schermata ingrandita, con i pulsanti avanti e indietro (si può anche scorrere col dito o usare le frecce della tastiera) e si chiude con la X, con Esc o toccando fuori, come si usa in tre passi, l'elenco delle otto funzioni principali e i pulsanti per creare l'account o accedere. Dopo aver eliminato l'account si arriva qui con una riga di conferma. Chi è già entrato viene mandato alla sua home, che sta in `/home`; uscendo con «Esci» si torna alla presentazione. Le immagini degli esercizi si vedono anche qui, quindi `public/esercizi` non è protetta dall'accesso. |
 | **Tema chiaro e scuro** | Il pulsante con il sole e la luna in alto a destra (anche nelle pagine di accesso) cambia il tema. La prima volta si parte da quello del telefono; dopo il primo tocco la scelta si ricorda in quel browser (`localStorage`, chiave `gympulse_tema`). I colori si chiamano per ruolo e stanno tutti in `src/app/globals.css`; i grafici li leggono da lì. Tema "Foresta": verde bosco con un punto di lime. |
 | **Piè di pagina** | In fondo a tutte le pagine, anche dentro l'app, c'è «App ideata e creata da Emanuele Buemi». Sta nel layout (`PiePagina.tsx`), quindi si cambia in un posto solo. Sotto il piè di pagina resta lo spazio per il timer di recupero, fisso in basso durante la sessione, che altrimenti coprirebbe il nome. |
 | **Logo e icone** | Una kettlebell con il battito dentro. Il disegno è in `public/icon.svg`, da cui sono ricavate le icone PNG (192, 512, "maskable" per Android e 180 per la schermata Home di iPhone); il componente `Logo.tsx` lo riusa con i colori del tema. |
@@ -24,8 +22,8 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **La tua scheda** | Parti con **una sola giornata vuota (A)** e la riempi dall'app, poi aggiungi le altre col **+**: scegli gli esercizi, serie, ripetizioni (anche a range, es. 6-8), recupero, note e il "carico a salire". Puoi cambiare l'ordine, aggiungere e togliere esercizi quando vuoi. La pagina della giornata mostra per ogni esercizio serie × ripetizioni **e il tempo di recupero**  e l'ultimo carico usato. |
 | **Catalogo degli esercizi** | Gli esercizi **non si scrivono più a mano**: si scelgono da un catalogo di **246 esercizi**, diviso in nove categorie (**Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento**). Nell'elenco «Aggiungi esercizio» si cerca per nome (italiano o inglese, senza badare agli accenti) e si filtra per categoria; ogni riga ha la sua **miniatura**. Il nome italiano è in evidenza e l'inglese, più piccolo, sta sotto. Dalla pagina **Scheda** si apre anche il **Catalogo degli esercizi** (`/catalogo`): tutti gli esercizi divisi per categoria, con foto, ricerca, linguette per categoria e, toccando un esercizio, passi e accortezze. La categoria è quella del catalogo e non si cambia. Il catalogo è nel database (tabella `CatalogoEsercizio`) e si carica dal file `prisma/dati/catalogo-esercizi.json` con `npm run db:catalogo`: per aggiungere un esercizio si aggiunge una voce al file e si rilancia il comando. |
 | **Come si fa** | Sotto ogni esercizio, nella scheda e nella sessione, il pulsante **Come si fa** apre i passi dell'esecuzione e le accortezze da avere. I testi li dà il database a richiesta (non viaggiano con la pagina). Sono scritti in italiano, con parole nostre, a partire da pagine italiane lette, da un dataset pubblico inglese tradotto (free-exercise-db, licenza Unlicense) e, per una parte degli esercizi, dalla sola conoscenza generale perché non si è trovata una fonte leggibile. I primi 240 testi sono stati poi riletti e corretti (ortografia, presa «inversa» al posto di «supina», «addome» al posto di «core»), e quelli che erano rimasti di un esercizio sostituito sono stati riscritti. **Non sono consigli di un istruttore**: per i movimenti tecnici e i carichi pesanti c'è sempre l'invito a impararli con un istruttore. Se per l'esercizio c'è un'immagine, compare nel riquadro. |
-| **Immagini degli esercizi** | Un'immagine per esercizio, nella cartella `public/esercizi`: JPEG quadrati di **200 × 200** punti con lo sfondo bianco, chiamati con il numero e lo slug dell'esercizio (`35_push-up.jpg`; lo script accetta anche `.png` e `.webp`, e il solo slug o il solo numero). Il numero e lo slug si trovano nel file `prisma/dati/catalogo-esercizi.json`. Per aggiungerne una basta mettere il file nella cartella e rilanciare `npm run db:catalogo`: lo script ritrova i file da solo, segnala i nomi che non corrispondono a nessun esercizio e i doppioni. Nell'app l'immagine compare nel riquadro **Come si fa** e accanto al nome nella scheda, nella sessione, nell'editor della scheda e nello storico, sempre alla sua grandezza o più piccola (mai ingrandita, perché sfocherebbe). **Controlla i diritti**: il repository è pubblico, quindi le immagini vanno tenute nel repository solo se si ha il permesso di usarle. |
-| **Quante giornate vuoi** | Il numero di giornate non è fisso: da **1 a 7**, a seconda di quante volte ti alleni a settimana. Dalla pagina Scheda il **+** aggiunge la giornata successiva (B, C, D, …) e "Togli la giornata" la toglie, finché ne resta una. Togliendo una giornata che ha già sedute registrate, le sedute **non si perdono**: restano nello storico, nei progressi e nell'export, e la giornata sparisce solo dalla scheda. |
+| **Immagini degli esercizi** | Un'immagine per esercizio, nella cartella `public/esercizi`: JPEG quadrati di **200 × 200** punti con lo sfondo bianco, chiamati con il numero e lo slug dell'esercizio (`35_push-up.jpg`; lo script accetta anche `.png` e `.webp`, e il solo slug o il solo numero). Il numero e lo slug si trovano nel file `prisma/dati/catalogo-esercizi.json`. Per aggiungerne una basta mettere il file nella cartella e rilanciare `npm run db:catalogo`: lo script ritrova i file da solo, segnala i nomi che non corrispondono a nessun esercizio e i doppioni. Nell'app l'immagine compare nel riquadro **Come si fa**, accanto al nome nella scheda, nella sessione, nell'editor, nello storico e nel catalogo, e nelle miniature dell'elenco «Aggiungi esercizio», sempre alla sua grandezza o più piccola (mai ingrandita, perché sfocherebbe). **Controlla i diritti**: il repository è pubblico, quindi le immagini vanno tenute nel repository solo se si ha il permesso di usarle. |
+| **Quante giornate vuoi** | Il numero di giornate non è fisso: da **1 a 7**, a seconda di quante volte ti alleni a settimana. Dalla pagina Scheda il **+** aggiunge la giornata successiva (B, C, D, …) e "Togli la giornata" la toglie, finché ne resta una. Togliendo una giornata che ha già sedute registrate, le sedute **non si perdono**: restano nello storico e nei progressi, e la giornata sparisce solo dalla scheda. Vale anche quando a toglierla è il personal trainer. |
 | **Sessione di allenamento** | Per ogni serie scrivi kg e ripetizioni e la confermi con ✓. Puoi aggiungere o togliere serie, aggiungere esercizi extra e cambiare la data. Sotto il nome di ogni esercizio compare la **nota della scheda** (scritta da te o dal tuo personal trainer), per ricordare come va eseguito mentre ti alleni; gli esercizi aggiunti a metà sessione non hanno nota. |
 | **Valori dell'ultima volta** | Nei campi vedi in grigio i kg e le ripetizioni dell'ultima seduta. Contano solo dopo la conferma: se confermi una serie vuota vale il suggerimento. |
 | **Timer di recupero** | Dopo ogni serie parte il conto alla rovescia del recupero previsto dalla scheda (con vibrazione sui telefoni che la supportano). |
@@ -40,12 +38,6 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | **Durata della seduta** | Per ogni seduta puoi scrivere, se vuoi, quanti minuti è durata: compare nel dettaglio e nell'elenco dello storico. Non c'è nessun collegamento con orologi o altre app. |
 | **Scheda in CSV** | Dalla pagina Scheda si scarica il **catalogo completo** in un file Excel (una riga per esercizio, 3 serie da 8-10 ripetizioni, e nella colonna `giornata` il segnaposto `<A/B/C/D/E/F/G>` da sostituire con la lettera della giornata: se resta, l'importazione si ferma e lo dice) oppure la **propria scheda** nello stesso formato. Si cancellano le righe che non servono, si scrive nella colonna `giornata` dove deve andare ogni esercizio (A, B, C…) e si reimporta. Prima di scrivere l'app mostra un'anteprima («A: 8 esercizi → 5») e chiede conferma. Le giornate nel file vengono **rifatte** (i loro esercizi di prima si tolgono), quelle che non compaiono non si toccano; una giornata nuova si crea solo se è la lettera successiva all'ultima. Gli esercizi si ritrovano per nome italiano o inglese; se un nome non si trova non si importa niente. Storico e carichi non cambiano mai. Le sedute già fatte si consultano in Storico e Progressi: non si esportano né si importano. |
 
-### In programma
-
-| Cosa | Situazione |
-|---|---|
-| **Pubblicazione online** | Ultimo passo: Neon per il database e Vercel per l'app. |
-
 ---
 
 ## Stack tecnologico
@@ -55,12 +47,12 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | Framework | Next.js (App Router) | 16.4.3 | Pagine e backend nello stesso progetto; le modifiche ai dati passano da *server action* |
 | Interfaccia | React | 19.3.1 | Libreria per la costruzione dell'interfaccia utente tramite componenti riutilizzabili e gestione dello stato |
 | Linguaggio | TypeScript | 7.0.2 | Superset tipizzato di JavaScript; controllo statico dei tipi per un codice più sicuro e manutenibile |
-| Stile | Tailwind CSS | 4.3.3 | Font Bricolage Grotesque, tema chiaro |
-| Database | PostgreSQL | 17 | Docker in locale; Neon (cloud) online |
+| Stile | Tailwind CSS | 4.3.3 | Font Bricolage Grotesque, tema chiaro e scuro |
+| Database | PostgreSQL | 17 in locale, 18 su Neon | Docker in locale; Neon (cloud) online. Per il backup di Neon serve `pg_dump` 18 (vedi `RILASCIO.md`) |
 | ORM | Prisma | 7.10.1 | Con driver `pg` 8.23.1 e `@prisma/adapter-pg` 7.10.1 |
 | Validazione | Zod | 4.6.7 | I dati arrivati dal browser si ricontrollano sempre sul server |
 | Accesso | Scritto nel progetto | — | Cookie firmato (HMAC-SHA256) e password con scrypt, entrambi di Node.js: nessuna libreria in più |
-| Grafici | Recharts | 3.10.1 | Linee e barre di una sola serie, in un solo colore (blu `#2a78d6`, controllato sul colore della carta) |
+| Grafici | Recharts | 3.10.1 | Linee e barre di una sola serie, in un solo colore (il token `--color-grafico`: blu in chiaro, blu più chiaro in scuro) |
 | Email | Nodemailer | 10.1.2 | Invio SMTP dei codici. Scelta la 10.1.2 e non la 10.3.1 più recente, uscita da due giorni: un pacchetto che maneggia le credenziali l'ho voluto con almeno due settimane di vita |
 | Strumenti | `tsx` 4.23.15, `dotenv` 18.0.9 | | Per lo script `db:utente` |
 
@@ -77,8 +69,8 @@ Si usa dal browser del telefono e funziona anche in locale sul PC.
 | | Sviluppo | Produzione |
 |---|---|---|
 | Ramo Git | `dev` | `main` |
-| Database | PostgreSQL in Docker sul tuo PC | Neon (cloud) *— da collegare* |
-| App | `npm run dev` su http://localhost:3000 | Vercel *— da collegare*; sul PC `npm run build` e `npm start` |
+| Database | PostgreSQL in Docker sul tuo PC | Neon (cloud) |
+| App | `npm run dev` su http://localhost:3000 | Vercel (https://gym-pulse-omega.vercel.app); sul PC `npm run build` e `npm start` |
 | Variabili d'ambiente | file `.env` | variabili di Vercel, oppure della shell se provi la build sul PC |
 | `AUTH_SECRET` | uno locale | **un altro**, diverso, solo in produzione |
 | Migrazioni | `npm run db:migrate` (crea) e `npm run db:deploy` (applica) | solo `npm run db:deploy` |
@@ -130,7 +122,7 @@ git checkout dev
 
 4. **Tabelle**: `npm run db:deploy` applica le migrazioni. Quando modifichi lo schema in sviluppo si usa `npm run db:migrate`.
 
-5. **Il primo account**: apri l'app e scegli *Crea account* (con `EMAIL_PROVIDER="console"` il codice lo leggi nel terminale). In alternativa, da terminale, senza email, aggiungi al `.env` queste tre righe:
+5. **Il primo account**: apri l'app e scegli *Crea account* (la registrazione non manda email: l'account nasce subito). In alternativa, da terminale, senza email, aggiungi al `.env` queste tre righe:
 
    ```env
    NUOVO_NOME="Nome Cognome"
@@ -138,7 +130,7 @@ git checkout dev
    NUOVA_PASSWORD="almeno 8 caratteri"
    ```
 
-   poi lancia `npm run db:utente` e **toglile dal `.env`**: una password in chiaro non deve restare su disco. Se il nome utente esiste già, lo stesso comando ne cambia la password. Un account creato così **non ha un'email**: la si collega dalla pagina Account, e finché non c'è la password non si recupera con il codice.
+   poi lancia `npm run db:utente` e **toglile dal `.env`**: una password in chiaro non deve restare su disco. Se il nome utente esiste già, lo stesso comando ne cambia la password. Un account creato così **non ha un'email**: la si collega dalla pagina Account (con `EMAIL_PROVIDER="console"` il codice di conferma lo leggi nel terminale), e finché non c'è la password non si recupera con il codice.
 
 6. **Avvio**: `npm run dev`, poi apri http://localhost:3000. Se la porta è occupata, Next sceglie la successiva (3001) e lo scrive nel terminale.
 
@@ -171,7 +163,7 @@ npm.cmd start             # avvia su http://localhost:3000
 
 Le variabili della shell valgono solo per quella finestra e vincono sul file `.env`, quindi la build di produzione non usa per sbaglio il database locale. Chiusa la finestra, spariscono. **Non scrivere le credenziali di produzione nel `.env`.**
 
-**Su Vercel** si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo) e `AUTH_SECRET`. Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema.
+**Su Vercel** si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo), `AUTH_SECRET`, le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`) e `CODICE_TRAINER` (il codice d'invito dei personal trainer, almeno 12 caratteri). Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema. Il promemoria completo, con backup e controlli, è in `RILASCIO.md`.
 
 ## Script disponibili
 
@@ -187,7 +179,7 @@ Tutti i comandi si lanciano dalla cartella del progetto. Su PowerShell, se `npm`
 | `npm run db:deploy` | Applica al database le migrazioni già scritte | applica al database locale | **l'unico per la produzione**: non crea nulla, applica solo |
 | `npm run db:migrate` | Crea una nuova migrazione dallo schema e la applica | **solo qui**, quando modifichi `schema.prisma` | **mai** in produzione |
 | `npm run db:utente` | Crea un account, ne cambia la password, la palestra o il ruolo (`NUOVA_PALESTRA`, `NUOVO_RUOLO=trainer`) | per l'account di prova | per recuperare una password in produzione, con le variabili di produzione |
-| `npm run db:catalogo` | Carica il catalogo degli esercizi (`prisma/dati/catalogo-esercizi.json`) e collega agli esercizi delle persone quelli con lo stesso nome. Con `PROVA=1` non scrive niente e mostra cosa cambierebbe | dopo ogni migrazione che tocca il catalogo, e quando se ne modifica il file | con le variabili di produzione, dopo il backup |
+| `npm run db:catalogo` | Carica il catalogo degli esercizi (`prisma/dati/catalogo-esercizi.json`) e collega agli esercizi delle persone quelli con lo stesso nome italiano o inglese. Con `PROVA=1` non scrive niente e mostra cosa cambierebbe | dopo ogni migrazione che tocca il catalogo, e quando se ne modifica il file | con le variabili di produzione, dopo il backup |
 | `npm run db:studio` | Apre Prisma Studio per vedere e modificare le righe | database locale | **con cautela**: modifica dati veri |
 
 Sono tutti i comandi esistenti: gli script in `package.json` sono 10 (`dev`, `build`, `start`, `typecheck`, `postinstall`, `db:migrate`, `db:deploy`, `db:studio`, `db:utente`, `db:catalogo`). `postinstall` parte da solo dopo `npm install` e non va lanciato a mano.
@@ -217,7 +209,12 @@ GymPulse/
 │   │   ├── 20261108120000_categorie_riscaldamento/   # otto categorie: "altri" diventa "riscaldamento", via olimpico e corpo intero
 │   │   ├── 20261108150000_registrazione_senza_codice/ # via la tabella delle registrazioni in attesa del codice
 │   │   ├── 20261108180000_categoria_glutei/          # nasce la categoria "glutei", separata da "gambe": nove categorie
+│   │   ├── 20261110100000_catalogo_senza_alias/      # via la colonna "alias" dal catalogo
+│   │   ├── 20261111100000_ruoli_e_palestre/          # ruolo e palestra degli utenti; chi ha modificato una giornata e quando
+│   │   ├── 20261112100000_un_trainer_per_palestra/   # indice unico parziale: un solo personal trainer per palestra
 │   │   └── migration_lock.toml
+│   ├── catalogo.ts, immagini.ts                      # script: carica il catalogo (db:catalogo) e ritrova le immagini
+│   ├── dati/catalogo-esercizi.json                   # i 246 esercizi del catalogo
 │   ├── schema.prisma                                 # modello dei dati
 │   └── utente.ts                                     # script: crea un account, cambia password, palestra o ruolo
 ├── public/
@@ -235,18 +232,23 @@ GymPulse/
 │   │   ├── actions.ts                                # azioni sul server: salva sessione e scheda, elimina, anteprima e importazione della scheda da CSV
 │   │   ├── api/
 │   │   │   └── scheda-csv/route.ts                   # catalogo e scheda in CSV (?cosa=catalogo o ?cosa=scheda)
+│   │   ├── registrati/page.tsx                       # creazione dell'account (utente o personal trainer)
+│   │   ├── catalogo/page.tsx                         # il catalogo degli esercizi per categoria
+│   │   ├── esercizi/actions.ts                       # legge i passi e le accortezze di un esercizio (a richiesta)
 │   │   ├── login/
 │   │   │   ├── page.tsx                              # accesso
-│   │   │   ├── actions.ts                            # accedi, registrati (con email), recupera la password, esci
-│   │   │   ├── registrati/page.tsx                   # creazione dell'account
+│   │   │   ├── actions.ts                            # accedi, registrati (utente o trainer), recupera la password, esci
 │   │   │   └── recupera/page.tsx                     # password dimenticata
 │   │   ├── account/
-│   │   │   ├── page.tsx                              # il tuo profilo, la palestra e l'email per il recupero
-│   │   │   ├── palestra.ts                           # sceglie o toglie la palestra (il consenso ai trainer)
-│   │   │   ├── actions.ts                        # email di recupero e eliminazione dell'account (eliminaAccount)
-│   │   ├── trainer/                              # le pagine del personal trainer: allievi, scheda, editor
-│   │   │   ├── actions.ts                        # azioni del trainer: salva, aggiungi e togli giornata (con allievoDelTrainer)
-│   │   │   └── actions.ts                            # collega, conferma e cambia l'email (non si toglie)
+│   │   │   ├── page.tsx                              # profilo, palestra, email per il recupero, elimina account
+│   │   │   ├── palestra.ts                           # sceglie o toglie la palestra (il consenso al trainer)
+│   │   │   └── actions.ts                            # email di recupero ed eliminazione dell'account (eliminaAccount)
+│   │   ├── trainer/                                  # le pagine del personal trainer
+│   │   │   ├── page.tsx                              # I tuoi allievi
+│   │   │   ├── actions.ts                            # salva, aggiungi e togli giornata (sempre dopo allievoDelTrainer)
+│   │   │   └── [allievoId]/                          # la scheda di un allievo e il suo editor
+│   │   │       ├── page.tsx
+│   │   │       └── modifica/page.tsx
 │   │   ├── scheda/
 │   │   │   ├── page.tsx                              # la scheda: scelta A/B/C e avvio della sessione
 │   │   │   └── modifica/page.tsx                     # l'editor della giornata
@@ -265,13 +267,20 @@ GymPulse/
 │   │   ├── SelettoreEsercizio.tsx                    # menu per scegliere l'esercizio nei progressi
 │   │   ├── TabGiorni.tsx                             # scelta A / B / C
 │   │   ├── NavSuperiore.tsx                          # menu in alto
-│   │   ├── FormLogin.tsx, FormRegistrazione.tsx      # moduli di accesso e registrazione (a un passo)
+│   │   ├── FormLogin.tsx, FormRegistrazione.tsx      # moduli di accesso e registrazione (utente o trainer, a un passo)
 │   │   ├── FormRecupero.tsx, FormEmail.tsx           # recupero della password e email nell'Account
+│   │   ├── FormPalestra.tsx                          # scelta o rimozione della palestra, nell'Account
+│   │   ├── EliminaAccount.tsx                        # pannello «Elimina account» con i numeri di cosa sparisce
 │   │   ├── FinestraConferma.tsx                      # finestra di conferma con i colori dell'app (al posto di window.confirm)
 │   │   ├── CsvScheda.tsx                             # scarica il catalogo, importa la scheda da CSV con anteprima
 │   │   ├── CatalogoCompleto.tsx                      # il catalogo per categoria (pagina /catalogo)
 │   │   ├── DettaglioEsercizio.tsx                    # foto, passi e accortezze di un esercizio
 │   │   ├── EliminaSessione.tsx                       # pulsante per eliminare una seduta
+│   │   ├── ElencoEsercizi.tsx                        # l'elenco «Aggiungi esercizio», con ricerca, categoria e miniature
+│   │   ├── ElencoGiornata.tsx                        # gli esercizi di una giornata (con i kg solo per chi è il proprietario)
+│   │   ├── ModificataDa.tsx                          # «Modificata da NOME, il giorno»
+│   │   ├── ImmagineEsercizio.tsx, IstruzioniEsercizio.tsx, OminoDomanda.tsx # la foto e il riquadro «Come si fa»
+│   │   ├── SessioneInCorso.tsx, PesoPerGruppo.tsx    # «Riprendi la sessione» nella home; kg per categoria nei progressi
 │   │   ├── Logo.tsx, PiePagina.tsx                   # logo e piè di pagina con il nome dell'autore
 │   │   ├── TemaPulsante.tsx                          # il pulsante sole/luna che cambia il tema
 │   │   ├── benvenuto/Index.tsx                       # la cornice del telefono e le dodici schermate d'esempio della pagina iniziale
@@ -292,16 +301,16 @@ GymPulse/
 └── .gitignore                                        # elenco di file da ignorare durante il push su git
 ```
 
-Dentro `src/lib/` (33 file):
+Dentro `src/lib/` (40 file):
 
 | Gruppo | File |
 |---|---|
-| Accesso | `accesso.ts` (chi è l'utente della richiesta), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `account-eliminazione.ts` (cancella un account con tutti i suoi dati, in una transazione), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account) |
-| Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (i codici nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi e di quelli Gmail) |
-| Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `catalogo-db.ts` (il catalogo intero), `scheda-scrittura.ts` (scrive gli esercizi di una giornata), `import-scheda.ts` (dal CSV al piano di importazione della scheda), `voci.ts` (da riga del database a esercizio) |
+| Accesso | `accesso.ts` (chi è l'utente della richiesta, e `allievoDelTrainer`: l'unico punto che dice se un trainer può toccare la scheda di una persona), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `account-eliminazione.ts` (cancella un account con tutti i suoi dati, in una transazione), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account e conteggio di cosa contiene), `palestre.ts` (le palestre ammesse), `codice-trainer.ts` (il codice d'invito dei trainer, confronto a tempo costante), `trainer-db.ts` (allievi e trainer di una palestra: solo i nomi) |
+| Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (i codici nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi, di qualunque fornitore) |
+| Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `catalogo-db.ts` (il catalogo intero), `scheda-scrittura.ts` (scrive la scheda di una persona, per lei o per il suo trainer: salva, aggiunge e toglie giornate sotto blocco), `import-scheda.ts` (dal CSV al piano di importazione della scheda), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (regole comuni dei file CSV), `csv-scheda.ts` (scrive e legge il CSV del catalogo e della scheda), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer, giornata consigliata, carico successivo), `progressi.ts` (volume, peso totale, carico, record), `panoramica.ts` (sedute per settimana, sedute per giornata, kg per gruppo muscolare), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
-| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le nove categorie), `tema.ts` (dove si ricorda il tema scelto), `bozza.ts` (la sessione in corso nel browser) |
+| Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le nove categorie), `tema.ts` (dove si ricorda il tema scelto), `bozza.ts` (la sessione in corso nel browser, e come toglierla quando l'account viene eliminato) |
 
 ## Modello dei dati
 
@@ -311,8 +320,8 @@ In ogni tabella l'`id` è la prima colonna.
 
 | Tabella | Colonne, nell'ordine | Id |
 |---|---|---|
-| `User` | `id`, `fullName`, `username`, `passwordHash`, `email`, `palestra` (una di quelle di `palestre.ts`, vuota se non ne ha), `ruolo` (`utente` o `trainer`) | numero progressivo; un trainer ha sempre la palestra (vincolo `User_trainer_palestra`) |
-| `GiornoScheda` | `id`, `userId`, `titolo`, `attiva`, `modificatoDaId`, `modificatoIl` (chi l'ha cambiata per ultimo e quando) | chiave primaria composta (id, userId); coppia unica per persona |
+| `User` | `id`, `fullName`, `username`, `passwordHash`, `email`, `palestra` (una di quelle di `palestre.ts`, vuota se non ne ha), `ruolo` (`utente` o `trainer`) | numero progressivo; un trainer ha sempre la palestra (vincolo `User_trainer_palestra`) e per ogni palestra c'è al massimo un trainer (indice unico parziale `User_un_trainer_per_palestra`) |
+| `GiornoScheda` | `id`, `userId`, `titolo`, `attiva`, `modificatoDaId`, `modificatoIl` (chi l'ha cambiata per ultimo e quando) | chiave primaria composta (id, userId); coppia unica per persona. `modificatoDaId` punta a `User` con `ON DELETE SET NULL`: se chi l'ha modificata elimina l'account, la giornata resta |
 | `Esercizio` | `id`, `userId`, `nome`, `categoria` (una delle nove chiavi, es. `petto`, oppure vuota), `catalogoId` (la voce del catalogo, vuoto per gli esercizi personali di prima) | numero progressivo |
 | `CatalogoEsercizio` | `id`, `slug`, `nomeIt`, `nomeEn`, `categoria`, `attrezzatura`, `muscoloPrincipale`, `muscoliSecondari`, `tipoMovimento`, `immagine`, `esecuzione`, `accortezze` | numero progressivo; uguale per tutti, non modificabile dall'app |
 | `VoceScheda` | `id`, `userId`, `giornoId`, `esercizioId`, `ordine`, `tipo`, `serie`, `ripMin`, `ripMax`, `recuperoSec`, `ripTotali`, `serieMin`, `serieMax`, `nota`, `incrementoKg` | testo casuale |
@@ -332,8 +341,9 @@ Una tabella serve solo ai codici per email e non ha dati della scheda:
 - **L'utente si ricava sempre dal cookie**, mai da un id mandato dal browser. Il proxy chiude le pagine, e ogni pagina e ogni azione ricontrolla da sola.
 - **Più account nello stesso browser.** Un browser ha un solo cookie di accesso per tutte le sue schede: se in una scheda si entra con un altro account, una scheda rimasta aperta sul primo scriverebbe nel secondo (era un difetto vero: la scheda di una persona finiva in quella di un'altra). Ora ogni pagina che scrive manda l'id dell'account per cui è stata disegnata, e il server **rifiuta** se non coincide con quello del cookie. L'id mandato dalla pagina serve solo a rifiutare: l'account su cui si scrive resta sempre quello del cookie. In pratica, in un browser si usa un account alla volta; per due account insieme servono due browser o una finestra in incognito.
 - **Eliminare l'account** non chiede la password, solo una finestra di conferma (la nostra, `FinestraConferma`; il resto dell'app usa ancora `window.confirm`): chi avesse rubato il cookie di accesso di una persona potrebbe quindi cancellarne l'account. È una scelta di comodità, fatta di proposito; se non ti basta, il costo è un campo password in più (come per cambiare l'email). La cancellazione è in una transazione sola e con il blocco per persona; dopo, ogni cookie ancora in giro smette di valere perché l'utente non esiste più. I backup non si toccano.
+- **Personal trainer: un solo punto decide.** `allievoDelTrainer` (in `lib/accesso.ts`) dice se un trainer può toccare la scheda di una persona: serve che chi chiede sia trainer, che la persona sia un utente (non un trainer, non lui stesso) e che abbia scelto la stessa palestra. Lo usano **ogni pagina e ogni azione** del trainer, a ogni richiesta e mai fidandosi di un id arrivato dal browser: se la persona toglie la palestra, la richiesta successiva viene rifiutata anche da una pagina rimasta aperta. Le pagine del trainer non leggono nemmeno dal database i kg, lo storico, l'email o il nome utente. Se due persone modificano la stessa giornata insieme, la seconda riceve «La scheda è stata modificata da NOME» e non sovrascrive. Il codice d'invito si confronta a tempo costante (HMAC e `timingSafeEqual`), con un limite di cinque tentativi sbagliati all'ora per indirizzo (in memoria, per istanza su Vercel: rallenta e non blocca del tutto, la sicurezza vera è la lunghezza del codice).
 - **Dati ricontrollati sul server** con Zod (date, pesi, ripetizioni, scheda, file CSV).
-- **CSV**: ognuno scarica solo la propria scheda (il catalogo è uguale per tutti, ma serve l'accesso). La scheda da CSV si importa in una sola transazione, con un blocco per persona, dopo un'anteprima: l'importazione controlla ogni riga (giornata, nome dell'esercizio, numeri), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
+- **CSV**: ognuno scarica solo la propria scheda (il catalogo è uguale per tutti, ma serve l'accesso). La scheda da CSV si importa in una sola transazione, con un blocco per persona, dopo un'anteprima: l'importazione controlla ogni riga (giornata, nome dell'esercizio, numeri; il segnaposto `<A/B/C/D/E/F/G>` lasciato al posto della lettera ferma l'importazione), la dimensione (massimo 900.000 caratteri), e si ferma al primo errore dicendo il numero di riga, senza importare niente a metà. Nel file i testi che iniziano con `=`, `+`, `-` o `@` hanno un apostrofo davanti, così Excel non li esegue come formule; l'importazione lo toglie.
 - **Registrazione aperta a chiunque** conosca l'indirizzo, con l'email obbligatoria (di qualunque fornitore) ma **non confermata**: si controlla solo la forma, e un indirizzo sbagliato rende la password non recuperabile mentre uno altrui può ricevere codici di recupero che non ha chiesto (al massimo 3 all'ora, vedi sotto). Nessuno entra nell'account di un altro per questo: il codice arriva alla casella scritta, non a chi lo chiede. Ci sono limiti per indirizzo di rete (3 account all'ora, 10 accessi ogni 15 minuti, 5 email di recupero all'ora) tenuti **in memoria**: su Vercel valgono per ogni istanza e rallentano senza bloccare del tutto.
 - **Limiti delle email nel database** (valgono per tutti i server e non si azzerano riavviando): 1 email al minuto per scopo, 3 all'ora e 10 al giorno per persona, **3 all'ora per ogni casella di destinazione** (ferma chi vuole riempire di messaggi l'indirizzo di un altro; `nome+1@gmail.com`, `n.ome@gmail.com` e `nome@googlemail.com` contano come la stessa casella) e un **tetto globale di 100 email in 24 ore** (cambia con `EMAIL_LIMITE_GIORNALIERO`). Le email sono gratis, ma il tetto protegge l'account che le spedisce: Google dichiara un massimo di 500 email al giorno e blocca l'invio per 1-24 ore se lo si supera. Se il tetto scatta, il recupero e il cambio dell'indirizzo si fermano.
 - **Codici per email**: 6 cifre, valgono 10 minuti, 5 tentativi, uso unico, e un codice nuovo sostituisce il precedente. Nel database c'è solo un HMAC, legato a persona e scopo. Un codice di recupero vale solo se è stato mandato all'indirizzo che l'account ha *in quel momento*: cambiare l'email rende inutili i codici già mandati.
@@ -348,7 +358,7 @@ L'invio è in `src/lib/email.ts` e parla con un server SMTP qualunque tramite No
 
 Si può usare il **proprio Gmail personale**: non serve crearne uno apposta. Cosa comporta:
 
-- **Chi chiede un codice (recupero o cambio email) vede il tuo indirizzo** come mittente (`GymPulse <tuonome@gmail.com>`), e se risponde alla email la risposta arriva a te.
+- **Chi chiede un codice (recupero o cambio email) vede il tuo indirizzo** (quello da cui spedisci, non il suo) come mittente (`GymPulse <tuonome@gmail.com>`), e se risponde alla email la risposta arriva a te.
 - **Ogni codice mandato finisce nella tua Posta inviata.**
 - **La password per le app non è la password dell'account, ma dà accesso alla tua posta** (Google la accetta per leggere e inviare con programmi esterni). Va trattata come un segreto: se esce, la si revoca dalla pagina di Google e se ne crea un'altra.
 - **Il limite di Google (500 email al giorno) è lo stesso della tua posta di tutti i giorni**: l'app si ferma a 100 al giorno (`EMAIL_LIMITE_GIORNALIERO`) proprio per non arrivarci.
@@ -381,23 +391,13 @@ Se un giorno questi punti ti pesano, basta cambiare le due variabili con quelle 
 
 **Per provare in locale senza mandare niente**, usa `EMAIL_PROVIDER="console"` come spiegato più su.
 
-## Pubblicazione online (ultimo passo)
+## Pubblicazione online
 
 **Perché Neon e non Supabase.** L'app usa funzioni di PostgreSQL (blocchi `pg_advisory_xact_lock`, vincoli `CHECK`, chiavi esterne composte), quindi serve un database Postgres. Dalle pagine dei piani gratuiti: Neon dà 1 GB per progetto, si sospende dopo 5 minuti di inattività e riparte alla prima query, senza carta; Supabase dà 500 MB, **mette in pausa il progetto dopo una settimana di inattività** e non include i backup automatici. Non ho verificato i backup di Neon.
 
-1. **Neon** per il database: progetto con Postgres 17 (come il Docker locale) in una regione europea. Servono due stringhe di connessione: quella **con pooler** (`-pooler` nell'indirizzo) per l'app e quella **diretta** per le migrazioni e per portarci i dati.
+1. **Neon** per il database: progetto in una regione europea (Francoforte). Neon usa **Postgres 18**, il Docker locale la 17: per il backup serve `pg_dump` 18 (vedi `RILASCIO.md`). Servono due stringhe di connessione: quella **con pooler** (`-pooler` nell'indirizzo) per l'app e quella **diretta** per le migrazioni e per portarci i dati.
 2. **I dati**: si porta una copia del database locale con solo il proprio account (vedi sotto), non quello di tutti i giorni.
-3. **Vercel** per l'app, collegato al ramo `main`, piano Hobby (gratuito, solo uso personale e non commerciale). Variabili d'ambiente **solo per Production**: `DATABASE_URL` (la stringa con pooler), un `AUTH_SECRET` **nuovo**, diverso da quello locale (almeno 32 caratteri), e le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`). Senza queste la registrazione e il recupero restano spenti.
-4. **Regione delle funzioni**: per i nuovi progetti Vercel usa Washington (`iad1`); su Hobby se ne sceglie una sola, e conviene quella più vicina al database (in *Settings → Functions*, oppure `regions` in `vercel.json`).
+3. **Vercel** per l'app, collegato al ramo `main`, piano Hobby (gratuito, solo uso personale e non commerciale). Variabili d'ambiente **solo per Production**: `DATABASE_URL` (la stringa con pooler), un `AUTH_SECRET` **nuovo**, diverso da quello locale (almeno 32 caratteri), le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`) e `CODICE_TRAINER`. Senza `AUTH_SECRET` l'accesso resta chiuso; senza le variabili dell'email il recupero della password resta spento (la registrazione funziona comunque); senza `CODICE_TRAINER` l'opzione «Personal trainer» non compare.
+4. **Regione delle funzioni**: per i nuovi progetti Vercel usa Washington (`iad1`); su Hobby se ne sceglie una sola, e conviene quella più vicina al database, cioè Francoforte (`fra1`), in *Settings → Functions*, oppure `regions` in `vercel.json`.
 5. **Il ramo `dev` resta spento online**: in *Settings → Build and Deployment → Ignored Build Step* si sceglie "Only build production". Una build annullata conta comunque tra i deploy giornalieri (100 su Hobby).
 6. Le credenziali di Neon vanno solo nelle variabili di Vercel e nei comandi che lanci tu, mai nel codice e mai nel `.env`.
-
-**Portare online il database con il solo account `emanuele`** (gli account di prova non servono):
-
-1. Backup del database di tutti i giorni (`gympulse`) con `pg_dump`.
-2. Copia in un database nuovo, `gympulse_produzione`.
-3. Sulla copia si lancia lo script che toglie gli altri account, e i codici email. Si ferma se l'account non c'è e se lo si lancia per sbaglio su `gympulse`.
-4. `pg_dump` della copia e ripristino su Neon con la stringa diretta. Le migrazioni già applicate viaggiano nel dump (la tabella `_prisma_migrations` è una tabella normale), quindi `db:deploy` su Neon deve dire che non c'è niente da applicare.
-5. I file di dump contengono l'hash della password e l'email: restano fuori dal repository e si cancellano a fine lavoro.
-
-Provato su una copia: dopo la pulizia restano solo i dati dell'account, nessuna riga di altri account, e il dump si ripristina in un database vuoto. Non provato: la connessione a Neon vera, e il comportamento di `@prisma/adapter-pg` e dei blocchi `pg_advisory_xact_lock` con il pooler di Neon (la pagina di Neon su Prisma non parla di prepared statements né di PgBouncer).
