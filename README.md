@@ -163,7 +163,7 @@ npm.cmd start             # avvia su http://localhost:3000
 
 Le variabili della shell valgono solo per quella finestra e vincono sul file `.env`, quindi la build di produzione non usa per sbaglio il database locale. Chiusa la finestra, spariscono. **Non scrivere le credenziali di produzione nel `.env`.**
 
-**Su Vercel** si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo), `AUTH_SECRET`, le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`) e `CODICE_TRAINER` (il codice d'invito dei personal trainer, almeno 12 caratteri). Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema. Il promemoria completo, con backup e controlli, è in `RILASCIO.md`.
+**Su Vercel** si impostano in *Settings → Environment Variables*: `DATABASE_URL` (Neon, la stringa **con pooler**, quella con `-pooler` nell'indirizzo), `AUTH_SECRET`, le variabili dell'email (`SMTP_UTENTE`, `SMTP_PASSWORD`) e `CODICE_TRAINER` (il codice d'invito dei personal trainer, almeno 12 caratteri). Le migrazioni non partono da sole: si applicano con `db:deploy` dal PC, con `DATABASE_URL` della shell che punta alla stringa **diretta** di Neon (senza `-pooler`), prima di pubblicare una modifica che cambia lo schema. Il promemoria completo, con backup e controlli, è in `RILASCIO.md`; cosa è già stato pubblicato, rilascio per rilascio, è in `STORICO_RILASCI.md`.
 
 ## Script disponibili
 
