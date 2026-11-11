@@ -371,6 +371,15 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                     {ultima && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
                   </p>
                   {carico && <p className="mt-1 text-sm font-semibold text-accento">{testoSuggerimento(carico)}</p>}
+                  {/* La nota della scheda (di chi l'ha scritta: tu o il tuo personal trainer) sta qui, ben visibile: serve proprio
+                      mentre ti alleni, per sapere come va fatto l'esercizio. Viene dalla scheda e non dalla bozza, quindi se
+                      cambia la vedi aggiornata. Un esercizio aggiunto a metà sessione non ha nota. */}
+                  {definizione?.nota && (
+                    <p className="mt-2 rounded-xl bg-carta-alta px-3 py-2 text-sm break-words">
+                      <span className="font-extrabold">Nota: </span>
+                      {definizione.nota}
+                    </p>
+                  )}
                   <div className="mt-1">
                     <IstruzioniEsercizio catalogoId={es.catalogoId ?? null} esercizioId={es.esercizioId} nome={es.nome} />
                   </div>
