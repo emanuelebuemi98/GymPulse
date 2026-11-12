@@ -4,7 +4,8 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaSessione } from '@/app/actions'
 import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
-import { formatTimer, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
+import { descrizioneObiettivo, formatTimer, haRipetizioniPerSerie, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
+import { giroCompleto, nomeGruppo } from '@/lib/gruppi'
 import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
 import { secondiDaTimer } from '@/lib/durata'
 import { formatDataNumerica, formatNumero } from '@/lib/formato'
@@ -69,7 +70,9 @@ function testoSuggerimento(s: SuggerimentoCarico): string {
   if (s.daVerificare) return `Ultimo carico: ${formatNumero(s.kg)} kg (ripetizioni da verificare)`
   return s.aumenta
     ? `Prossimo carico: ${formatNumero(s.kg)} kg`
-    : `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripMax} rip in ogni serie per salire`
+    : s.ripSerie
+      ? `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripSerie.join('-')} rip per salire`
+      : `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripMax} rip in ogni serie per salire`
 }
 
 export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) {
@@ -174,8 +177,9 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     return suggerimentoSerie(
       ultima?.serie ?? [],
       indice,
-      definizione ? ripetizioniTarget(definizione.obiettivo) : null,
+      definizione ? ripetizioniTarget(definizione.obiettivo, indice) : null,
       ultima ? !ultima.datiIniziali : false,
+      definizione ? haRipetizioniPerSerie(definizione.obiettivo) : false,
     )
   }
 
@@ -216,7 +220,17 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     modificaRiga(es.chiave, indice, { pesoKg: kg, ripetizioni: String(ripetizioni), confermata: true })
 
     const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
-    if (definizione?.obiettivo.tipo === 'serie' && definizione.obiettivo.recuperoSec > 0) {
+    if (definizione?.gruppo) {
+      // Super serie: tra un esercizio e l'altro non c'è pausa. Il recupero parte quando il giro è finito, cioè quando tutti gli
+      // esercizi del gruppo hanno confermato questa serie, e dura quanto il recupero del gruppo.
+      const numero = definizione.gruppo.numero
+      const membri = esercizi.filter((e) => e.esercizioId !== null && definizioni.get(e.esercizioId)?.gruppo?.numero === numero)
+      if (!giroCompleto(membri, es.chiave, indice)) return
+      const totale = definizione.gruppo.recuperoSec
+      if (totale > 0) setTimer({ fine: Date.now() + totale * 1000, totale })
+      return
+    }
+    if (definizione && definizione.obiettivo.recuperoSec > 0) {
       const totale = definizione.obiettivo.recuperoSec
       setTimer({ fine: Date.now() + totale * 1000, totale })
     }
@@ -362,21 +376,55 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
       </section>
 
       <ul className="space-y-4">
-        {esercizi.map((es) => {
+        {esercizi.map((es, posizioneEsercizio) => {
           const ultima = ultimaDi(es)
           const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
+          // La super serie di questo esercizio: i suoi membri sono vicini (anche dopo aver tolto o aggiunto esercizi alla seduta).
+          const numeroGruppo = definizione?.gruppo?.numero ?? null
+          const membriGruppo =
+            numeroGruppo === null
+              ? []
+              : esercizi.filter((e) => e.esercizioId !== null && definizioni.get(e.esercizioId)?.gruppo?.numero === numeroGruppo)
+          const posizioneGruppo = membriGruppo.findIndex((e) => e.chiave === es.chiave)
+          const nomeDelGruppo = membriGruppo.length >= 2 ? nomeGruppo(membriGruppo.length) : null
+          const precedente = posizioneEsercizio > 0 ? esercizi[posizioneEsercizio - 1] : null
+          const èAttaccatoAlPrecedente =
+            nomeDelGruppo !== null &&
+            precedente !== null &&
+            precedente.esercizioId !== null &&
+            definizioni.get(precedente.esercizioId)?.gruppo?.numero === numeroGruppo
           const carico = es.esercizioId ? suggerimentiCarico[es.esercizioId] : undefined
           const errorePerQuesto = erroreEsercizio?.chiave === es.chiave ? erroreEsercizio.testo : null
 
           return (
-            <li key={es.chiave} className={`${stileCarta} space-y-3 p-4`}>
+            <li
+              key={es.chiave}
+              className={`${stileCarta} space-y-3 p-4 ${nomeDelGruppo ? 'border-l-4 border-l-accento' : ''} ${
+                èAttaccatoAlPrecedente ? '-mt-4 rounded-t-none border-t-0' : ''
+              } ${nomeDelGruppo && posizioneGruppo < membriGruppo.length - 1 ? 'rounded-b-none' : ''}`}
+              aria-label={nomeDelGruppo ? `${nomeDelGruppo} ${posizioneGruppo + 1} di ${membriGruppo.length}: ${es.nome}` : undefined}
+            >
+              {nomeDelGruppo && (
+                <p className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-full bg-accento/15 px-2.5 py-1 font-extrabold text-accento">
+                    {nomeDelGruppo} · {posizioneGruppo + 1}/{membriGruppo.length}
+                  </span>
+                  <span className="text-muto">
+                    {posizioneGruppo < membriGruppo.length - 1
+                      ? 'Una serie, poi passa subito al prossimo'
+                      : definizione?.gruppo && definizione.gruppo.recuperoSec > 0
+                        ? `Finito il giro, recupero ${formatTimer(definizione.gruppo.recuperoSec)}`
+                        : 'Finito il giro, riparti subito'}
+                  </span>
+                </p>
+              )}
               <div className="flex items-start justify-between gap-3">
                 <ImmagineEsercizio src={es.immagine ?? ''} nome={es.nome} className="size-20" />
                 <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-extrabold leading-tight">{es.nome}</h3>
                   {es.nomeEn && <p className="text-xs text-muto">{es.nomeEn}</p>}
                   <p className="text-sm text-muto">
-                    {definizione ? `Target ${descrizione(definizione)}` : 'Esercizio aggiunto'}
+                    {definizione ? `Target ${descrizioneObiettivo(definizione.obiettivo)}` : 'Esercizio aggiunto'}
                     {ultima && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
                   </p>
                   {carico && <p className="mt-1 text-sm font-semibold text-accento">{testoSuggerimento(carico)}</p>}
@@ -522,13 +570,6 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
       )}
     </div>
   )
-}
-
-function descrizione(esercizio: Esercizio): string {
-  const o = esercizio.obiettivo
-  if (o.tipo === 'serie') return o.ripMin === o.ripMax ? `${o.serie} × ${o.ripMin}` : `${o.serie} × ${o.ripMin}-${o.ripMax}`
-  if (o.tipo === 'totale') return `${o.ripTotali} ripetizioni totali`
-  return o.serieMin === o.serieMax ? `${o.serieMin} serie` : `${o.serieMin}-${o.serieMax} serie`
 }
 
 function RigaSerieCampi(props: {

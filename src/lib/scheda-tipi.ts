@@ -2,10 +2,13 @@
 // Scheda → Personalizza: qui ci sono solo i tipi con cui il codice la legge e la scrive.
 
 // Recupero in secondi, carico in kg.
-export type Obiettivo =
-  | { tipo: 'serie'; serie: number; ripMin: number; ripMax: number; recuperoSec: number }
-  | { tipo: 'totale'; ripTotali: number }
-  | { tipo: 'libero'; serieMin: number; serieMax: number }
+// `ripSerie`: le ripetizioni di ogni serie, quando sono diverse (12, 10, 8, 6): c'è solo in quel caso, e ha tante voci quante sono le
+// serie. In quel caso `ripMin` e `ripMax` sono il minimo e il massimo della lista. Senza, le ripetizioni sono le stesse per tutte.
+export type Obiettivo = { tipo: 'serie'; serie: number; ripMin: number; ripMax: number; recuperoSec: number; ripSerie?: number[] }
+
+// Un gruppo di esercizi consecutivi senza pausa tra uno e l'altro: superset (2), triset (3), gigantset (4 o più). `numero` è uguale per
+// tutti gli esercizi del gruppo (1, 2, ... nella giornata) e `recuperoSec` è il recupero dopo ogni giro, uguale per tutti.
+export type Gruppo = { numero: number; recuperoSec: number }
 
 export type Esercizio = {
   id: number
@@ -22,6 +25,8 @@ export type Esercizio = {
   nota?: string
   // Incremento proposto quando il range è completato su tutte le serie.
   incrementoKg?: number
+  // Presente solo per un esercizio che fa parte di un superset, triset o gigantset.
+  gruppo?: Gruppo
 }
 
 export type Giorno = {

@@ -55,7 +55,7 @@ export function SchermataScheda() {
     <Telefono>
       <Barra attiva="Scheda" />
       <p className="text-[13px] font-extrabold">A · Petto e tricipiti</p>
-      <Esercizio immagine="/esercizi/27_barbell-bench-press.jpg" nome="Panca piana con bilanciere" dettaglio="4 × 6-8 · recupero 2 min" />
+      <Esercizio immagine="/esercizi/27_barbell-bench-press.jpg" nome="Panca piana con bilanciere" dettaglio="4 × 12-10-8-6 · recupero 2 min" />
       <Esercizio immagine="/esercizi/6_incline-cable-fly.jpg" nome="Croci ai cavi su panca inclinata" dettaglio="3 × 10-12 · recupero 90 s" />
       <Esercizio immagine="/esercizi/35_push-up.jpg" nome="Piegamenti sulle braccia" dettaglio="3 × 12 · recupero 60 s" />
     </Telefono>
@@ -87,7 +87,7 @@ export function SchermataSessione() {
         <ImmagineEsercizio src="/esercizi/45_lat-pulldown.jpg" nome="Lat Machine avanti" className="size-10 rounded-lg" />
         <span>
           <span className="block text-[13px] font-extrabold">Lat Machine avanti</span>
-          <span className="block text-[9.5px] text-muto">Target 4 × 8-10 · ultima seduta 40 kg</span>
+          <span className="block text-[9.5px] text-muto">Target 4 × 12-10-8-6 · ultima seduta 40 kg</span>
         </span>
       </div>
       <div className="mt-1 grid grid-cols-[1rem_1fr_1fr_1.6rem] gap-1.5 text-[9px] font-semibold text-muto">
@@ -96,10 +96,11 @@ export function SchermataSessione() {
         <span className="text-center">rip.</span>
         <span />
       </div>
-      <Serie numero={1} kg="40" rip="10" fatta />
-      <Serie numero={2} kg="40" rip="9" fatta />
-      <Serie numero={3} kg="42,5" rip="10" fatta={false} />
-      <p className="rounded-xl bg-ok/10 px-2 py-1 text-[10px] font-semibold text-ok">Prossimo carico consigliato: 42,5 kg</p>
+      <Serie numero={1} kg="40" rip="12" fatta />
+      <Serie numero={2} kg="42,5" rip="10" fatta />
+      <Serie numero={3} kg="45" rip="8" fatta={false} />
+      <Serie numero={4} kg="45" rip="6" fatta={false} />
+      <p className="rounded-xl bg-ok/10 px-2 py-1 text-[10px] font-semibold text-ok">Prossimo carico consigliato: 45 kg</p>
       <div className="mt-auto flex items-center justify-between rounded-full bg-inchiostro py-1.5 pr-1.5 pl-4 text-su-inchiostro">
         <span>
           <span className="block text-[9px] font-semibold opacity-70">Recupero</span>
@@ -390,6 +391,52 @@ export function SchermataRecord() {
           </div>
         ))}
         <p className="mt-1 text-[9px] font-semibold text-muto">▸ Tutti i record (21)</p>
+      </div>
+    </Telefono>
+  )
+}
+
+// Le super serie: esercizi uno dopo l'altro senza pausa. Con 2 esercizi è un superset, con 3 un triset, con 4 o più un gigantset;
+// il recupero parte dopo l'ultimo esercizio, a fine giro. La barra a sinistra tiene insieme gli esercizi del gruppo.
+export function SchermataSuperSerie() {
+  return (
+    <Telefono>
+      <Barra attiva="Scheda" />
+      <p className="text-[13px] font-extrabold">C · Spalle e braccia</p>
+      <div className="space-y-0.5">
+        <span className="inline-block rounded-full bg-accento/15 px-2 py-0.5 text-[9px] font-extrabold text-accento">Superset · senza pausa</span>
+        <div className="flex items-center gap-2 rounded-t-2xl border border-b-0 border-l-4 border-bordo border-l-accento bg-carta p-1.5 pr-2.5">
+          <span className="w-4 shrink-0 text-[9px] font-bold text-muto">1/2</span>
+          <Miniatura nome="Alzate laterali con manubri" file="85_dumbbell-lateral-raise" className="size-9" />
+          <span className="min-w-0">
+            <span className="block truncate text-[10.5px] font-bold">Alzate laterali con manubri</span>
+            <span className="block text-[9px] text-muto">3 × 12</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-2 rounded-b-2xl border border-l-4 border-bordo border-l-accento bg-carta p-1.5 pr-2.5">
+          <span className="w-4 shrink-0 text-[9px] font-bold text-muto">2/2</span>
+          <Miniatura nome="Piegamenti sulle braccia" file="35_push-up" className="size-9" />
+          <span className="min-w-0">
+            <span className="block truncate text-[10.5px] font-bold">Piegamenti sulle braccia</span>
+            <span className="block text-[9px] text-muto">3 × 15</span>
+            <span className="block text-[9px] font-semibold text-accento">Poi recupero 90 s</span>
+          </span>
+        </div>
+      </div>
+      <div className="space-y-0.5">
+        <span className="inline-block rounded-full bg-accento/15 px-2 py-0.5 text-[9px] font-extrabold text-accento">Triset · senza pausa</span>
+        <div className="flex items-center gap-2 rounded-t-2xl border border-b-0 border-l-4 border-bordo border-l-accento bg-carta p-1 pr-2.5">
+          <span className="w-4 shrink-0 text-[9px] font-bold text-muto">1/3</span>
+          <span className="truncate text-[10px] font-bold">Curl con bilanciere · 3 × 10</span>
+        </div>
+        <div className="flex items-center gap-2 border border-b-0 border-l-4 border-bordo border-l-accento bg-carta p-1 pr-2.5">
+          <span className="w-4 shrink-0 text-[9px] font-bold text-muto">2/3</span>
+          <span className="truncate text-[10px] font-bold">Curl a martello · 3 × 10</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-b-2xl border border-l-4 border-bordo border-l-accento bg-carta p-1 pr-2.5">
+          <span className="w-4 shrink-0 text-[9px] font-bold text-muto">3/3</span>
+          <span className="truncate text-[10px] font-bold">Curl ai cavi · 3 × 12</span>
+        </div>
       </div>
     </Telefono>
   )

@@ -43,6 +43,8 @@ export async function scriviVoci(
         ordine: ++ordine,
         nota: voce.nota,
         incrementoKg: voce.incrementoKg,
+        gruppo: voce.gruppo?.numero ?? null,
+        recuperoGruppoSec: voce.gruppo?.recuperoSec ?? null,
         ...campiObiettivo(voce.obiettivo),
       },
     })

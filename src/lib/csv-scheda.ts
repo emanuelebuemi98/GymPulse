@@ -15,7 +15,10 @@ export const SEGNAPOSTO_GIORNATA = '<A/B/C/D/E/F/G>'
 export const RIGHE_MASSIME_SCHEDA = 2_000
 
 // "categoria" è solo da leggere: aiuta a scegliere in Excel e l'importazione la ignora. Le colonne dopo "esercizio" si possono
-// lasciare vuote: valgono i numeri che propone l'editor della scheda (3 serie da 8 ripetizioni, 90 secondi di recupero).
+// lasciare vuote: valgono i numeri che propone l'editor della scheda (3 serie da 8-10 ripetizioni, 90 secondi di recupero).
+// «tipo», «rip_totali», «serie_min» e «serie_max» sono colonne dei tipi di obiettivo che non ci sono più (ripetizioni totali, serie a
+// scelta): restano nel file, vuote, perché un file scritto prima si importi senza dover togliere nulla. L'importazione le legge
+// e le ignora: una riga di quei tipi diventa «serie × ripetizioni» con i numeri di sempre (3 serie da 8-10).
 export const COLONNE_SCHEDA = [
   'giornata',
   'titolo',
@@ -31,27 +34,32 @@ export const COLONNE_SCHEDA = [
   'serie_max',
   'nota',
   'incremento_kg',
+  // In coda, così un file scritto prima di queste colonne si importa come sempre. `rip_per_serie`: le ripetizioni di ogni serie
+  // separate da spazi ("12 10 8 6"); vuoto = uguali per tutte (rip_min e rip_max). `gruppo` e `recupero_gruppo_sec`: gli esercizi
+  // vicini con la stessa etichetta sono un superset (2), un triset (3) o un gigantset (4 o più), senza pausa tra uno e l'altro,
+  // con quel recupero dopo ogni giro.
+  'rip_per_serie',
+  'gruppo',
+  'recupero_gruppo_sec',
 ] as const
 
 const OBBLIGATORIE = ['giornata', 'esercizio'] as const
-
-export type TipoRiga = 'serie' | 'totale' | 'libero'
 
 export type RigaScheda = {
   riga: number
   giornata: string
   titolo: string | null
   nome: string
-  tipo: TipoRiga
   serie: number | null
   ripMin: number | null
   ripMax: number | null
   recuperoSec: number | null
-  ripTotali: number | null
-  serieMin: number | null
-  serieMax: number | null
   nota: string | null
   incrementoKg: number | null
+  ripSerie: number[] | null
+  // L'etichetta scritta nel file (1, 2, a…): vale dentro la giornata, e non è il numero che finisce nel database.
+  gruppo: string | null
+  recuperoGruppoSec: number | null
 }
 
 export type EsitoCsvScheda = { ok: true; righe: RigaScheda[] } | { ok: false; errore: string }
@@ -89,6 +97,9 @@ export function creaCsvCatalogo(voci: VoceCatalogo[]): string {
       '',
       '',
       '',
+      '',
+      '',
+      '',
     ])
   }
   return scrivi(righe)
@@ -105,16 +116,20 @@ export function creaCsvScheda(giorni: Giorno[]): string {
         proteggi(giorno.titolo),
         proteggi(esercizio.nome),
         etichettaDi(esercizio.categoria),
-        o.tipo,
-        o.tipo === 'serie' ? String(o.serie) : '',
-        o.tipo === 'serie' ? String(o.ripMin) : '',
-        o.tipo === 'serie' ? String(o.ripMax) : '',
-        o.tipo === 'serie' ? String(o.recuperoSec) : '',
-        o.tipo === 'totale' ? String(o.ripTotali) : '',
-        o.tipo === 'libero' ? String(o.serieMin) : '',
-        o.tipo === 'libero' ? String(o.serieMax) : '',
+        'serie',
+        String(o.serie),
+        String(o.ripMin),
+        String(o.ripMax),
+        String(o.recuperoSec),
+        '',
+        '',
+        '',
         esercizio.nota ? proteggi(esercizio.nota) : '',
         esercizio.incrementoKg ? String(esercizio.incrementoKg).replace('.', ',') : '',
+        // Con gli spazi e non con i trattini: Excel trasforma "12-10" in una data.
+        o.ripSerie ? o.ripSerie.join(' ') : '',
+        esercizio.gruppo ? String(esercizio.gruppo.numero) : '',
+        esercizio.gruppo ? String(esercizio.gruppo.recuperoSec) : '',
       ])
     }
   }
@@ -127,6 +142,25 @@ function intero(testo: string, nome: string): EsitoNumero {
   if (testo === '') return { ok: true, valore: null }
   if (!/^\d+$/.test(testo)) return { ok: false, errore: `${nome} "${testo}" non è un numero intero` }
   return { ok: true, valore: Number(testo) }
+}
+
+type EsitoRipSerie = { ok: true; valori: number[] | null } | { ok: false; errore: string }
+
+// Le ripetizioni di ogni serie: numeri da 1 a 100 separati da spazi, virgole, trattini o barre ("12 10 8 6", "12-10-8-6"). Il file
+// scritto dall'app usa gli spazi perché Excel trasforma "12-10" in una data; se è successo lo stesso, il numero che ne esce è
+// fuori dai limiti e l'importazione lo dice.
+function ripPerSerie(testo: string): EsitoRipSerie {
+  const parti = testo.split(/[\s,\-/]+/).filter((parte) => parte !== '')
+  if (parti.length === 0) return { ok: true, valori: null }
+  if (parti.length > 20) return { ok: false, errore: 'le ripetizioni per serie sono troppe (al massimo 20 serie)' }
+  const valori = parti.map((parte) => (/^\d+$/.test(parte) ? Number(parte) : Number.NaN))
+  if (valori.some((valore) => !Number.isInteger(valore) || valore < 1 || valore > 100)) {
+    return {
+      ok: false,
+      errore: `le ripetizioni per serie "${testo}" non vanno bene: scrivi un numero da 1 a 100 per ogni serie, separati da spazi (12 10 8 6). Se Excel ha cambiato il testo in una data, scrivilo con gli spazi e imposta la cella come testo`,
+    }
+  }
+  return { ok: true, valori }
 }
 
 export function leggiCsvScheda(testo: string): EsitoCsvScheda {
@@ -177,20 +211,19 @@ export function leggiCsvScheda(testo: string): EsitoCsvScheda {
     const titolo = scopri(cella('titolo'))
     if (titolo.length > 60) return errore('il titolo della giornata è troppo lungo (massimo 60 caratteri)')
 
+    // La colonna «tipo» c'è ancora, ma di tipo ce n'è uno solo: «serie» (o vuoto). Un file scritto quando c'erano «totale» e «libero»
+    // non si rifiuta: quelle righe diventano «serie × ripetizioni» con i numeri di sempre.
     const tipoScritto = cella('tipo').toLowerCase()
-    if (tipoScritto !== '' && tipoScritto !== 'serie' && tipoScritto !== 'totale' && tipoScritto !== 'libero') {
-      return errore(`il tipo "${cella('tipo')}" non è valido: usa serie, totale o libero (o lascia vuoto)`)
+    const vecchioTipo = tipoScritto === 'totale' || tipoScritto === 'libero'
+    if (tipoScritto !== '' && tipoScritto !== 'serie' && !vecchioTipo) {
+      return errore(`il tipo "${cella('tipo')}" non è valido: l'unico tipo è serie (o lascia la cella vuota)`)
     }
-    const tipo: TipoRiga = tipoScritto === '' ? 'serie' : tipoScritto
 
     const numeri = {
       serie: intero(cella('serie'), 'le serie'),
       ripMin: intero(cella('rip_min'), 'le ripetizioni minime'),
       ripMax: intero(cella('rip_max'), 'le ripetizioni massime'),
       recuperoSec: intero(cella('recupero_sec'), 'il recupero'),
-      ripTotali: intero(cella('rip_totali'), 'le ripetizioni totali'),
-      serieMin: intero(cella('serie_min'), 'le serie minime'),
-      serieMax: intero(cella('serie_max'), 'le serie massime'),
     }
     for (const esito of Object.values(numeri)) if (!esito.ok) return errore(esito.errore)
     const n = (chiave: keyof typeof numeri) => {
@@ -203,22 +236,33 @@ export function leggiCsvScheda(testo: string): EsitoCsvScheda {
       return errore(`l'incremento "${incrementoTesto}" non è un numero`)
     }
 
-    // Le colonne che non servono al tipo si ignorano; quelle che servono e sono vuote prendono i valori dell'editor.
+    // Ripetizioni diverse per ogni serie (solo per i tipi "serie"): se ci sono, le serie sono tante quante le ripetizioni scritte,
+    // a meno che non sia scritto anche il numero di serie (e allora devono coincidere: lo controlla la validazione).
+    const rip = ripPerSerie(scopri(cella('rip_per_serie')))
+    if (!rip.ok) return errore(rip.errore)
+
+    // Super serie: l'etichetta serve solo a dire quali righe vanno insieme. Il recupero del gruppo è un numero intero di secondi.
+    const gruppoTesto = scopri(cella('gruppo')).toLowerCase()
+    if (gruppoTesto.length > 20) return errore('l\'etichetta del gruppo è troppo lunga (massimo 20 caratteri)')
+    const recuperoGruppo = intero(cella('recupero_gruppo_sec'), 'il recupero del gruppo')
+    if (!recuperoGruppo.ok) return errore(recuperoGruppo.errore)
+
+    // Le celle vuote prendono i valori dell'editor. Una riga di un vecchio tipo (totale, libero) non porta i numeri delle serie: ha
+    // 3 serie da 8-10 ripetizioni.
     risultato.push({
       riga: numero,
       giornata,
       titolo: titolo === '' ? null : titolo,
       nome,
-      tipo,
-      serie: tipo === 'serie' ? (n('serie') ?? 3) : null,
-      ripMin: tipo === 'serie' ? (n('ripMin') ?? 8) : null,
-      ripMax: tipo === 'serie' ? n('ripMax') : null,
-      recuperoSec: tipo === 'serie' ? n('recuperoSec') : null,
-      ripTotali: tipo === 'totale' ? (n('ripTotali') ?? 50) : null,
-      serieMin: tipo === 'libero' ? (n('serieMin') ?? 3) : null,
-      serieMax: tipo === 'libero' ? n('serieMax') : null,
+      serie: vecchioTipo ? 3 : (n('serie') ?? rip.valori?.length ?? 3),
+      ripMin: vecchioTipo ? 8 : (n('ripMin') ?? 8),
+      ripMax: vecchioTipo ? 10 : n('ripMax'),
+      recuperoSec: vecchioTipo ? null : n('recuperoSec'),
       nota: cella('nota') === '' ? null : scopri(cella('nota')),
       incrementoKg: incrementoTesto === '' ? null : Number(incrementoTesto.replace(',', '.')),
+      ripSerie: vecchioTipo ? null : rip.valori,
+      gruppo: gruppoTesto === '' ? null : gruppoTesto,
+      recuperoGruppoSec: recuperoGruppo.valore,
     })
   }
 

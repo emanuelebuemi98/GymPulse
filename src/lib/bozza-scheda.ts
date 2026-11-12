@@ -1,4 +1,4 @@
-import type { TipoVoce, VoceForm } from './scheda-form'
+import type { VoceForm } from './scheda-form'
 
 // Bozza della scheda che si sta scrivendo, salvata nel browser: se si esce per sbaglio dall'editor (Annulla, indietro, la pagina
 // che si ricarica, il telefono che chiude il browser) le modifiche non si perdono. Come la bozza della sessione (bozza.ts), ma
@@ -16,7 +16,6 @@ export type BozzaScheda = { titolo: string; voci: VoceForm[]; versione: string |
 
 const chiave = (utenteId: number, proprietarioId: number, giornoId: string) => `${PREFISSO}${utenteId}-${proprietarioId}-${giornoId}`
 
-const TIPI: TipoVoce[] = ['serie', 'totale', 'libero']
 const CAMPI_TESTO = [
   'chiave',
   'nome',
@@ -27,25 +26,38 @@ const CAMPI_TESTO = [
   'ripMin',
   'ripMax',
   'recuperoSec',
-  'ripTotali',
-  'serieMin',
-  'serieMax',
   'nota',
   'incrementoKg',
 ] as const
 
+// Campi nati dopo la prima versione della bozza: una bozza scritta prima non li ha, e non per questo va buttata. In lettura si
+// completano con "nessuno" (ripetizioni uguali per tutte, nessuna super serie).
 const èIdOnull = (valore: unknown) => valore === null || (typeof valore === 'number' && Number.isInteger(valore))
+const èGruppo = (valore: unknown) => valore === null || (typeof valore === 'number' && Number.isInteger(valore) && valore >= 1 && valore <= 999)
+const èTestoFacoltativo = (valore: unknown) => valore === undefined || (typeof valore === 'string' && valore.length <= 300)
 
 // Il contenuto viene dal browser: prima di usarlo si controlla che sia fatto come una riga dell'editor.
 function voceValida(valore: unknown): valore is VoceForm {
   if (typeof valore !== 'object' || valore === null) return false
   const v = valore as Record<string, unknown>
   if (!CAMPI_TESTO.every((campo) => typeof v[campo] === 'string' && (v[campo] as string).length <= 300)) return false
-  if (!TIPI.includes(v.tipo as TipoVoce)) return false
+  // Una bozza scritta quando c'erano ancora i tipi «ripetizioni totali» e «serie a scelta» ha un tipo (e dei campi) che ora non
+  // servono: non è un errore, l'esercizio è trattato come «serie × ripetizioni» con i numeri che ha.
   // L'immagine è un file dell'app o niente: un percorso diverso non si carica.
   const immagine = v.immagine as string
   if (immagine !== '' && !immagine.startsWith('/esercizi/')) return false
+  if (!èTestoFacoltativo(v.ripSerie) || !èTestoFacoltativo(v.recuperoGruppo)) return false
+  if (v.gruppo !== undefined && !èGruppo(v.gruppo)) return false
   return èIdOnull(v.esercizioId) && èIdOnull(v.catalogoId) && èIdOnull(v.catalogoRif)
+}
+
+// Completa una riga letta dalla bozza con i campi che una bozza più vecchia non aveva.
+function completa(voce: VoceForm & { tipo?: unknown; ripTotali?: unknown; serieMin?: unknown; serieMax?: unknown }): VoceForm {
+  // Si tolgono i campi dei vecchi tipi: non fanno più parte di una riga, e l'impronta (che confronta con la scheda salvata)
+  // altrimenti risulterebbe sempre diversa.
+  const { tipo: _tipo, ripTotali: _ripTotali, serieMin: _serieMin, serieMax: _serieMax, ...resto } = voce
+  void _tipo, _ripTotali, _serieMin, _serieMax
+  return { ...resto, ripSerie: voce.ripSerie ?? '', gruppo: voce.gruppo ?? null, recuperoGruppo: voce.recuperoGruppo ?? '' }
 }
 
 function leggiVoce(grezzo: string, ora: number): BozzaScheda | null {
@@ -58,7 +70,7 @@ function leggiVoce(grezzo: string, ora: number): BozzaScheda | null {
   if (typeof titolo !== 'string' || titolo.length > 200) return null
   if (!Array.isArray(voci) || voci.length > 50 || !voci.every(voceValida)) return null
   if (versione !== null && typeof versione !== 'string') return null
-  return { titolo, voci, versione }
+  return { titolo, voci: (voci as VoceForm[]).map(completa), versione }
 }
 
 // L'impronta di una scheda dell'editor: serve a sapere se è uguale a quella salvata. Le chiavi si ordinano, così non conta

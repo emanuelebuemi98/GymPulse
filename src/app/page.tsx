@@ -15,6 +15,7 @@ import {
   SchermataSeduta,
   SchermataSessione,
   SchermataStorico,
+  SchermataSuperSerie,
 } from '@/components/benvenuto/Index'
 import {
   IconaCarica,
@@ -49,7 +50,7 @@ const schermate = [
   },
   {
     titolo: 'Le tue giornate',
-    testo: 'Da una a sette giornate (A, B, C…), ognuna con i suoi esercizi, le serie, le ripetizioni e il recupero.',
+    testo: 'Da una a sette giornate (A, B, C…), ognuna con i suoi esercizi, le serie, le ripetizioni (anche diverse per ogni serie, come 12-10-8-6) e il recupero.',
     schermata: <SchermataGiornate />,
   },
   {
@@ -58,13 +59,18 @@ const schermate = [
     schermata: <SchermataScheda />,
   },
   {
+    titolo: 'Superset, triset e gigantset',
+    testo: 'Metti insieme due o più esercizi da fare uno dopo l\'altro, senza pausa: due sono un superset, tre un triset, quattro o più un gigantset. Il recupero parte alla fine del giro.',
+    schermata: <SchermataSuperSerie />,
+  },
+  {
     titolo: 'Il catalogo',
     testo: 'Tutti i 246 esercizi divisi per categoria (Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento), con la foto di ognuno, la ricerca per nome e le linguette per scegliere.',
     schermata: <SchermataCatalogo />,
   },
   {
     titolo: 'In palestra',
-    testo: 'Scrivi kg e ripetizioni e tocca la spunta. Parte il timer di recupero e vedi i valori dell\'ultima volta.',
+    testo: 'Scrivi kg e ripetizioni e tocca la spunta. Parte il timer di recupero e vedi i valori dell\'ultima volta. Se la scheda ha ripetizioni diverse per ogni serie, in ogni riga vedi quelle da fare.',
     schermata: <SchermataSessione />,
   },
   {
@@ -108,7 +114,7 @@ const passi = [
   {
     titolo: 'Costruisci la scheda',
     testo:
-      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 246, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni e recupero.',
+      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 246, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni (serie fisse, con un minimo e un massimo, oppure serie piramidale come 12-10-8-6) e recupero, e se vuoi metti insieme più esercizi in un superset, un triset o un gigantset.',
   },
   {
     titolo: 'Allenati',
@@ -130,7 +136,7 @@ const funzioni = [
   {
     icona: IconaPlay,
     titolo: 'Timer di recupero',
-    testo: 'Parte dopo ogni serie con il tempo previsto dalla scheda, e vibra quando è finito.',
+    testo: 'Parte dopo ogni serie con il tempo previsto dalla scheda, e vibra quando è finito. Nei superset, nei triset e nei gigantset parte alla fine del giro.',
   },
   {
     icona: IconaSpunta,
@@ -138,9 +144,14 @@ const funzioni = [
     testo: 'Se il telefono si spegne a metà allenamento, le serie confermate restano e riprendi da dove eri.',
   },
   {
+    icona: IconaRegolazioni,
+    titolo: 'Ripetizioni e super serie',
+    testo: 'Per ogni esercizio scegli le serie fisse, con un minimo e un massimo, oppure la serie piramidale: una ripetizione diversa per ogni serie, a scendere o a salire (12-10-8-6). E puoi unire più esercizi in un superset, un triset o un gigantset.',
+  },
+  {
     icona: IconaStorico,
     titolo: 'Giornata consigliata',
-    testo: 'Segue l\'ordine delle giornate e ogni lunedì riparte dalla prima.',
+    testo: 'Ogni lunedì riparte dalla prima giornata e propone quella che non hai ancora fatto. Con un tocco scegli un\'altra giornata.',
   },
   {
     icona: IconaCarica,

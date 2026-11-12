@@ -7,6 +7,8 @@ export type SuggerimentoCarico = {
   kg: number
   aumenta: boolean
   ripMax: number
+  // Le ripetizioni da raggiungere in ogni serie quando sono diverse per serie (12, 10, 8, 6); assente se sono le stesse per tutte.
+  ripSerie?: number[]
   // Le ripetizioni dell'ultima volta non sono state registrate davvero: non si può dire se il range è stato completato.
   daVerificare: boolean
 }
@@ -52,7 +54,7 @@ export function suggerisciCarichi(
   for (const esercizio of esercizi) {
     const { obiettivo, incrementoKg } = esercizio
     const ultima = ultime[esercizio.id]
-    if (!ultima || obiettivo.tipo !== 'serie' || incrementoKg === undefined) continue
+    if (!ultima || incrementoKg === undefined) continue
 
     const serie = ultima.serie.flatMap((s) =>
       s.pesoKg === null ? [] : [{ peso: s.pesoKg, ripetizioni: s.ripetizioni }],
@@ -61,13 +63,13 @@ export function suggerisciCarichi(
     const massimo = Math.max(...serie.map((s) => s.peso))
 
     if (ultima.datiIniziali) {
-      suggerimenti[esercizio.id] = { kg: massimo, aumenta: false, ripMax: obiettivo.ripMax, daVerificare: true }
+      suggerimenti[esercizio.id] = { kg: massimo, aumenta: false, ripMax: obiettivo.ripMax, ripSerie: obiettivo.ripSerie, daVerificare: true }
       continue
     }
 
-    const kg = prossimoCarico(serie, obiettivo.ripMax, incrementoKg)
+    const kg = prossimoCarico(serie, obiettivo.ripSerie ?? obiettivo.ripMax, incrementoKg)
     if (kg === null) continue
-    suggerimenti[esercizio.id] = { kg, aumenta: kg > massimo, ripMax: obiettivo.ripMax, daVerificare: false }
+    suggerimenti[esercizio.id] = { kg, aumenta: kg > massimo, ripMax: obiettivo.ripMax, ripSerie: obiettivo.ripSerie, daVerificare: false }
   }
   return suggerimenti
 }
@@ -75,14 +77,17 @@ export function suggerisciCarichi(
 // Valori suggeriti per la serie numero `indice` (da 0): quelli della stessa serie dell'ultima volta,
 // oppure dell'ultima serie fatta. Se le ripetizioni dell'ultima volta non sono state registrate davvero
 // (dati iniziali), si suggerisce il target della scheda, non un numero che sembri misurato.
+// Se la scheda fissa le ripetizioni di ogni serie (12, 10, 8, 6), il segnaposto è quello della serie e non quello dell'ultima volta:
+// il peso invece resta quello dell'ultima volta.
 export function suggerimentoSerie(
   precedenti: SerieRegistrata[],
   indice: number,
   ripTarget: number | null,
   ripAffidabili: boolean,
+  ripFisse = false,
 ): { pesoKg: number | null; ripetizioni: number | null } {
   const base = precedenti[indice] ?? precedenti[precedenti.length - 1]
-  const dallaStoria = ripAffidabili ? (base?.ripetizioni ?? null) : null
+  const dallaStoria = ripAffidabili && !(ripFisse && ripTarget !== null) ? (base?.ripetizioni ?? null) : null
   return {
     pesoKg: base?.pesoKg ?? null,
     ripetizioni: dallaStoria ?? ripTarget,

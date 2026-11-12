@@ -99,16 +99,13 @@ export async function pianoImportScheda(
       const voce = {
         esercizioId: dove.esercizioId,
         catalogoId: dove.catalogoId,
-        tipo: riga.tipo,
         serie: riga.serie,
         ripMin: riga.ripMin,
         ripMax: riga.ripMax,
         recuperoSec: riga.recuperoSec,
-        ripTotali: riga.ripTotali,
-        serieMin: riga.serieMin,
-        serieMax: riga.serieMax,
         nota: riga.nota,
         incrementoKg: riga.incrementoKg,
+        ripSerie: riga.ripSerie,
       }
       // Prima ogni riga da sola, così l'errore dice quale riga del file è sbagliata.
       const singola = validaScheda({ giornoId: lettera, titolo, voci: [voce] })
@@ -116,7 +113,25 @@ export async function pianoImportScheda(
       voci.push(singola.dati.voci[0])
     }
 
-    // Poi la giornata intera: esercizi ripetuti, troppi esercizi.
+    // Le super serie: le righe con la stessa etichetta vanno insieme. L'etichetta diventa un numero (1, 2, …) nell'ordine in cui
+    // compare; il recupero è quello scritto su una delle righe del gruppo (se due righe ne scrivono di diversi, è un errore).
+    const numeri = new Map<string, number>()
+    const recuperi = new Map<string, number>()
+    for (const riga of righe) {
+      if (riga.gruppo === null) continue
+      if (!numeri.has(riga.gruppo)) numeri.set(riga.gruppo, numeri.size + 1)
+      if (riga.recuperoGruppoSec === null) continue
+      const scritto = recuperi.get(riga.gruppo)
+      if (scritto !== undefined && scritto !== riga.recuperoGruppoSec) {
+        return {
+          ok: false,
+          errore: `Riga ${riga.riga}: il recupero del gruppo "${riga.gruppo}" è diverso da quello scritto nelle altre righe dello stesso gruppo`,
+        }
+      }
+      recuperi.set(riga.gruppo, riga.recuperoGruppoSec)
+    }
+
+    // Poi la giornata intera: esercizi ripetuti, troppi esercizi, super serie.
     const intera = validaScheda({
       giornoId: lettera,
       titolo,
@@ -126,6 +141,8 @@ export async function pianoImportScheda(
         ...datiObiettivo(voce, righe[indice]),
         nota: voce.nota,
         incrementoKg: voce.incrementoKg,
+        gruppo: righe[indice].gruppo === null ? null : numeri.get(righe[indice].gruppo!)!,
+        recuperoGruppoSec: righe[indice].gruppo === null ? null : (recuperi.get(righe[indice].gruppo!) ?? null),
       })),
     })
     if (!intera.ok) return { ok: false, errore: `Giornata ${lettera}: ${minuscola(intera.errore)}` }
@@ -147,13 +164,10 @@ const minuscola = (testo: string) => testo.charAt(0).toLowerCase() + testo.slice
 // Le colonne dell'obiettivo come le vuole validaScheda, prese dalla riga del file.
 function datiObiettivo(_voce: VoceNormalizzata, riga: RigaScheda) {
   return {
-    tipo: riga.tipo,
     serie: riga.serie,
     ripMin: riga.ripMin,
     ripMax: riga.ripMax,
     recuperoSec: riga.recuperoSec,
-    ripTotali: riga.ripTotali,
-    serieMin: riga.serieMin,
-    serieMax: riga.serieMax,
+    ripSerie: riga.ripSerie,
   }
 }
