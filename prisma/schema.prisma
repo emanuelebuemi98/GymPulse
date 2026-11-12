@@ -172,6 +172,9 @@ model Sessione {
   giornoId     String
   data         DateTime        @default(now())
   note         String?
+  // La durata in secondi, misurata dal cronometro della sessione. `durataMinuti` è la colonna di prima, ormai non più scritta:
+  // le durate già salvate sono state riportate in secondi dalla migrazione `durata_in_secondi`.
+  durataSecondi Int?
   durataMinuti Int?
   datiIniziali Boolean         @default(false)
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
