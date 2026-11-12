@@ -14,8 +14,9 @@ Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per ri
 | 2 | 8 nov 2026 | `17eda64` | **Primo rilascio vero**: catalogo di 246 esercizi, tema chiaro e scuro, presentazione, registrazione in un passo | 4 | riuscito (e un nuovo deploy il 9 nov) |
 | 3 | 10 nov 2026 | `b62c6a5` | Email di qualunque fornitore, catalogo per categoria, scheda da file CSV | 1 | riuscito (e un nuovo deploy l'11 nov) |
 | 4 | 11 nov 2026 | `1e6cce2` | **Personal trainer e palestre**, un solo trainer per palestra, eliminazione dell'account, note in sessione | 2 | riuscito |
+| 5 | 12 nov 2026 | `f8374da` | **Password visibile**, **cronometro con la durata in secondi**, **scelta della giornata** da fare | 1 | riuscito |
 
-Nei rilasci 2, 3 e 4 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata.
+Nei rilasci 2, 3, 4 e 5 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata.
 
 ---
 
@@ -116,9 +117,29 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 
 ---
 
+## Rilascio 5 — 12 novembre 2026: password visibile, durata e scelta della giornata
+
+- **Commit:** `f8374da` (5 commit dal rilascio 4). Il merge è stato un avanzamento semplice: `main` e `dev` sono finiti sullo stesso commit, senza un commit di merge.
+- **Cosa conteneva:**
+  - **password visibile**: su accesso, registrazione (password e conferma), recupero, email e codice d'invito del trainer, un pulsante con l'occhio per vedere quello che si scrive; al tocco il campo resta attivo e il testo non si perde;
+  - **cronometro della sessione e durata in secondi**: a ogni sessione parte un cronometro, che si vede nella sezione «Durata» in fondo; salvando la seduta la durata si registra da sola, in secondi, e lo storico la mostra in ore, minuti e secondi («1 h 5 min 12 s»). Il campo dei minuti scritti a mano è stato tolto. Non si registra se la seduta è di un altro giorno o se è durata oltre 10 ore;
+  - **scelta della giornata**: la home propone la prima giornata non ancora fatta nella settimana; il pulsante «Cambia» nella card «Oggi tocca a» apre l'elenco delle giornate e la card si aggiorna subito, con «consigliata» e «fatta» accanto a ciascuna. Una giornata saltata si lascia semplicemente non fatta; lunedì si riparte dalla prima.
+- **Migrazione (1):** `durata_in_secondi`. Aggiunge la colonna `durataSecondi` e riporta in secondi le durate già salvate (minuti × 60). La colonna `durataMinuti` resta dov'è e non viene più scritta: si potrà togliere con una migrazione successiva. Aggiunge soltanto una colonna: il codice vecchio funziona anche sul database nuovo.
+- **Catalogo e immagini:** invariati (passi 6 e 7 saltati).
+- **Variabili su Vercel:** nessuna nuova.
+- **Passi eseguiti** (dichiarati eseguiti, nessun problema segnalato): backup di Neon con `pg_dump` 18 (`neon-prima-durata.dump`), `migrate status`, `db:deploy` con la migrazione, catalogo saltato, merge su `main`. L'esito scritto di `migrate status` e di `db:deploy` non è registrato.
+- **Provato prima del rilascio, in locale e su copie del database:** l'occhio con un tocco vero del dito, in chiaro e scuro (il campo resta attivo e il testo non si perde); il cronometro che riparte da dove era dopo un ricaricamento; i secondi che arrivano nel database e nello storico (1 h 5 min 12 s, 48 s); i casi senza durata (più di 10 ore, data passata); la scelta della giornata con sedute della settimana inserite a mano; la migrazione su una copia con durate di 60, 45 e 1 minuto, riportate giuste in secondi.
+- **Vercel** (ora italiana):
+  - 12 nov 10:37, push di `dev`: **annullata** («Canceled by Ignored Build Step»), com'è voluto;
+  - 12 nov 10:49, merge su `main`: deploy **riuscito** (partito alle 10:49:18, finito alle 10:49:38).
+- **Problemi incontrati:** nessuno segnalato.
+- **Controlli online del passo 11:** dichiarati andati bene ("tutto su"); i singoli esiti non sono registrati.
+
+---
+
 ## Problemi che si ripresentano
 
-- **Backup di Neon:** serve `pg_dump` 18, non quello del Docker locale. Un file da 0 byte non è un backup. La cartella dei backup si indica con la variabile `CARTELLA_BACKUP` (passo 2 di `DEPLOY.md`).
+- **Backup di Neon:** serve `pg_dump` 18, non quello del Docker locale. Un file da 0 byte non è un backup. La cartella dei backup si indica con la variabile `CARTELLA_BACKUP` (passo 2 di `DEPLOY.md`), e il nome del file con la data in `NOME_BACKUP`: con un nome già usato il backup nuovo sovrascrive quello vecchio.
 - **Prompt dei comandi, non PowerShell:** i comandi di `DEPLOY.md` usano la sintassi di `cmd`.
 - **`dev` non va compilato su Vercel:** vale l'«Ignored Build Step»; se un giorno compare una build di `dev` fallita per `DATABASE_URL`, è l'impostazione che è saltata.
 - **Variabili nuove:** vanno messe in Vercel **prima** del merge su `main`, altrimenti serve un secondo deploy.
