@@ -1,6 +1,5 @@
 import Link from 'next/link'
-import { IconaPlay } from '@/components/icone'
-import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
+import { CardOggi, type GiornataCard } from '@/components/CardOggi'
 import { SessioneInCorso } from '@/components/SessioneInCorso'
 import { stileCarta, stileEtichetta } from '@/components/stili'
 import { giornoConsigliato } from '@/lib/allenamento'
@@ -19,7 +18,11 @@ const ANTEPRIME_IN_HOME = 5
 
 export default async function HomePage() {
   const userId = await richiediUtente()
-  const [giorni, { totale, ultima }, utente] = await Promise.all([leggiScheda(userId), riepilogoHome(userId), leggiUtente(userId)])
+  const [giorni, { totale, ultima, fatteSettimana }, utente] = await Promise.all([
+    leggiScheda(userId),
+    riepilogoHome(userId),
+    leggiUtente(userId),
+  ])
   // Solo per il personal trainer: quanti utenti della sua palestra hanno scelto di condividere la scheda.
   const allievi = utente?.ruolo === 'trainer' && utente.palestra ? await leggiAllievi(utente.palestra) : null
 
@@ -37,11 +40,23 @@ export default async function HomePage() {
     )
   }
 
-  const consigliato = giornoConsigliato(giorni, ultima)
-  // Le miniature degli esercizi di oggi: solo quelli con un'immagine, e gli altri si contano.
-  const conImmagine = consigliato.esercizi.filter((esercizio) => esercizio.immagine !== '')
-  const anteprime = conImmagine.slice(0, ANTEPRIME_IN_HOME)
-  const eserciziInPiu = consigliato.esercizi.length - anteprime.length
+  const consigliato = giornoConsigliato(giorni, ultima, fatteSettimana)
+  // Per la card: ogni giornata con le miniature dei suoi esercizi (solo quelli con un'immagine, gli altri si contano), così
+  // cambiando giornata la card si aggiorna senza richiedere niente al server.
+  const giornate: GiornataCard[] = giorni.map((giorno) => {
+    const anteprime = giorno.esercizi
+      .filter((esercizio) => esercizio.immagine !== '')
+      .slice(0, ANTEPRIME_IN_HOME)
+      .map((esercizio) => ({ id: esercizio.id, immagine: esercizio.immagine, nome: esercizio.nome }))
+    return {
+      id: giorno.id,
+      titolo: giorno.titolo,
+      esercizi: giorno.esercizi.length,
+      anteprime,
+      inPiu: giorno.esercizi.length - anteprime.length,
+    }
+  })
+  const fatte = new Set(fatteSettimana)
 
   return (
     <div className="space-y-7">
@@ -70,47 +85,8 @@ export default async function HomePage() {
         </Link>
       )}
 
-      {/* Prima cosa: cosa fare oggi. */}
-      <section className="relative overflow-hidden rounded-3xl bg-inchiostro p-6 text-su-inchiostro">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-4 -right-2 text-[9rem] leading-none font-extrabold text-accento-chiaro/20"
-        >
-          {consigliato.id}
-        </span>
-        <p className="text-sm font-semibold text-su-inchiostro/70">Oggi tocca a</p>
-        <h1 className="mt-1 max-w-[16rem] text-3xl leading-tight font-extrabold tracking-tight">
-          {consigliato.titolo}
-        </h1>
-        <p className="mt-1 text-sm text-su-inchiostro/70">
-          Allenamento {consigliato.id} · {consigliato.esercizi.length} esercizi
-        </p>
-        {/* Gli esercizi di oggi, in miniatura: si vede subito cosa c'è in programma. */}
-        {anteprime.length > 0 && (
-          <ul aria-label="Esercizi di oggi" className="relative mt-4 flex flex-wrap items-center gap-2">
-            {anteprime.map((esercizio) => (
-              <li key={esercizio.id}>
-                <ImmagineEsercizio src={esercizio.immagine} nome={esercizio.nome} className="size-12 rounded-xl border-0" />
-              </li>
-            ))}
-            {eserciziInPiu > 0 && (
-              <li className="text-sm font-bold text-su-inchiostro/80 tabular-nums">+{eserciziInPiu}</li>
-            )}
-          </ul>
-        )}
-        <div className="relative mt-5 flex flex-wrap items-center gap-3">
-          <Link
-            href={`/sessione?r=${consigliato.id}`}
-            className="inline-flex items-center gap-2 rounded-full bg-accento-chiaro px-5 py-3 font-extrabold text-inchiostro active:opacity-80"
-          >
-            <IconaPlay className="size-4" />
-            Inizia
-          </Link>
-          <Link href={`/scheda?r=${consigliato.id}`} className="px-1 py-3 text-sm font-semibold text-su-inchiostro underline underline-offset-4">
-            Vedi la scheda
-          </Link>
-        </div>
-      </section>
+      {/* Prima cosa: cosa fare oggi. Col pulsante «Cambia» si sceglie un'altra giornata. */}
+      <CardOggi giornate={giornate} consigliata={consigliato.id} fatte={[...fatte]} />
 
       {/* Numeri e ultima seduta in una riga sola. */}
       <section aria-label="Riepilogo" className="flex items-stretch gap-3">
@@ -152,6 +128,7 @@ export default async function HomePage() {
                     <span className="block truncate font-bold">{giorno.titolo}</span>
                     <span className="block text-xs text-muto">
                       {giorno.esercizi.length} esercizi{èConsigliato && ' · consigliata'}
+                      {fatte.has(giorno.id) && ' · fatta'}
                     </span>
                   </span>
                   <span aria-hidden="true" className="text-muto">

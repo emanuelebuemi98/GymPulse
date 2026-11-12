@@ -27,7 +27,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function SchedaPage({ searchParams }: Props) {
   const userId = await richiediUtente()
   const richiesto = primoParametro((await searchParams).r)
-  const [giorni, { ultima }] = await Promise.all([leggiScheda(userId), riepilogoHome(userId)])
+  const [giorni, { ultima, fatteSettimana }] = await Promise.all([leggiScheda(userId), riepilogoHome(userId)])
 
   if (giorni.length === 0) {
     // Non dovrebbe capitare (una scheda ha sempre almeno una giornata), ma un account creato in altri modi potrebbe.
@@ -41,7 +41,7 @@ export default async function SchedaPage({ searchParams }: Props) {
     )
   }
 
-  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)
+  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima, fatteSettimana)
   const riepilogo = riepilogoGiornata(giorno.esercizi)
   const [ultime, sedute] = await Promise.all([
     ultimeVolte(userId, giorno.esercizi.map((e) => e.id)),

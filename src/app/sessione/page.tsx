@@ -19,7 +19,11 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function SessionePage({ searchParams }: Props) {
   const userId = await richiediUtente()
   const richiesto = primoParametro((await searchParams).r)
-  const [giorni, elenco, { ultima }] = await Promise.all([leggiScheda(userId), leggiElenco(userId), riepilogoHome(userId)])
+  const [giorni, elenco, { ultima, fatteSettimana }] = await Promise.all([
+    leggiScheda(userId),
+    leggiElenco(userId),
+    riepilogoHome(userId),
+  ])
 
   if (giorni.length === 0) {
     return (
@@ -32,7 +36,7 @@ export default async function SessionePage({ searchParams }: Props) {
     )
   }
 
-  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima)
+  const giorno = giorni.find((g) => g.id === richiesto) ?? giornoConsigliato(giorni, ultima, fatteSettimana)
   // Le ultime volte servono solo per gli esercizi che la persona ha già (quelli del catalogo non ancora suoi non hanno storia).
   const ultime = await ultimeVolte(userId, elenco.flatMap((voce) => (voce.id === null ? [] : [voce.id])))
 

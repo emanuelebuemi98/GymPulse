@@ -12,14 +12,21 @@ export function indiceGiornoSuccessivo(ultimoIndice: number | null, totaleGiorni
 }
 
 // Giornata da proporre. Ogni settimana (da lunedì, ora di Roma) riparte dalla prima: se l'ultima seduta è di una
-// settimana precedente, o non ce ne sono, si propone la prima. Dentro la settimana si segue l'ordine, cioè la
-// giornata dopo l'ultima registrata. Se l'ultima non è più nella scheda, si riparte dalla prima.
+// settimana precedente, o non ce ne sono, si propone la prima. Dentro la settimana si propone la prima giornata che non è
+// ancora stata fatta (`fatte` sono le sigle fatte da lunedì): così una giornata saltata non si perde, e se si fa la C prima
+// della B, dopo la C si propone la B. Se sono già tutte fatte si segue l'ordine, cioè la giornata dopo l'ultima registrata
+// (se l'ultima non è più nella scheda, si riparte dalla prima).
 export function giornoConsigliato<T extends { id: string }>(
   giorni: T[],
   ultima: { giornoId: string; data: Date } | null,
+  fatte: string[],
   oggi = new Date(),
 ): T {
   if (ultima === null || dataIso(ultima.data) < lunediDi(dataIso(oggi))) return giorni[0]
+
+  const giaFatte = new Set(fatte)
+  const nonFatta = giorni.find((giorno) => !giaFatte.has(giorno.id))
+  if (nonFatta) return nonFatta
 
   const indice = giorni.findIndex((giorno) => giorno.id === ultima.giornoId)
   return giorni[indiceGiornoSuccessivo(indice === -1 ? null : indice, giorni.length)]
