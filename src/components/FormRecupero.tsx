@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { recuperaPassword, type StatoRecupero } from '@/app/login/actions'
+import { CampoPassword } from './CampoPassword'
 import { stileBottoneChiaro, stileBottonePrimario, stileTesto } from './stili'
 
 const iniziale: StatoRecupero = { passo: 'utente', utente: '', errore: null, messaggio: null }
@@ -48,31 +49,17 @@ export function FormRecupero() {
             />
           </label>
 
-          <label className="block space-y-1 text-sm font-semibold text-muto">
-            <span>Nuova password</span>
-            <input
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              maxLength={200}
-              className={`${stileTesto} text-left`}
-            />
-            <span className="block text-xs font-normal">Almeno 8 caratteri.</span>
-          </label>
+          <CampoPassword
+            etichetta="Nuova password"
+            name="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            maxLength={200}
+            nota="Almeno 8 caratteri."
+          />
 
-          <label className="block space-y-1 text-sm font-semibold text-muto">
-            <span>Ripeti la nuova password</span>
-            <input
-              name="conferma"
-              type="password"
-              autoComplete="new-password"
-              required
-              maxLength={200}
-              className={`${stileTesto} text-left`}
-            />
-          </label>
+          <CampoPassword etichetta="Ripeti la nuova password" name="conferma" autoComplete="new-password" required maxLength={200} />
         </>
       )}
 

@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react'
 import { registrati, type StatoRegistrazione } from '@/app/login/actions'
 import { PALESTRE } from '@/lib/palestre'
+import { CampoPassword } from './CampoPassword'
 import { stileBottonePrimario, stileTesto } from './stili'
 
 const iniziale: StatoRegistrazione = { errore: null, nome: '', utente: '', email: '', palestra: '', trainer: false }
@@ -116,48 +117,27 @@ export function FormRegistrazione({ trainerAttivo }: { trainerAttivo: boolean })
       </label>
 
       {trainer && (
-        <label className="block space-y-1 text-sm font-semibold text-muto">
-          <span>Codice d&apos;invito</span>
-          <input
-            name="codice"
-            type="password"
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            required
-            maxLength={200}
-            className={`${stileTesto} text-left`}
-          />
-          <span className="block text-xs font-normal">Te lo dà chi gestisce l&apos;app.</span>
-        </label>
+        <CampoPassword
+          etichetta="Codice d'invito"
+          name="codice"
+          autoComplete="off"
+          required
+          maxLength={200}
+          nota="Te lo dà chi gestisce l'app."
+        />
       )}
 
-      <label className="block space-y-1 text-sm font-semibold text-muto">
-        <span>Password</span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          maxLength={200}
-          className={`${stileTesto} text-left`}
-        />
-        <span className="block text-xs font-normal">Almeno 8 caratteri.</span>
-      </label>
+      <CampoPassword
+        etichetta="Password"
+        name="password"
+        autoComplete="new-password"
+        required
+        minLength={8}
+        maxLength={200}
+        nota="Almeno 8 caratteri."
+      />
 
-      <label className="block space-y-1 text-sm font-semibold text-muto">
-        <span>Ripeti la password</span>
-        <input
-          name="conferma"
-          type="password"
-          autoComplete="new-password"
-          required
-          maxLength={200}
-          className={`${stileTesto} text-left`}
-        />
-      </label>
+      <CampoPassword etichetta="Ripeti la password" name="conferma" autoComplete="new-password" required maxLength={200} />
 
       {stato.errore && (
         <p role="alert" className="rounded-2xl bg-errore/10 p-3 text-sm font-semibold text-errore">

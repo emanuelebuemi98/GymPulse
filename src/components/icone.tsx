@@ -160,3 +160,18 @@ export const IconaScudo = (p: Props) => (
     <path d="M12 9v4M12 16h.01" />
   </Icona>
 )
+
+export const IconaOcchio = (p: Props) => (
+  <Icona {...p}>
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </Icona>
+)
+
+export const IconaOcchioBarrato = (p: Props) => (
+  <Icona {...p}>
+    <path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.1-.9" />
+    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    <path d="M3 3l18 18" />
+  </Icona>
+)

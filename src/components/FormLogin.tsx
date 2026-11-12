@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { accedi, type StatoLogin } from '@/app/login/actions'
+import { CampoPassword } from './CampoPassword'
 import { stileBottonePrimario, stileTesto } from './stili'
 
 const iniziale: StatoLogin = { errore: null }
@@ -27,17 +28,7 @@ export function FormLogin({ da }: { da: string }) {
         />
       </label>
 
-      <label className="block space-y-1 text-sm font-semibold text-muto">
-        <span>Password</span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          maxLength={200}
-          className={`${stileTesto} text-left`}
-        />
-      </label>
+      <CampoPassword etichetta="Password" name="password" autoComplete="current-password" required maxLength={200} />
 
       {stato.errore && (
         <p role="alert" className="rounded-2xl bg-errore/10 p-3 text-sm font-semibold text-errore">

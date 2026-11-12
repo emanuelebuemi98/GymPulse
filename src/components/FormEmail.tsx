@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { gestisciEmail, type StatoEmail } from '@/app/account/actions'
+import { CampoPassword } from './CampoPassword'
 import { stileBottoneChiaro, stileBottonePrimario, stileTesto } from './stili'
 
 const iniziale: StatoEmail = { passo: 'indirizzo', errore: null, messaggio: null, email: null }
@@ -33,17 +34,13 @@ export function FormEmail({ haEmail, utenteId }: { haEmail: boolean; utenteId: n
             <span className="block text-xs font-normal">Ti mando un codice per confermarlo.</span>
           </label>
 
-          <label className="block space-y-1 text-sm font-semibold text-muto">
-            <span>La tua password</span>
-            <input
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              maxLength={200}
-              className={`${stileTesto} text-left`}
-            />
-            <span className="block text-xs font-normal">La chiedo perché l&apos;email permette di cambiare la password.</span>
-          </label>
+          <CampoPassword
+            etichetta="La tua password"
+            name="password"
+            autoComplete="current-password"
+            maxLength={200}
+            nota="La chiedo perché l'email permette di cambiare la password."
+          />
         </>
       ) : (
         <>
