@@ -138,9 +138,14 @@ model Esercizio {
 }
 
 // Un esercizio dentro una giornata, con il suo obiettivo. È la parte modificabile dall'app.
-// tipo = "serie":  serie × ripMin-ripMax, con recuperoSec
-// tipo = "totale": ripTotali da accumulare su più serie
-// tipo = "libero": da serieMin a serieMax serie a scelta
+// tipo = "serie": serie × ripMin-ripMax, con recuperoSec. È l'unico tipo (il CHECK "VoceScheda_tipo" lo impone): «ripetizioni totali»
+//   e «serie a scelta» non ci sono più, e le colonne ripTotali, serieMin e serieMax restano vuote (tenerle evita di rompere il codice
+//   di prima, che le legge ancora).
+// ripSerie: le ripetizioni di ogni serie separate da virgola ("12,10,8,6"); vuoto = uguali per tutte, tra ripMin e ripMax
+//   (ripMin e ripMax restano il minimo e il massimo, così chi legge solo quelli vede comunque un intervallo giusto).
+// gruppo: esercizi consecutivi con lo stesso numero si fanno senza pausa (superset, triset, gigantset); recuperoGruppoSec è
+//   il recupero dopo ogni giro del gruppo, uguale su tutti i suoi esercizi. Vuoti entrambi per un esercizio singolo.
+//   I CHECK "VoceScheda_tipo", "VoceScheda_ripSerie" e "VoceScheda_gruppo" stanno nella migrazione: Prisma non li descrive.
 model VoceScheda {
   id           String       @id @default(cuid())
   userId       Int
@@ -157,6 +162,9 @@ model VoceScheda {
   serieMax     Int?
   nota         String?
   incrementoKg Float?
+  ripSerie          String?
+  gruppo            Int?
+  recuperoGruppoSec Int?
   giorno       GiornoScheda @relation(fields: [userId, giornoId], references: [userId, id], onDelete: Cascade)
   esercizio    Esercizio    @relation(fields: [userId, esercizioId], references: [userId, id], onDelete: NoAction)
 
