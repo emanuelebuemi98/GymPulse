@@ -1,9 +1,17 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaScheda } from '@/app/actions'
 import { salvaSchedaAllievo } from '@/app/trainer/actions'
+import {
+  eliminaBozzaScheda,
+  improntaScheda,
+  leggiBozzaScheda,
+  ripulisciBozzeSchedeScadute,
+  salvaBozzaScheda,
+  type BozzaScheda,
+} from '@/lib/bozza-scheda'
 import type { Giorno } from '@/lib/scheda-tipi'
 import {
   nuovaVoceForm,
@@ -15,6 +23,7 @@ import {
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
 import type { VoceElenco } from '@/lib/tipi'
 import { ElencoEsercizi } from './ElencoEsercizi'
+import { FinestraConferma } from './FinestraConferma'
 import { ImmagineEsercizio } from './ImmagineEsercizio'
 import { IconaCestino, IconaGiu, IconaSu } from './icone'
 import { IstruzioniEsercizio } from './IstruzioniEsercizio'
@@ -39,11 +48,88 @@ const etichetteTipo: Record<TipoVoce, string> = {
 
 export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/scheda' }: Props) {
   const router = useRouter()
+  // Di chi è la scheda: la propria, oppure quella dell'allievo se a modificarla è il suo personal trainer.
+  const proprietarioId = allievoId ?? utenteId
   const [titolo, setTitolo] = useState(giorno.titolo)
   const [voci, setVoci] = useState<VoceForm[]>(() => giorno.esercizi.map(voceFormDaEsercizio))
   const [sceltaAperta, setSceltaAperta] = useState(false)
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
+
+  // La bozza. `salvata` è la scheda com'è nel database quando si apre l'editor, e `versione` il suo ultimo momento di modifica:
+  // servono a capire se c'è qualcosa da non perdere e se la bozza è ancora attuale. Si calcolano una volta sola.
+  const [salvata] = useState(() => improntaScheda(giorno.titolo, giorno.esercizi.map(voceFormDaEsercizio)))
+  const [versione] = useState(() => giorno.modificata?.il ?? null)
+  const [bozzaPronta, setBozzaPronta] = useState(false)
+  // 'ripresa': le modifiche non salvate sono state rimesse. 'conflitto': la scheda è cambiata da quando le avevi scritte, e la
+  // bozza aspetta una scelta (daConfrontare) invece di essere applicata in silenzio.
+  const [avviso, setAvviso] = useState<'ripresa' | 'conflitto' | null>(null)
+  const [daConfrontare, setDaConfrontare] = useState<BozzaScheda | null>(null)
+  const [conferma, setConferma] = useState<'annulla' | 'ricomincia' | null>(null)
+  // Dopo un salvataggio o un annullamento voluti la bozza non deve più essere scritta.
+  const chiuso = useRef(false)
+
+  const modificata = improntaScheda(titolo, voci) !== salvata
+
+  // All'apertura riprende la bozza di questa giornata, se c'è: si legge qui e non nello stato iniziale perché il server non ha
+  // il localStorage e le due versioni della pagina non coinciderebbero.
+  useEffect(() => {
+    ripulisciBozzeSchedeScadute()
+    const bozza = leggiBozzaScheda(utenteId, proprietarioId, giorno.id)
+    if (bozza) {
+      if (improntaScheda(bozza.titolo, bozza.voci) === salvata) {
+        // Uguale alla scheda salvata: non c'è niente da tenere.
+        eliminaBozzaScheda(utenteId, proprietarioId, giorno.id)
+      } else if (bozza.versione === versione) {
+        setTitolo(bozza.titolo)
+        setVoci(bozza.voci)
+        setAvviso('ripresa')
+      } else {
+        setDaConfrontare(bozza)
+        setAvviso('conflitto')
+      }
+    }
+    setBozzaPronta(true)
+    // La bozza si legge una volta sola all'apertura.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [utenteId, proprietarioId, giorno.id])
+
+  // A ogni modifica la bozza si riscrive; se la scheda torna uguale a quella salvata, la bozza non serve più. Finché c'è da
+  // scegliere cosa fare di una bozza vecchia non si scrive niente, per non cancellarla.
+  useEffect(() => {
+    if (!bozzaPronta || chiuso.current || avviso === 'conflitto') return
+    if (!modificata) eliminaBozzaScheda(utenteId, proprietarioId, giorno.id)
+    else salvaBozzaScheda(utenteId, proprietarioId, giorno.id, { titolo, voci, versione })
+  }, [bozzaPronta, avviso, modificata, titolo, voci, versione, utenteId, proprietarioId, giorno.id])
+
+  function riparti() {
+    setTitolo(giorno.titolo)
+    setVoci(giorno.esercizi.map(voceFormDaEsercizio))
+    eliminaBozzaScheda(utenteId, proprietarioId, giorno.id)
+    setAvviso(null)
+    setErrore(null)
+    setConferma(null)
+  }
+
+  function usaBozzaVecchia() {
+    if (!daConfrontare) return
+    setTitolo(daConfrontare.titolo)
+    setVoci(daConfrontare.voci)
+    setDaConfrontare(null)
+    setAvviso('ripresa')
+  }
+
+  function tieniSalvata() {
+    eliminaBozzaScheda(utenteId, proprietarioId, giorno.id)
+    setDaConfrontare(null)
+    setAvviso(null)
+  }
+
+  function esci() {
+    chiuso.current = true
+    eliminaBozzaScheda(utenteId, proprietarioId, giorno.id)
+    router.push(`${base}?r=${giorno.id}`)
+  }
 
   // Gli esercizi già in questa giornata non si propongono di nuovo.
   const esclusi = new Set(
@@ -87,6 +173,9 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
           ? await salvaScheda(utenteId, scheda, versione)
           : await salvaSchedaAllievo(utenteId, allievoId, scheda, versione)
       if ('errore' in esito) return setErrore(esito.errore)
+      // Salvata: la bozza non serve più (e se il salvataggio fallisce resta, per riprovare senza riscrivere).
+      chiuso.current = true
+      eliminaBozzaScheda(utenteId, proprietarioId, giorno.id)
       router.push(`${base}?r=${giorno.id}`)
       router.refresh()
     })
@@ -96,10 +185,45 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold tracking-tight">Personalizza {giorno.id}</h1>
-        <button type="button" onClick={() => router.push(`${base}?r=${giorno.id}`)} className={stileBottoneChiaro}>
+        <button
+          type="button"
+          // Con modifiche non salvate si chiede conferma: uscire per sbaglio è proprio il caso da evitare.
+          onClick={() => (modificata ? setConferma('annulla') : esci())}
+          className={stileBottoneChiaro}
+        >
           Annulla
         </button>
       </div>
+
+      {/* La bozza è stata rimessa: si dice, e si può ricominciare dalla scheda salvata. */}
+      {avviso === 'ripresa' && (
+        <section role="status" className="space-y-2 rounded-2xl bg-ok/10 p-3 text-sm">
+          <p className="font-semibold text-testo">Ho ripreso le modifiche che non avevi salvato.</p>
+          <p className="text-muto">Premi «Salva scheda» per tenerle. Se non le vuoi, ricomincia dalla scheda salvata.</p>
+          <button type="button" onClick={() => setConferma('ricomincia')} className={stileBottoneChiaro}>
+            Ricomincia dalla scheda salvata
+          </button>
+        </section>
+      )}
+
+      {/* La scheda è cambiata dopo che hai scritto la bozza (per esempio l'ha modificata il tuo personal trainer): non si
+          sovrascrive niente di nascosto, si sceglie. */}
+      {avviso === 'conflitto' && (
+        <section role="alert" className="space-y-2 rounded-2xl bg-attenzione/15 p-3 text-sm">
+          <p className="font-semibold text-testo">Questa giornata è cambiata da quando avevi iniziato a modificarla.</p>
+          <p className="text-muto">
+            Hai delle modifiche non salvate, scritte sulla scheda di prima. Se le riprendi, salvando sostituisci la scheda attuale.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={tieniSalvata} className={stileBottoneChiaro}>
+              Usa la scheda attuale
+            </button>
+            <button type="button" onClick={usaBozzaVecchia} className={stileBottoneChiaro}>
+              Riprendi le mie modifiche
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <label className="block space-y-1 text-sm text-muto">
@@ -210,6 +334,30 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
       <button type="button" onClick={salva} disabled={inCorso} className={stileBottonePrimario}>
         {inCorso ? 'Salvataggio…' : 'Salva scheda'}
       </button>
+
+      <FinestraConferma
+        aperta={conferma === 'annulla'}
+        titolo="Uscire senza salvare?"
+        testoConferma="Esci e butta le modifiche"
+        testoAnnulla="Resta qui"
+        pericolo
+        alConferma={esci}
+        alAnnulla={() => setConferma(null)}
+      >
+        <p>Le modifiche che hai fatto a questa giornata andranno perse.</p>
+      </FinestraConferma>
+
+      <FinestraConferma
+        aperta={conferma === 'ricomincia'}
+        titolo="Ricominciare dalla scheda salvata?"
+        testoConferma="Ricomincia"
+        testoAnnulla="Tieni le modifiche"
+        pericolo
+        alConferma={riparti}
+        alAnnulla={() => setConferma(null)}
+      >
+        <p>Le modifiche non salvate andranno perse.</p>
+      </FinestraConferma>
     </div>
   )
 }

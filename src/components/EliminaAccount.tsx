@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { eliminaAccount } from '@/app/account/actions'
 import { eliminaBozzeDi } from '@/lib/bozza'
+import { eliminaBozzeSchedeDi } from '@/lib/bozza-scheda'
 import { FinestraConferma } from './FinestraConferma'
 import { IconaCestino, IconaScarica } from './icone'
 import { stileBottoneChiaro } from './stili'
@@ -36,6 +37,7 @@ export function EliminaAccount({ utenteId, dati, èTrainer }: Props) {
         return setErrore(esito.errore)
       }
       eliminaBozzeDi(utenteId)
+      eliminaBozzeSchedeDi(utenteId)
       window.location.assign('/?account=eliminato')
     })
   }
