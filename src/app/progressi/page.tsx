@@ -99,8 +99,8 @@ async function Panoramica({
         <Numero valore={String(generale.sedute)} etichetta={generale.sedute === 1 ? 'seduta' : 'sedute'} />
         <Numero valore={formatNumero(generale.serie, 0)} etichetta="serie fatte" />
         <Numero valore={formatNumero(generale.volumeKg / 1000, 1)} etichetta="tonnellate sollevate" />
-        {generale.minuti > 0 ? (
-          <Numero valore={formatDurata(generale.minuti)} etichetta="in palestra" />
+        {generale.secondi > 0 ? (
+          <Numero valore={formatDurataTotale(Math.round(generale.secondi / 60))} etichetta="in palestra" />
         ) : (
           <Numero valore={String(generale.settimaneDiFila)} etichetta={generale.settimaneDiFila === 1 ? 'settimana di fila' : 'settimane di fila'} />
         )}
@@ -221,8 +221,9 @@ function Numero({ valore, etichetta }: { valore: string; etichetta: string }) {
   )
 }
 
-// 135 minuti → '2 h 15 min'; meno di un'ora → '45 min'.
-function formatDurata(minuti: number): string {
+// Il totale di tutte le sedute, in ore e minuti (i secondi di somme così lunghe sono rumore): 135 minuti → '2 h 15 min';
+// meno di un'ora → '45 min'.
+function formatDurataTotale(minuti: number): string {
   const ore = Math.floor(minuti / 60)
   const resto = minuti % 60
   if (ore === 0) return `${resto} min`

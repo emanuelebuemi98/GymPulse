@@ -140,7 +140,7 @@ export type RiepilogoGenerale = {
   sedute: number
   serie: number
   volumeKg: number
-  minuti: number
+  secondi: number
   settimaneDiFila: number
 }
 
@@ -148,7 +148,7 @@ export type RiepilogoGenerale = {
 // zero). Le settimane di fila si contano dall'ultima verso il passato fermandosi alla prima senza sedute; se l'ultima
 // settimana è a zero è quella in corso, appena cominciata, e non interrompe la serie.
 export function riepilogoGenerale(
-  sedute: { numeroSerie: number; volumeKg: number; durataMinuti: number | null }[],
+  sedute: { numeroSerie: number; volumeKg: number; durataSecondi: number | null }[],
   settimane: Settimana[],
 ): RiepilogoGenerale {
   const daContare = settimane.length > 0 && settimane[settimane.length - 1].sedute === 0 ? settimane.slice(0, -1) : settimane
@@ -159,7 +159,7 @@ export function riepilogoGenerale(
     sedute: sedute.length,
     serie: sedute.reduce((totale, s) => totale + s.numeroSerie, 0),
     volumeKg: sedute.reduce((totale, s) => totale + s.volumeKg, 0),
-    minuti: sedute.reduce((totale, s) => totale + (s.durataMinuti ?? 0), 0),
+    secondi: sedute.reduce((totale, s) => totale + (s.durataSecondi ?? 0), 0),
     settimaneDiFila,
   }
 }

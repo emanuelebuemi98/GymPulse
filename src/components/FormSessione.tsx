@@ -6,6 +6,7 @@ import { salvaSessione } from '@/app/actions'
 import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
 import { formatTimer, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
 import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
+import { secondiDaTimer } from '@/lib/durata'
 import { formatDataNumerica, formatNumero } from '@/lib/formato'
 import { parseIntero, parseNumero } from '@/lib/numeri'
 import { suggerimentoSerie, suggerisciCarichi, type SuggerimentoCarico } from '@/lib/progressi'
@@ -14,6 +15,7 @@ import { ElencoEsercizi } from './ElencoEsercizi'
 import { ImmagineEsercizio } from './ImmagineEsercizio'
 import { IconaCestino, IconaMeno, IconaPiu, IconaSpunta } from './icone'
 import { IstruzioniEsercizio } from './IstruzioniEsercizio'
+import { TempoTrascorso } from './TempoTrascorso'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
 type RigaSerie = { pesoKg: string; ripetizioni: string; confermata: boolean }
@@ -32,12 +34,13 @@ type EsSessione = {
   serie: RigaSerie[]
 }
 
-// Una bozza salvata quando c'erano anche i dati dell'orologio ha dei campi in più: si ignorano.
+// Una bozza salvata quando c'erano anche i dati dell'orologio, o il campo dei minuti della durata, ha dei campi in più: si
+// ignorano. `inizio` è l'ora in cui è iniziata la sessione (millisecondi): le bozze di prima non ce l'hanno.
 type Bozza = {
   esercizi: EsSessione[]
   data: string
   note: string
-  durata: string
+  inizio?: number
 }
 
 type Props = {
@@ -77,7 +80,6 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
   const [esercizi, setEsercizi] = useState<EsSessione[]>(() => giorno.esercizi.map(esercizioIniziale))
   const [data, setData] = useState(oggi)
   const [note, setNote] = useState('')
-  const [durata, setDurata] = useState('')
   const [errore, setErrore] = useState<string | null>(null)
   const [scaduta, setScaduta] = useState(false)
   const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
@@ -85,6 +87,9 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
   const [timer, setTimer] = useState<{ fine: number; totale: number } | null>(null)
   const [restano, setRestano] = useState(0)
   const [bozzaPronta, setBozzaPronta] = useState(false)
+  // Quando è iniziata la sessione: serve a calcolare la durata. Si imposta all'apertura, insieme alla bozza (il server non
+  // vede l'orologio del telefono).
+  const [inizio, setInizio] = useState<number | null>(null)
   const [inCorso, startTransition] = useTransition()
 
   // All'apertura riprende la bozza di questa giornata, se c'è: si legge qui e non nello stato iniziale
@@ -117,12 +122,16 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
       setEsercizi(riportati)
       setData(bozza.data)
       setNote(bozza.note)
-      setDurata(bozza.durata)
+      // L'allenamento è già iniziato solo se c'è almeno una serie confermata: una pagina aperta e poi lasciata lì non conta.
+      const iniziata = riportati.some((es) => es.serie.some((riga) => riga.confermata))
+      setInizio(iniziata && typeof bozza.inizio === 'number' && bozza.inizio <= Date.now() ? bozza.inizio : Date.now())
       if (persi.length > 0) {
         setErrore(
           `Questi esercizi erano scritti a mano e non si trovano più nell'elenco, quindi li ho tolti dalla bozza: ${persi.join(', ')}. Se avevi serie confermate, aggiungi l'esercizio giusto dall'elenco e riscrivile.`,
         )
       }
+    } else {
+      setInizio(Date.now())
     }
     setBozzaPronta(true)
     // La bozza si legge una volta sola all'apertura: l'elenco non cambia mentre si allena.
@@ -130,9 +139,9 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
   }, [utenteId, giorno.id])
 
   useEffect(() => {
-    if (!bozzaPronta) return
-    salvaBozza(utenteId, giorno.id, { esercizi, data, note, durata } satisfies Bozza)
-  }, [bozzaPronta, utenteId, giorno.id, esercizi, data, note, durata])
+    if (!bozzaPronta || inizio === null) return
+    salvaBozza(utenteId, giorno.id, { esercizi, data, note, inizio } satisfies Bozza)
+  }, [bozzaPronta, utenteId, giorno.id, esercizi, data, note, inizio])
 
   useEffect(() => {
     if (!timer) return
@@ -154,7 +163,6 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
 
   const righeTotali = esercizi.reduce((totale, e) => totale + e.serie.length, 0)
   const righeConfermate = esercizi.reduce((totale, e) => totale + e.serie.filter((s) => s.confermata).length, 0)
-  const durataMinuti = parseIntero(durata)
 
   function ultimaDi(es: EsSessione) {
     return es.esercizioId ? ultime[es.esercizioId] : undefined
@@ -268,8 +276,6 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     setScaduta(false)
     setErroreEsercizio(null)
 
-    if (durata.trim() !== '' && durataMinuti === null) return setErrore('La durata deve essere un numero intero di minuti')
-
     const invio = esercizi.map((es) => ({
       esercizioId: es.esercizioId,
       catalogoId: es.esercizioId === null ? (es.catalogoId ?? null) : null,
@@ -280,6 +286,9 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
 
     if (invio.every((es) => es.serie.length === 0)) return setErrore('Conferma almeno una serie con ✓')
 
+    // La durata è il tempo misurato dal cronometro, in secondi (niente se la seduta è di un altro giorno).
+    const durataDaSalvare = secondiDaTimer(inizio, Date.now(), data, oggi)
+
     startTransition(async () => {
       let esito: Awaited<ReturnType<typeof salvaSessione>>
       try {
@@ -287,7 +296,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
           giornoId: giorno.id,
           data,
           note: note.trim() === '' ? null : note,
-          durataMinuti,
+          durataSecondi: durataDaSalvare,
           esercizi: invio,
         })
       } catch {
@@ -456,16 +465,20 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Durata</h2>
-        <label className="block space-y-1 text-sm text-muto">
-          <span>Minuti (facoltativo)</span>
-          <input
-            inputMode="numeric"
-            placeholder="60"
-            value={durata}
-            onChange={(e) => setDurata(e.target.value)}
-            className={stileInput}
-          />
-        </label>
+        {/* Il cronometro: la durata si salva da sola, in ore, minuti e secondi, quando si salva la seduta. */}
+        {inizio !== null && data === oggi ? (
+          <>
+            <p className="flex items-baseline justify-between gap-3 rounded-2xl bg-carta-alta px-4 py-3">
+              <span className="text-sm font-semibold text-muto">Tempo di questa sessione</span>{' '}
+              <span className="text-3xl leading-none font-extrabold text-accento">
+                <TempoTrascorso inizio={inizio} />
+              </span>
+            </p>
+            <p className="text-xs text-muto">Si salva da solo nello storico quando salvi la seduta.</p>
+          </>
+        ) : (
+          <p className="text-sm text-muto">Hai scelto un altro giorno: la durata non si salva, perché il cronometro misura la sessione di oggi.</p>
+        )}
       </section>
 
       {errore && (

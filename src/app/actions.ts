@@ -36,7 +36,7 @@ export async function salvaSessione(
   const esito = validaSessione(input)
   if (!esito.ok) return { errore: esito.errore }
 
-  const { giornoId, note, durataMinuti } = esito.dati
+  const { giornoId, note, durataSecondi } = esito.dati
   // Gli esercizi senza serie confermate non vengono salvati (e non ne nasce uno nuovo tra quelli della persona).
   const esercizi = esito.dati.esercizi.filter((esercizio) => esercizio.serie.length > 0)
 
@@ -69,7 +69,7 @@ export async function salvaSessione(
         giornoId,
         data: esito.istante,
         note: note ? note : null,
-        durataMinuti,
+        durataSecondi,
         // Dentro una creazione annidata lo userId delle serie viene dalla seduta: indicarlo di nuovo è un errore.
         serie: { create: serie },
       },

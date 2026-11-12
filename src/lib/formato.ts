@@ -87,6 +87,27 @@ export function mezzanotteSuccessiva(istante: Date): Date {
   return new Date(istante.getTime() + 24 * 3_600_000)
 }
 
+// Tempo trascorso, come su un cronometro: 754 → "12:34", 3912 → "1:05:12".
+export function formatTrascorso(secondi: number): string {
+  const totale = Math.max(0, Math.floor(secondi))
+  const ore = Math.floor(totale / 3600)
+  const minuti = Math.floor((totale % 3600) / 60)
+  const resto = String(totale % 60).padStart(2, '0')
+  return ore > 0 ? `${ore}:${String(minuti).padStart(2, '0')}:${resto}` : `${minuti}:${resto}`
+}
+
+// Durata di una seduta in ore, minuti e secondi, per lo storico: 45 → "45 s", 754 → "12 min 34 s", 3912 → "1 h 5 min 12 s".
+// Si parte dall'unità più grande che serve e si arriva sempre ai secondi.
+export function formatDurata(secondi: number): string {
+  const totale = Math.max(0, Math.round(secondi))
+  const ore = Math.floor(totale / 3600)
+  const minuti = Math.floor((totale % 3600) / 60)
+  const resto = totale % 60
+  if (ore > 0) return `${ore} h ${minuti} min ${resto} s`
+  if (minuti > 0) return `${minuti} min ${resto} s`
+  return `${resto} s`
+}
+
 export function formatNumero(valore: number, decimali = 1): string {
   return valore.toLocaleString('it-IT', { maximumFractionDigits: decimali })
 }

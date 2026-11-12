@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
-import { formatDataLunga, formatNumero } from '@/lib/formato'
+import { formatDataLunga, formatDurata, formatNumero } from '@/lib/formato'
 import { elencoSessioni } from '@/lib/storico'
 import { richiediUtente } from '@/lib/accesso'
 
@@ -55,7 +55,12 @@ export default async function StoricoPage() {
                   <span className="block text-sm text-muto">
                     {sessione.numeroEsercizi} esercizi · {sessione.numeroSerie} serie
                     {sessione.volumeKg > 0 && ` · ${formatNumero(sessione.volumeKg, 0)} kg`}
-                    {sessione.durataMinuti !== null && ` · ${sessione.durataMinuti} min`}
+                    {sessione.durataSecondi !== null && (
+                      <>
+                        {' · '}
+                        <span className="whitespace-nowrap">{formatDurata(sessione.durataSecondi)}</span>
+                      </>
+                    )}
                   </span>
                   {sessione.anteprime.length > 0 && (
                     <span className="flex items-center gap-1.5 pt-1">

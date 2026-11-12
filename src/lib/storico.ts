@@ -1,24 +1,34 @@
 import { db } from './db'
-import type { SerieConGruppo } from './panoramica'
+import { dataIso } from './formato'
+import { lunediDi, type SerieConGruppo } from './panoramica'
 import { calcolaRecord, massimoKg, pesoTotaleKg, volumeSerie, type RecordEsercizio } from './progressi'
 import type { SerieRegistrata, UltimeVolte } from './tipi'
 
 // Quante miniature di esercizi mostra ogni card dello storico; gli altri esercizi si contano ("+4").
 const ANTEPRIME_IN_STORICO = 4
 
-// Conteggi e ultima seduta per la home.
-export async function riepilogoHome(userId: number) {
-  const [totale, ultima] = await Promise.all([
+// Conteggi e ultima seduta per la home, più le giornate già fatte questa settimana (da lunedì, ora di Roma).
+export async function riepilogoHome(userId: number, oggi = new Date()) {
+  // Si leggono le sedute degli ultimi 8 giorni e si tengono in memoria solo quelle da lunedì: il lunedì di Roma può cadere
+  // fino a 6 giorni fa e il fuso sposta di poche ore, quindi 8 giorni bastano sempre e non c'è un errore di confine.
+  const [totale, ultima, recenti] = await Promise.all([
     db.sessione.count({ where: { userId } }),
     db.sessione.findFirst({
       where: { userId },
       orderBy: { data: 'desc' },
       include: { giorno: true, serie: { select: { esercizioId: true } } },
     }),
+    db.sessione.findMany({
+      where: { userId, data: { gte: new Date(oggi.getTime() - 8 * 86_400_000) } },
+      select: { giornoId: true, data: true },
+    }),
   ])
+  const lunedi = lunediDi(dataIso(oggi))
+  const fatteSettimana = [...new Set(recenti.filter((seduta) => dataIso(seduta.data) >= lunedi).map((seduta) => seduta.giornoId))]
 
   return {
     totale,
+    fatteSettimana,
     ultima: ultima && {
       id: ultima.id,
       data: ultima.data,
@@ -62,7 +72,7 @@ export async function elencoSessioni(userId: number) {
       numeroEsercizi: esercizi.size,
       numeroSerie: sessione.serie.length,
       volumeKg: volumeSerie(sessione.serie),
-      durataMinuti: sessione.durataMinuti,
+      durataSecondi: sessione.durataSecondi,
       datiIniziali: sessione.datiIniziali,
       anteprime: conImmagine.slice(0, ANTEPRIME_IN_STORICO),
       eserciziInPiu: Math.max(0, esercizi.size - ANTEPRIME_IN_STORICO),
@@ -105,7 +115,7 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
     data: sessione.data,
     giornoId: sessione.giornoId,
     giornoTitolo: sessione.giorno.titolo,
-    durataMinuti: sessione.durataMinuti,
+    durataSecondi: sessione.durataSecondi,
     note: sessione.note,
     datiIniziali: sessione.datiIniziali,
     esercizi: [...gruppi.values()],

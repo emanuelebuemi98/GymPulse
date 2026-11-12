@@ -5,7 +5,7 @@ import { EliminaSessione } from '@/components/EliminaSessione'
 import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
-import { formatData, formatDataLunga, formatNumero } from '@/lib/formato'
+import { formatData, formatDataLunga, formatDurata, formatNumero } from '@/lib/formato'
 import { dettaglioSessione } from '@/lib/storico'
 import { idDaParametro } from '@/lib/url'
 import { richiediUtente, utenteCorrente } from '@/lib/accesso'
@@ -38,7 +38,12 @@ export default async function DettaglioSessionePage({ params }: Props) {
         <h1 className="mt-2 text-2xl font-extrabold tracking-tight">{formatDataLunga(sessione.data)}</h1>
         <p className="text-muto">
           Allenamento {sessione.giornoId} · {sessione.giornoTitolo}
-          {sessione.durataMinuti !== null && ` · ${sessione.durataMinuti} min`}
+          {sessione.durataSecondi !== null && (
+            <>
+              {' · '}
+              <span className="whitespace-nowrap">{formatDurata(sessione.durataSecondi)}</span>
+            </>
+          )}
         </p>
         {sessione.datiIniziali && (
           <div className="flex flex-wrap gap-2 pt-2">

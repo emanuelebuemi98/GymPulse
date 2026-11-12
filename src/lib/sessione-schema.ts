@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { DURATA_MASSIMA_SECONDI } from './durata'
 import { istanteDaData } from './formato'
 
 // Regole per una sessione registrata. Il browser non è fidato: il server ricontrolla tutto.
@@ -29,20 +30,20 @@ const esercizioSchema = z
     message: 'Scegli ogni esercizio dall’elenco: quelli scritti a mano non si salvano più',
   })
 
-// Note e durata hanno le stesse regole quando la seduta arriva dal form e quando arriva da un file CSV.
+// Note e durata hanno le stesse regole quando la seduta arriva dal form e quando arriva da un file CSV. La durata è in secondi.
 export const noteSchema = z.string().trim().max(500, 'Le note sono troppo lunghe').nullable()
 export const durataSchema = z
   .number({ error: 'Durata non valida' })
-  .int('La durata deve essere in minuti interi')
-  .min(1, 'La durata deve essere di almeno 1 minuto')
-  .max(600, 'Durata troppo lunga')
+  .int('La durata deve essere in secondi interi')
+  .min(1, 'La durata deve essere di almeno 1 secondo')
+  .max(DURATA_MASSIMA_SECONDI, 'Durata troppo lunga')
   .nullable()
 
 const sessioneSchema = z.object({
   giornoId: z.string().min(1, 'Giorno mancante'),
   data: z.string(),
   note: noteSchema,
-  durataMinuti: durataSchema,
+  durataSecondi: durataSchema,
   esercizi: z.array(esercizioSchema).max(50),
 })
 
