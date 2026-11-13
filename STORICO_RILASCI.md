@@ -15,8 +15,9 @@ Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per ri
 | 3 | 10 nov 2026 | `b62c6a5` | Email di qualunque fornitore, catalogo per categoria, scheda da file CSV | 1 | riuscito (e un nuovo deploy l'11 nov) |
 | 4 | 11 nov 2026 | `1e6cce2` | **Personal trainer e palestre**, un solo trainer per palestra, eliminazione dell'account, note in sessione | 2 | riuscito |
 | 5 | 12 nov 2026 | `f8374da` | **Password visibile**, **cronometro con la durata in secondi**, **scelta della giornata** da fare | 1 | riuscito |
+| 6 | 12 nov 2026 | `198e206` | **Salvataggio automatico della scheda**, **serie fisse e serie piramidale**, **superset, triset e gigantset**, un solo tipo di obiettivo | 2 | riuscito |
 
-Nei rilasci 2, 3, 4 e 5 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata.
+Nei rilasci 2, 3, 4, 5 e 6 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata.
 
 ---
 
@@ -134,6 +135,30 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
   - 12 nov 10:49, merge su `main`: deploy **riuscito** (partito alle 10:49:18, finito alle 10:49:38).
 - **Problemi incontrati:** nessuno segnalato.
 - **Controlli online del passo 11:** dichiarati andati bene ("tutto su"); i singoli esiti non sono registrati.
+
+---
+
+## Rilascio 6 — 12 novembre 2026: scheda salvata da sola, serie piramidale e super serie
+
+- **Commit:** `198e206` (6 commit dal rilascio 5). Il merge è stato un avanzamento semplice: `main` e `dev` sono finiti sullo stesso commit, senza un commit di merge.
+- **Cosa conteneva:**
+  - **scheda salvata da sola**: mentre si modifica una giornata, le modifiche si salvano nel browser (24 ore); uscendo per sbaglio si ritrovano con l'avviso «Ho ripreso le modifiche che non avevi salvato». «Annulla» chiede conferma se ci sono modifiche, e se la giornata è cambiata nel frattempo (per esempio dal personal trainer) si sceglie tra la scheda attuale e le proprie modifiche;
+  - **serie fisse e serie piramidale**: sotto «Ripetizioni» due tasti, all'inizio spenti. **SERIE FISSE**: un minimo e un massimo uguali per tutte le serie. **SERIE PIRAMIDALE**: una ripetizione per ogni serie, a scendere o a salire (12-10-8-6). La scheda mostra «4 × 12-10-8-6», in sessione ogni riga ha le ripetizioni della sua serie e il carico a salire aumenta quando ogni serie ha raggiunto le sue;
+  - **superset, triset e gigantset**: il pannello «Super Serie» (in alto, prima dell'elenco) mette insieme da 2 a 10 esercizi da fare senza pausa tra uno e l'altro, con un recupero del gruppo che parte a fine giro. Il nome si ricava dal numero di esercizi (2, 3, 4 o più). In sessione il timer non parte tra un esercizio e l'altro. Funziona anche per il personal trainer sulla scheda dell'allievo, e nel file Excel;
+  - **un solo tipo di obiettivo**: «ripetizioni totali» e «serie a scelta» sono tolti; il file Excel li accetta ancora e li legge come 3 × 8-10;
+  - il file Excel ha tre colonne in coda (`rip_per_serie`, `gruppo`, `recupero_gruppo_sec`); la pagina iniziale ha una schermata e una funzione nuove.
+- **Migrazioni (2):**
+  - `ripetizioni_per_serie_e_super_serie`: aggiunge le colonne `ripSerie`, `gruppo` e `recuperoGruppoSec` a `VoceScheda` e due controlli (`VoceScheda_ripSerie`, `VoceScheda_gruppo`). Solo colonne e controlli: il codice vecchio funziona anche sul database nuovo;
+  - `un_solo_tipo_di_obiettivo`: **cambia dei valori**. Gli esercizi con i due tipi tolti diventano «serie × ripetizioni» da 3 serie, 8-10 ripetizioni e 90 secondi di recupero (nel database locale erano Jackknife e Sollevamento gambe alla sbarra), e aggiunge il controllo `VoceScheda_tipo` (solo «serie»). Le colonne `ripTotali`, `serieMin` e `serieMax` restano, vuote.
+- **Catalogo e immagini:** invariati (passi 6 e 7 saltati).
+- **Variabili su Vercel:** nessuna nuova.
+- **Passi eseguiti** (dichiarati eseguiti, nessun problema segnalato): backup di Neon con `pg_dump` 18 (`neon-prima-serie.dump`), `migrate status`, `db:deploy` con le 2 migrazioni, catalogo saltato, merge su `main`. L'esito scritto di `migrate status` e di `db:deploy`, e quanti esercizi su Neon avevano i tipi tolti, non sono registrati.
+- **Provato prima del rilascio, in locale e su copie del database:** i due tasti spenti all'inizio, che aprono e richiudono i campi; la serie piramidale (campi che seguono il numero di serie, valori che restano, passaggio da un tasto all'altro); superset, triset e gigantset (creazione, sposta il blocco intero o un esercizio dentro il gruppo, scioglimento); il timer che parte solo a giro completo, anche confermando fuori ordine; il personal trainer sulla scheda dell'allievo; la bozza che ritrova i gruppi; un file Excel esportato e reimportato, e uno scritto con i vecchi tipi; la migrazione che converte i due tipi su una copia (e il database che rifiuta un tipo diverso da «serie»).
+- **Vercel** (ora italiana):
+  - 12 nov 18:16, push di `dev`: **annullata** («Canceled by Ignored Build Step»), com'è voluto;
+  - 12 nov 18:24, merge su `main`: deploy **riuscito** (partito alle 18:24:57, finito alle 18:25:18).
+- **Problemi incontrati:** nessuno segnalato.
+- **Controlli online del passo 11:** dichiarati andati bene ("tutto in prod"); i singoli esiti non sono registrati.
 
 ---
 
