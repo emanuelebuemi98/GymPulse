@@ -232,7 +232,7 @@ export function SchermataCatalogo() {
       <p className="text-[13px] font-extrabold">Catalogo esercizi</p>
       <div className="rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px] text-suggerito">Cerca un esercizio</div>
       <div className="flex gap-1 overflow-hidden text-[9px] font-semibold">
-        {['Tutte 246', 'Petto 39', 'Dorsali 37', 'Glutei 17'].map((voce) => (
+        {['Tutte 246', 'Petto 39', 'Dorsali 32', 'Glutei 17'].map((voce) => (
           <span
             key={voce}
             className={`shrink-0 rounded-full border px-2 py-1 ${voce.startsWith('Glutei') ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta'}`}
