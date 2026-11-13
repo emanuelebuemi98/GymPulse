@@ -12,11 +12,11 @@ import {
 } from '@/lib/codici-email'
 import { db } from '@/lib/db'
 import { emailAttiva, inviaEmail } from '@/lib/email'
-import { codiceTrainerConfigurato, codiceTrainerGiusto } from '@/lib/codice-trainer'
+import { codiceTrainerConfigurato, codiceTrainerGiusto, limiteCodiceTrainer } from '@/lib/codice-trainer'
 import { validaEmail } from '@/lib/indirizzo-email'
 import { creaLimite, indirizzoClient, testoLimite } from '@/lib/limite'
 import { palestraDa } from '@/lib/palestre'
-import { palestraHaTrainer } from '@/lib/trainer-db'
+import { MESSAGGIO_PALESTRA_OCCUPATA, palestraHaTrainer } from '@/lib/trainer-db'
 import { messaggioCodice, normalizzaCodiceOtp } from '@/lib/otp'
 import { creaHashPassword, hashFittizio, verificaPassword } from '@/lib/password'
 import {
@@ -57,7 +57,6 @@ export type StatoRegistrazione = {
   trainer: boolean
 }
 
-const MESSAGGIO_PALESTRA_OCCUPATA = 'Questa palestra ha già un personal trainer'
 const PAUSA_DOPO_ERRORE_MS = 800
 const LUNGHEZZA_MAX_USERNAME = 100
 const LUNGHEZZA_MAX_CAMPO = 200
@@ -70,9 +69,7 @@ const limiteRegistrazioni = creaLimite(3, 60 * 60 * 1000)
 const limiteAccessi = creaLimite(10, 15 * 60 * 1000)
 const limiteInviiRecupero = creaLimite(5, 60 * 60 * 1000)
 const limiteControlliRecupero = creaLimite(8, 15 * 60 * 1000)
-// I codici d'invito sbagliati: pochi, perché una persona vera lo scrive giusto al primo o al secondo colpo. Per istanza su Vercel,
-// quindi rallenta e non blocca del tutto: la sicurezza vera è la lunghezza del codice (almeno 12 caratteri).
-const limiteCodiceTrainer = creaLimite(5, 60 * 60 * 1000)
+// I codici d'invito sbagliati hanno il loro limite in lib/codice-trainer.ts, condiviso con il passaggio a trainer da Account.
 
 export async function accedi(_precedente: StatoLogin, dati: FormData): Promise<StatoLogin> {
   const segreto = valutaSegreto(process.env.AUTH_SECRET)

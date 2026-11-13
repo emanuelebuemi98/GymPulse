@@ -5,6 +5,10 @@ import { db } from './db'
 // stessa palestra, perché sceglierla è il consenso.
 export type Allievo = { id: number; fullName: string }
 
+// Cosa si risponde a chi vuole una palestra che ha già il suo trainer (registrazione e passaggio da Account). Si dice solo dopo
+// aver controllato il codice d'invito, così chi non ce l'ha non scopre quali palestre sono occupate.
+export const MESSAGGIO_PALESTRA_OCCUPATA = 'Questa palestra ha già un personal trainer'
+
 export async function leggiAllievi(palestra: string): Promise<Allievo[]> {
   const righe = await db.user.findMany({
     where: { ruolo: 'utente', palestra },

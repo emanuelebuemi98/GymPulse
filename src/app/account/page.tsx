@@ -3,19 +3,24 @@ import Link from 'next/link'
 import { EliminaAccount } from '@/components/EliminaAccount'
 import { FormEmail } from '@/components/FormEmail'
 import { FormPalestra } from '@/components/FormPalestra'
+import { FormTrainer } from '@/components/FormTrainer'
 import { stileCarta } from '@/components/stili'
 import { richiediUtente } from '@/lib/accesso'
+import { registrazioneTrainerAttiva } from '@/lib/codice-trainer'
 import { emailAttiva } from '@/lib/email'
 import { mascheraEmail } from '@/lib/indirizzo-email'
 import { leggiTrainerDellaPalestra } from '@/lib/trainer-db'
 import { contaDatiAccount, leggiUtente } from '@/lib/utente'
+import { primoParametro } from '@/lib/url'
 
 // Legge il database a ogni richiesta.
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = { title: 'Account' }
 
-export default async function AccountPage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function AccountPage({ searchParams }: Props) {
   const userId = await richiediUtente()
   const utente = await leggiUtente(userId)
   if (!utente) return null
@@ -23,6 +28,10 @@ export default async function AccountPage() {
   const haEmail = utente.email !== null
   const attiva = emailAttiva()
   const èTrainer = utente.ruolo === 'trainer'
+  // Il passaggio a trainer si offre solo se il server ha un codice d'invito valido, come nella registrazione.
+  const trainerAttivo = !èTrainer && registrazioneTrainerAttiva()
+  // Dopo il passaggio da utente a trainer si arriva qui con ?ruolo=trainer: una riga che conferma che è andata a buon fine.
+  const appenaTrainer = èTrainer && primoParametro((await searchParams).ruolo) === 'trainer'
   // I nomi dei trainer che, grazie alla palestra scelta, possono vedere la scheda: chi ha dato il consenso deve sapere a chi.
   const trainerDellaPalestra = utente.palestra && !èTrainer ? await leggiTrainerDellaPalestra(utente.palestra) : null
   // Cosa sparirebbe eliminando l'account: lo mostra il pannello «Elimina account».
@@ -33,6 +42,12 @@ export default async function AccountPage() {
       <header>
         <h1 className="text-3xl font-extrabold tracking-tight">Account</h1>
       </header>
+
+      {appenaTrainer && (
+        <p role="status" className="rounded-2xl bg-ok/10 p-3 text-sm font-semibold text-ok">
+          Ora sei un personal trainer di {utente.palestra}. Gli utenti che scelgono questa palestra compaiono in «I tuoi allievi».
+        </p>
+      )}
 
       {/* Il riepilogo di tutto ciò che l'app sa di te, in un posto solo. */}
       <section aria-labelledby="titolo-profilo" className={`${stileCarta} space-y-3 p-4`}>
@@ -94,6 +109,17 @@ export default async function AccountPage() {
           </>
         )}
       </section>
+
+      {trainerAttivo && (
+        <section className={`${stileCarta} space-y-3 p-4`}>
+          <h2 className="text-lg font-extrabold">Sei un personal trainer?</h2>
+          <p className="text-sm text-muto">
+            Se chi gestisce l&apos;app ti ha dato il codice d&apos;invito, puoi passare da utente a personal trainer: scegli la tua
+            palestra e scrivi il codice. Ogni palestra ha un solo personal trainer.
+          </p>
+          <FormTrainer utenteId={userId} />
+        </section>
+      )}
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Email per il recupero</h2>

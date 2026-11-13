@@ -166,7 +166,7 @@ Le impostazioni si fanno una volta sola; a ogni deploy basta controllare che sia
 - [ ] `DATABASE_URL`: la stringa di Neon **con** pooler (`-pooler` nell'indirizzo).
 - [ ] `AUTH_SECRET`: almeno 32 caratteri, **diverso** da quello locale. Cambiarlo chiude tutte le sessioni aperte: non farlo se non serve.
 - [ ] `SMTP_UTENTE` e `SMTP_PASSWORD` (la password per le app di Google, 16 lettere, non la password dell'account).
-- [ ] `CODICE_TRAINER`: il codice d'invito per registrarsi come personal trainer, **almeno 12 caratteri**. Lo dai tu a chi vuoi come trainer, a voce o in privato; **non va scritto in chat, nel codice o in Git**. Senza, o se è più corto, l'opzione «Personal trainer» non compare nella registrazione. Cambiarlo non toglie il ruolo a chi è già trainer.
+- [ ] `CODICE_TRAINER`: il codice d'invito per essere un personal trainer (alla registrazione, o passando da utente a trainer dalla pagina Account), **almeno 12 caratteri**. Lo dai tu a chi vuoi come trainer, a voce o in privato; **non va scritto in chat, nel codice o in Git**. Senza, o se è più corto, l'opzione «Personal trainer» non compare nella registrazione né in Account. Cambiarlo non toglie il ruolo a chi è già trainer.
 - [ ] Facoltative: `SMTP_HOST`, `SMTP_PORTA`, `EMAIL_LIMITE_GIORNALIERO`.
 - [ ] Le variabili **nuove** del passo A sono tutte qui.
 
