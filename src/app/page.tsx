@@ -65,7 +65,7 @@ const schermate = [
   },
   {
     titolo: 'Il catalogo',
-    testo: 'Tutti i 246 esercizi divisi per categoria (Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio, Riscaldamento), con la foto di ognuno, la ricerca per nome e le linguette per scegliere.',
+    testo: 'Tutti i 379 esercizi divisi per categoria (Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Cardio, Riscaldamento), con la foto di ognuno, la ricerca per nome e le linguette per scegliere.',
     schermata: <SchermataCatalogo />,
   },
   {
@@ -114,7 +114,7 @@ const passi = [
   {
     titolo: 'Costruisci la scheda',
     testo:
-      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 246, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni (serie fisse, con un minimo e un massimo, oppure serie piramidale come 12-10-8-6) e recupero, e se vuoi metti insieme più esercizi in un superset, un triset o un gigantset.',
+      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 379, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni (serie fisse, con un minimo e un massimo, oppure serie piramidale come 12-10-8-6) e recupero, e se vuoi metti insieme più esercizi in un superset, un triset o un gigantset.',
   },
   {
     titolo: 'Allenati',
@@ -130,8 +130,8 @@ const passi = [
 const funzioni = [
   {
     icona: IconaScheda,
-    titolo: 'Catalogo di 246 esercizi',
-    testo: 'In nove categorie: Petto, Dorsali, Spalle, Braccia, Gambe, Glutei, Addome, Cardio e Riscaldamento. Ognuno ha la sua foto, i passi dell\'esecuzione e gli errori da evitare.',
+    titolo: 'Catalogo di 379 esercizi',
+    testo: 'In undici categorie: Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Cardio e Riscaldamento. Ognuno ha la sua foto, i passi dell\'esecuzione e gli errori da evitare.',
   },
   {
     icona: IconaPlay,
