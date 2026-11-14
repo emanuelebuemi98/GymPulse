@@ -23,7 +23,11 @@ import { trovaImmagini } from './immagini'
 // cambiano: cambia solo il nome. Quello che non si riconosce resta com'è e viene elencato alla fine.
 //
 // Per sostituire un esercizio con un altro sullo stesso numero basta cambiarlo nel file (nuovo slug, stesso id): la riga
-// vecchia si toglie, ma solo se nessuna persona la usa; altrimenti lo script si ferma e lo dice.
+// vecchia si toglie, ma solo se nessuna persona la usa; altrimenti lo script si ferma e lo dice. Se è proprio quello che si vuole
+// (un esercizio rinominato, o la cui foto e il cui testo erano di un altro esercizio), si rilancia con SOSTITUISCI_IN_USO=1: la
+// riga resta com'è, prende lo slug e i testi nuovi, e gli esercizi delle persone che la usano la seguono (serie, scheda e storico
+// restano agganciati allo stesso esercizio, cambiano il nome e la categoria). Si prova prima con PROVA=1, che elenca le voci
+// coinvolte e gli esercizi che le usano. In PowerShell: $env:SOSTITUISCI_IN_USO="1"; npm.cmd run db:catalogo
 //
 // Un esercizio già collegato si tocca in due casi soltanto. Se il suo nome è quello di un'altra voce, il collegamento è
 // finito sul numero sbagliato (capita se nel database si sostituisce a mano il contenuto di una riga senza spostare chi
@@ -42,6 +46,7 @@ const connectionString = process.env.DATABASE_URL
 if (!connectionString) throw new Error('DATABASE_URL non è impostata: crea il file .env')
 
 const SOLO_PROVA = process.env.PROVA === '1'
+const SOSTITUISCI_IN_USO = process.env.SOSTITUISCI_IN_USO === '1'
 
 type Voce = {
   id: number
@@ -113,6 +118,7 @@ async function main() {
   let ricollegati = 0
   let spostati = 0
   let sostituiti: string[] = []
+  const rimasteInUso: string[] = []
   const cambi: string[] = []
   const sincronizzati: string[] = []
   const restano: string[] = []
@@ -135,12 +141,22 @@ async function main() {
             where: { catalogoId: { in: bloccati.map((riga) => riga.id) } },
             select: { catalogoId: true, nome: true, user: { select: { username: true } } },
           })
-          if (inUso.length > 0) {
+          if (inUso.length > 0 && SOSTITUISCI_IN_USO) {
+            // Le righe usate non si tolgono: il loro numero e la loro chiave restano, e lo slug nuovo si scrive nel passo 2 sulla riga
+            // che ha lo stesso numero. Gli esercizi delle persone seguono da soli (stessa riga), e il passo 4 ne riallinea nome e categoria.
+            const usate = new Set(inUso.map((e) => e.catalogoId))
+            for (const riga of bloccati.filter((r) => usate.has(r.id))) {
+              const nuova = voci.find((voce) => voce.id === riga.id)!
+              await tx.catalogoEsercizio.update({ where: { id: riga.id }, data: { slug: nuova.slug } })
+              rimasteInUso.push(`${riga.id}: ${riga.slug} -> ${nuova.slug} (usata da ${inUso.filter((e) => e.catalogoId === riga.id).map((e) => e.user.username).join(', ')})`)
+            }
+            bloccati.splice(0, bloccati.length, ...bloccati.filter((r) => !usate.has(r.id)))
+          } else if (inUso.length > 0) {
             throw new Error(
               `Questi esercizi non sono più nel file ma qualcuno li usa: ${inUso.map((e) => `${e.nome} (${e.user.username}, voce ${e.catalogoId})`).join(', ')}. Non cambio niente: togli prima l'esercizio dalla scheda oppure ridai al file lo stesso slug.`,
             )
           }
-          await tx.catalogoEsercizio.deleteMany({ where: { id: { in: bloccati.map((riga) => riga.id) } } })
+          if (bloccati.length > 0) await tx.catalogoEsercizio.deleteMany({ where: { id: { in: bloccati.map((riga) => riga.id) } } })
           sostituiti = bloccati.map((riga) => `${riga.id}: ${riga.slug}`)
         }
         const daSpostare = voci.filter((voce) => numeroDi.has(voce.slug) && numeroDi.get(voce.slug) !== voce.id)
@@ -266,6 +282,10 @@ async function main() {
   console.log(`Numeri (id) cambiati per allinearli al file: ${spostati}`)
   console.log(`Esercizi sostituiti da un altro sullo stesso numero: ${sostituiti.length}`)
   for (const riga of sostituiti) console.log(`  tolto ${riga}`)
+  if (rimasteInUso.length > 0) {
+    console.log(`Voci sostituite che qualcuno usa, cambiate sul posto (SOSTITUISCI_IN_USO): ${rimasteInUso.length}`)
+    for (const riga of rimasteInUso) console.log(`  ${riga}`)
+  }
   console.log(`Esercizi delle persone collegati al catalogo: ${legati}`)
   console.log(`Esercizi spostati su un'altra voce perché il collegamento era sbagliato: ${ricollegati}`)
   for (const riga of cambi) console.log(`  ${riga}`)

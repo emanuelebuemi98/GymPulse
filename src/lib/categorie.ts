@@ -2,14 +2,16 @@
 // server sia dal browser.
 //
 // In `Esercizio.categoria` e in `CatalogoEsercizio.categoria` finisce la chiave (per esempio `petto`), mai l'etichetta.
-// Il database accetta soltanto queste nove chiavi (vincoli scritti a mano nelle migrazioni `catalogo_esercizi`,
-// `categorie_riscaldamento` e `categoria_glutei`).
+// Il database accetta soltanto queste undici chiavi (vincoli scritti a mano nelle migrazioni `catalogo_esercizi`,
+// `categorie_riscaldamento`, `categoria_glutei` e `bicipiti_tricipiti_avambracci`, che ha diviso «braccia» in tre).
 
 export const CATEGORIE = [
   { chiave: 'petto', etichetta: 'Petto' },
   { chiave: 'dorsali', etichetta: 'Dorsali' },
   { chiave: 'spalle', etichetta: 'Spalle' },
-  { chiave: 'braccia', etichetta: 'Braccia' },
+  { chiave: 'bicipiti', etichetta: 'Bicipiti' },
+  { chiave: 'tricipiti', etichetta: 'Tricipiti' },
+  { chiave: 'avambracci', etichetta: 'Avambracci' },
   { chiave: 'gambe', etichetta: 'Gambe' },
   { chiave: 'glutei', etichetta: 'Glutei' },
   { chiave: 'addome', etichetta: 'Addome' },
@@ -25,7 +27,7 @@ export function etichettaCategoria(chiave: Categoria): string {
   return CATEGORIE.find((categoria) => categoria.chiave === chiave)!.etichetta
 }
 
-// La categoria scritta in un testo (senza badare alle maiuscole), oppure null se è vuoto o non è una delle nove.
+// La categoria scritta in un testo (senza badare alle maiuscole), oppure null se è vuoto o non è una delle undici.
 export function categoriaDa(testo: string): Categoria | null {
   const chiave = testo.trim().toLowerCase()
   return CATEGORIE.find((categoria) => categoria.chiave === chiave)?.chiave ?? null
