@@ -1328,7 +1328,7 @@
   {
     "id": 103,
     "slug": "high-cable-curl",
-    "nomeIt": "Curl ai cavi alti",
+    "nomeIt": "Curl ai cavi alti da alzato",
     "nomeEn": "High Cable Curl",
     "categoria": "bicipiti",
     "attrezzatura": "Cavi",
@@ -1913,7 +1913,7 @@
   {
     "id": 148,
     "slug": "miniband-lateral-walk",
-    "nomeIt": "Camminata laterale con miniband",
+    "nomeIt": "Camminata laterale con elastico",
     "nomeEn": "Miniband Lateral Walk",
     "categoria": "glutei",
     "attrezzatura": "Elastico Miniband",
@@ -3121,9 +3121,9 @@
   },
   {
     "id": 241,
-    "slug": "cable-diagonal-glute-kickback",
-    "nomeIt": "Slanci ad ascia al cavo basso",
-    "nomeEn": "Cable Diagonal Glute Kickback",
+    "slug": "cable-donkey-glute-kickback",
+    "nomeIt": "Slanci all'indietro al cavo basso",
+    "nomeEn": "Cable Donkey Glute Kickback",
     "categoria": "glutei",
     "attrezzatura": "Cavi",
     "muscoloPrincipale": "Grande Gluteo",
@@ -3134,9 +3134,9 @@
   },
   {
     "id": 242,
-    "slug": "donkey-kick",
-    "nomeIt": "Donkey Kick a quattro zampe",
-    "nomeEn": "Donkey Kick",
+    "slug": "donkey-kick-on-leg-extension-machine",
+    "nomeIt": "Donkey Kick a quattro zampe alla macchina",
+    "nomeEn": "Donkey Kick On Leg Extension Machine",
     "categoria": "glutei",
     "attrezzatura": "Corpo Libero",
     "muscoloPrincipale": "Grande Gluteo",
