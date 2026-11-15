@@ -223,7 +223,7 @@ export function SchermataCatalogo() {
   const voci = [
     ['Hip Thrust con bilanciere', 'Barbell Hip Thrust', '154_barbell-hip-thrust'],
     ['Hip Thrust alla macchina', 'Machine Hip Thrust', '153_machine-hip-thrust'],
-    ['Slanci ad ascia al cavo basso', 'Cable Diagonal Glute Kickback', '241_cable-diagonal-glute-kickback'],
+    ['Slanci all\'indietro al cavo basso', 'Cable Donkey Glute Kickback', '241_cable-donkey-glute-kickback'],
     ['Abduttori alla macchina', 'Hip Abduction Machine', '137_hip-abduction-machine'],
   ]
   return (
