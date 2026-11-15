@@ -16,8 +16,11 @@ Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per ri
 | 4 | 11 nov 2026 | `1e6cce2` | **Personal trainer e palestre**, un solo trainer per palestra, eliminazione dell'account, note in sessione | 2 | riuscito |
 | 5 | 12 nov 2026 | `f8374da` | **Password visibile**, **cronometro con la durata in secondi**, **scelta della giornata** da fare | 1 | riuscito |
 | 6 | 12 nov 2026 | `198e206` | **Salvataggio automatico della scheda**, **serie fisse e serie piramidale**, **superset, triset e gigantset**, un solo tipo di obiettivo | 2 | riuscito |
+| 7 | 13 nov 2026 | `41a7179` | **Passaggio a personal trainer dalla pagina Account**, tre esercizi del catalogo sostituiti, stacchi tra le gambe | nessuna | riuscito |
+| 8 | 14 nov 2026 | `d621cab` | **Catalogo di 379 esercizi** (133 nuovi), **braccia divise in bicipiti, tricipiti e avambracci** | 1 | riuscito |
+| 9 | 15 nov 2026 | `bed8584` | **Numeri del catalogo senza buchi** (le voci 366-380 diventano 365-379) | nessuna | riuscito |
 
-Nei rilasci 2, 3, 4, 5 e 6 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata.
+Nei rilasci 2, 3, 4, 5 e 6 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata. Dal rilascio 7 il catalogo cambia a ogni rilascio e si carica a mano con `db:catalogo`, ma l'esito di quel passo è registrato solo in parte: per il 7 e l'8 si deduce da una prova su Neon, per il 9 non è registrato. Dei rilasci 7 e 9 non ci sono migrazioni; quella del rilascio 8 risulta applicata dalla stessa prova (vedi le singole voci).
 
 ---
 
@@ -162,6 +165,66 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 
 ---
 
+## Rilascio 7 — 13 novembre 2026: passaggio a personal trainer dall'Account e catalogo ritoccato
+
+- **Commit:** `41a7179` (4 commit dal rilascio 6). Il merge è stato un avanzamento semplice, senza un commit di merge. Uno dei quattro è la registrazione del rilascio 6 in questo file.
+- **Cosa conteneva:**
+  - **passaggio da utente a personal trainer** dalla pagina Account: un riquadro «Sei un personal trainer?» (compare solo se `CODICE_TRAINER` è valido) con palestra, codice d'invito e una finestra di conferma che ricorda le conseguenze. Valgono le regole della registrazione come trainer: codice confrontato a tempo costante, una palestra con un solo trainer (il messaggio «già un personal trainer» si vede solo dopo il codice giusto), cinque codici sbagliati all'ora. Il limite ora è condiviso con la registrazione (per indirizzo, e in Account anche per persona). Dal trainer a utente non si torna dall'app, solo da terminale (`NUOVO_RUOLO=utente`);
+  - **catalogo**: tre esercizi sostituiti sullo stesso numero (16 «Croci a terra con landmine», 40 «Lat Machine a braccia tese», 95 «Alzate a 90 gradi a un braccio ai cavi»), la foto del 59 aggiornata e i cinque stacchi (64-68) spostati da Dorsali a Gambe, quindi Dorsali 32 e Gambe 39. I kg degli stacchi già fatti passano a Gambe nel grafico per categoria anche per le settimane passate, perché la categoria si legge dall'esercizio;
+  - la schermata del catalogo nella pagina iniziale dice «Dorsali 32» (era 37).
+- **Migrazioni:** nessuna.
+- **Catalogo e immagini:** cambiati (29 righe del file; foto: 3 aggiunte, 3 cancellate, 1 modificata). Serviva `db:catalogo`.
+- **Variabili su Vercel:** nessuna nuova (`CODICE_TRAINER` c'era già; ora serve anche in Account).
+- **Passi eseguiti:** non dichiarati uno per uno. Dalla prova su Neon fatta per il rilascio 8 si deduce che `db:catalogo` fosse già stato lanciato: quella prova elencava una sola voce da sostituire (la 111) e non le 16, 40 e 95. Backup, esito della prova e del passo: non registrati.
+- **Provato prima del rilascio, in locale e su copie del database:** il passaggio a trainer (46 controlli con il codice configurato e 6 senza: un codice sbagliato o una palestra occupata non cambiano niente, il blocco dopo cinque errori vale anche per la registrazione, senza codice il riquadro non c'è); lo script del catalogo con le tre sostituzioni e lo spostamento degli stacchi (lo «Stacco da terra» della copia del database locale, con le sue 6 serie, resta agganciato); typecheck e build.
+- **Vercel** (ora italiana):
+  - 13 nov 22:53 e 22:57, push di `dev`: **annullate** («Canceled by Ignored Build Step»), com'è voluto;
+  - 13 nov 23:14, merge su `main`: deploy **riuscito** (partito alle 23:14:10, finito alle 23:14:34).
+- **Problemi incontrati:** nessuno segnalato.
+- **Controlli online del passo 11:** non registrati.
+
+---
+
+## Rilascio 8 — 14 novembre 2026: catalogo di 379 esercizi e braccia in tre categorie
+
+- **Commit:** `d621cab` (4 commit dal rilascio 7). Avanzamento semplice.
+- **Cosa conteneva:**
+  - **133 esercizi nuovi** (numeri 247-380: il 365 mancava, vedi il rilascio 9), con nome, attrezzatura, muscoli, tipo di movimento, «Come si esegue» e accortezze scritti guardando ogni foto. Il catalogo passa da 246 a 379 voci. Per categoria: Petto 59, Dorsali 47, Spalle 72, Bicipiti 36, Tricipiti 41, Avambracci 11, Gambe 39, Glutei 17, Addome 36, Cardio 7, Riscaldamento 14;
+  - **«Braccia» divisa in Bicipiti, Tricipiti e Avambracci**: le categorie salgono da nove a undici. Gli avambracci sono le voci 120, 124, 125 e 127 più sette nuove;
+  - tre voci già esistenti riscritte sul loro numero: 101 «Curl a martello con manubri da seduto» (nuovo slug, stessa foto), 111 «Curl ai cavi da sdraiati su panca piana» e 131 «Distensione con manubrio a presa stretta», le ultime due con foto e testi diversi da prima;
+  - `db:catalogo` ha l'opzione `SOSTITUISCI_IN_USO=1`: se una voce sostituita è usata da qualcuno lo script si ferma senza cambiare niente; con l'opzione la voce cambia sul posto e chi la usa la segue (serie, scheda e storico restano agganciati, cambiano nome e categoria);
+  - pagina iniziale e README: 379 esercizi in undici categorie.
+- **Migrazioni (1):** `bicipiti_tricipiti_avambracci`: cambia dei valori e i due controlli sulla categoria, non la struttura. Le voci di «braccia» si distribuiscono in base al numero (100-115 bicipiti, 116-135 tricipiti tranne 120, 124, 125 e 127, che sono avambracci); gli esercizi delle persone prendono la categoria della loro voce, e quelli personali che erano «braccia» e non erano collegati restano senza categoria. Il codice di prima non conosce le tre chiavi nuove: tra la migrazione e il deploy gli esercizi delle braccia non sarebbero comparsi sotto nessuna categoria, senza errori (atteso dalle prove, non osservato online).
+- **Catalogo e immagini:** cambiati (133 voci nuove, 33 che cambiano solo categoria, 3 riscritte; foto: 134 aggiunte, 1 cancellata, 2 rinominate).
+- **Variabili su Vercel:** nessuna nuova (`SOSTITUISCI_IN_USO` è una variabile dello script, sul PC).
+- **Passi eseguiti:** dichiarata solo la prova di `db:catalogo` su Neon (output incollato in chat): nessun errore, una sola voce da sostituire (la 111), 379 immagini su 379, 246 voci nel database e 133 nuove, nessun esercizio personale non riconosciuto; due persone avevano la voce 131 e il loro esercizio prendeva il nome nuovo. Dalla prova si deduce che la migrazione fosse già applicata (senza, i valori «bicipiti» e «tricipiti» avrebbero violato i controlli del database). Backup, `migrate status`, `db:deploy`, il passo 7 e i controlli online: non registrati.
+- **Provato prima del rilascio, in locale e su copie del database:** migrazione e catalogo uno dopo l'altro (gli esercizi collegati prendono la categoria nuova, serie e scheda restano agganciate, una seconda esecuzione non cambia niente; lo script si ferma se una voce sostituita è usata e passa con `SOSTITUISCI_IN_USO=1`); l'app a 393 punti in chiaro e scuro (56 controlli su 57; l'unico fallito era un falso allarme su un «246» nell'HTML), con le 12 linguette del catalogo, il filtro dell'editor, il grafico dei kg, il file Excel di 379 righe e le 379 foto raggiungibili.
+- **Vercel** (ora italiana):
+  - 14 nov 18:32, push di `dev`: **annullata**, com'è voluto;
+  - 14 nov 18:42, merge su `main`: deploy **riuscito** (partito alle 18:42:49, finito alle 18:43:17).
+- **Problemi incontrati:** nessuno segnalato. Un dubbio emerso dopo: l'app mostrava 379 esercizi mentre i numeri arrivavano a 380. Il numero 365 non esisteva (nel primo elenco dei tricipiti si passava dal 364 al 366): è stato chiuso nel rilascio 9.
+- **Controlli online del passo 11:** non registrati.
+
+---
+
+## Rilascio 9 — 15 novembre 2026: numeri del catalogo senza buchi
+
+- **Commit:** `bed8584` (1 commit dal rilascio 8). Avanzamento semplice.
+- **Cosa conteneva:** le voci 366-380 diventano 365-379 e le loro 15 foto cambiano nome di conseguenza (da `365_…` a `379_…`). I numeri del catalogo vanno ora da 1 a 379 senza salti. Per chi usa l'app non cambia niente di visibile: stesse voci, stessi testi, e gli esercizi delle persone restano agganciati alla stessa voce (il numero si aggiorna a cascata).
+- **Migrazioni:** nessuna.
+- **Catalogo e immagini:** cambiati (15 numeri nel file, 15 foto rinominate senza altre modifiche).
+- **Variabili su Vercel:** nessuna.
+- **Passi eseguiti:** non registrati. In particolare **non risulta se `db:catalogo` sia stato lanciato su Neon dopo questo rilascio**: Git non lo dice e nessuno l'ha dichiarato.
+- **Provato prima del rilascio, su una copia del database:** partendo dal catalogo vecchio (com'era online) lo script cambia 15 numeri e basta; tre esercizi collegati alle voci 366, 374 e 380 passano a 365, 373 e 379 senza perdere il collegamento; non restano buchi né voci senza foto; una seconda esecuzione non cambia niente. Una serie registrata non è stata provata (l'inserimento di prova falliva): il collegamento si aggiorna a cascata sul numero, come già successo con i numeri spostati nei rilasci precedenti.
+- **Vercel** (ora italiana):
+  - 15 nov 11:47, push di `dev`: **annullata**, com'è voluto;
+  - 15 nov 11:48, merge su `main`: deploy **riuscito** (partito alle 11:48:05, finito alle 11:48:24).
+- **Problemi incontrati:** nessuno segnalato.
+- **Da verificare:** se Neon ha già i numeri nuovi. Dopo il deploy i file delle foto hanno i numeri nuovi; se `db:catalogo` non è stato lanciato, il database ha ancora quelli vecchi e le 15 voci (otto di tricipiti e sette di avambracci) puntano a file che non esistono più: la loro foto non si vede. Si controlla con la stringa diretta di Neon: `PROVA=1 npm run db:catalogo` (in `cmd`, con `set PROVA=1` su una riga da solo). «Numeri (id) cambiati: 0» vuol dire che c'è già; «15» che `db:catalogo` va ancora lanciato.
+- **Controlli online del passo 11:** non registrati.
+
+---
+
 ## Problemi che si ripresentano
 
 - **Backup di Neon:** serve `pg_dump` 18, non quello del Docker locale. Un file da 0 byte non è un backup. La cartella dei backup si indica con la variabile `CARTELLA_BACKUP` (passo 2 di `DEPLOY.md`), e il nome del file con la data in `NOME_BACKUP`: con un nome già usato il backup nuovo sovrascrive quello vecchio.
@@ -170,6 +233,7 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 - **Variabili nuove:** vanno messe in Vercel **prima** del merge su `main`, altrimenti serve un secondo deploy.
 - **Mai committare file di backup o di dump** (`.sql`, `.dump`): il repository è pubblico e contengono l'hash delle password e le email. Ora il `.gitignore` li esclude nella cartella principale del progetto, e i backup si tengono in una cartella fuori dal progetto.
 - **Lo stato di Neon non si legge da Git:** prima di dare per applicata una migrazione si guarda `npx prisma migrate status` con la stringa diretta.
+- **Il catalogo non sta nelle migrazioni:** `db:catalogo` si lancia a mano su Neon e Git non dice se è stato fatto (nei rilasci 7, 8 e 9 l'esito non è registrato). Se il passo si dimentica, le voci nuove non compaiono e, se le foto sono state rinominate, quelle del database puntano a file che non esistono più. Si controlla con `PROVA=1 npm run db:catalogo` sulla stringa diretta: «Numeri cambiati: 0», «sostituiti: 0» e «0 nuovi» vogliono dire che Neon è allineato al file. Se una voce sostituita è usata da qualcuno, lo script si ferma senza cambiare niente e si riparte con `SOSTITUISCI_IN_USO=1`.
 
 ---
 
