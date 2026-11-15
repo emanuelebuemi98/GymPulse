@@ -224,7 +224,7 @@ export function SchermataCatalogo() {
     ['Hip Thrust con bilanciere', 'Barbell Hip Thrust', '154_barbell-hip-thrust'],
     ['Hip Thrust alla macchina', 'Machine Hip Thrust', '153_machine-hip-thrust'],
     ['Slanci ad ascia al cavo basso', 'Cable Diagonal Glute Kickback', '241_cable-diagonal-glute-kickback'],
-    ['Abduttori alla macchina', 'Abductor Machine', '137_abductor-machine'],
+    ['Abduttori alla macchina', 'Hip Abduction Machine', '137_hip-abduction-machine'],
   ]
   return (
     <Telefono>
@@ -232,7 +232,7 @@ export function SchermataCatalogo() {
       <p className="text-[13px] font-extrabold">Catalogo esercizi</p>
       <div className="rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px] text-suggerito">Cerca un esercizio</div>
       <div className="flex gap-1 overflow-hidden text-[9px] font-semibold">
-        {['Tutte 379', 'Petto 59', 'Dorsali 47', 'Glutei 17'].map((voce) => (
+        {['Tutte 379', 'Petto 59', 'Dorsali 47', 'Glutei 14'].map((voce) => (
           <span
             key={voce}
             className={`shrink-0 rounded-full border px-2 py-1 ${voce.startsWith('Glutei') ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta'}`}
