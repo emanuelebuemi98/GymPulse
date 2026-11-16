@@ -12,6 +12,7 @@ const VUOTO: DettaglioEsercizio = {
   esecuzione: [],
   accortezze: [],
   immagine: null,
+  gif: null,
 }
 
 // Una riga di testo per ogni voce, senza righe vuote.
@@ -47,5 +48,6 @@ export async function leggiDettaglio(
     esecuzione: righe(riga.esecuzione),
     accortezze: righe(riga.accortezze),
     immagine: riga.immagine,
+    gif: riga.gif,
   }
 }

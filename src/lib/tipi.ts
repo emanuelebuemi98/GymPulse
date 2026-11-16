@@ -37,4 +37,6 @@ export type DettaglioEsercizio = {
   esecuzione: string[] // un passo per voce
   accortezze: string[] // un errore da evitare o una cautela per voce
   immagine: string | null
+  // L'animazione dell'esercizio, se c'è: nel «Come si fa» si vede al posto della foto. Senza, si vede la foto.
+  gif: string | null
 }

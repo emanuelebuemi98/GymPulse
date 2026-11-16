@@ -20,8 +20,19 @@ export function DettaglioEsercizioVista({ nome, dettaglio, inCorso, errore }: Pr
 
       {dettaglio && !vuoto && (
         <>
-          {dettaglio.immagine && (
-            <ImmagineEsercizio src={dettaglio.immagine} nome={nome} className="aspect-square w-full max-w-[200px]" />
+          {/* Con la gif si vede l'animazione (180 punti, quindi mai più larga); chi ha «riduci animazioni» attivo e chi non
+              riesce a caricarla vede la foto. Senza gif, la foto come prima. */}
+          {dettaglio.gif ? (
+            <ImmagineEsercizio
+              src={dettaglio.gif}
+              srcFermo={dettaglio.immagine ?? undefined}
+              nome={nome}
+              className="aspect-square w-full max-w-[180px]"
+            />
+          ) : (
+            dettaglio.immagine && (
+              <ImmagineEsercizio src={dettaglio.immagine} nome={nome} className="aspect-square w-full max-w-[200px]" />
+            )
           )}
           <p className="text-xs text-muto">
             {[dettaglio.attrezzatura, dettaglio.muscoloPrincipale && `muscoli: ${dettaglio.muscoloPrincipale}`]
