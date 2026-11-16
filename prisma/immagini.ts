@@ -78,3 +78,43 @@ export function trovaImmagini(cartella: string, esercizi: Iterable<EserciziPerIm
   risultato.numeroDiverso.sort()
   return risultato
 }
+
+// Le animazioni (gif) stanno in public/gif-esercizi, una per esercizio, con lo stesso nome delle foto: 45_lat-pulldown.gif, il numero e lo slug
+// separati da un trattino basso. A differenza delle foto non ci sono nomi più corti: un file con un nome che non è di nessun esercizio viene
+// segnalato, e chi non ha la gif resta senza (nel «Come si fa» si vede allora la foto). Il confronto non bada alle maiuscole.
+export type RisultatoGif = {
+  // slug -> percorso pubblico ('/gif-esercizi/45_lat-pulldown.gif')
+  perSlug: Map<string, string>
+  // file con un nome che non è di nessun esercizio (un errore di battitura, o un numero che non è quello dello slug)
+  senzaEsercizio: string[]
+  // più file per lo stesso esercizio (per esempio 45_lat-pulldown.gif e 45_Lat-Pulldown.gif)
+  doppie: string[]
+}
+
+export function trovaGif(cartella: string, esercizi: Iterable<EserciziPerImmagini>): RisultatoGif {
+  const nomi = new Map<string, string>() // '45_lat-pulldown' -> slug
+  for (const { id, slug } of esercizi) nomi.set(`${id}_${slug}`, slug)
+
+  const risultato: RisultatoGif = { perSlug: new Map(), senzaEsercizio: [], doppie: [] }
+  if (!existsSync(cartella)) return risultato
+
+  const trovati = new Map<string, string[]>()
+  for (const file of readdirSync(cartella)) {
+    const punto = file.lastIndexOf('.')
+    if (punto <= 0 || file.slice(punto + 1).toLowerCase() !== 'gif') continue
+    const nome = file.slice(0, punto).toLowerCase()
+    const slug = nomi.get(nome)
+    if (slug === undefined) {
+      risultato.senzaEsercizio.push(file)
+      continue
+    }
+    trovati.set(slug, [...(trovati.get(slug) ?? []), file])
+  }
+  for (const [slug, file] of trovati) {
+    if (file.length > 1) risultato.doppie.push(`${slug}: ${file.join(', ')}`)
+    else risultato.perSlug.set(slug, `/gif-esercizi/${file[0]}`)
+  }
+  risultato.senzaEsercizio.sort()
+  risultato.doppie.sort()
+  return risultato
+}

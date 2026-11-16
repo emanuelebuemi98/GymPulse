@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 import { CHIAVI_CATEGORIE } from '../src/lib/categorie'
-import { trovaImmagini } from './immagini'
+import { trovaGif, trovaImmagini } from './immagini'
 
 // Carica il catalogo degli esercizi dal file prisma/dati/catalogo-esercizi.json nella tabella CatalogoEsercizio. Si può
 // rilanciare quante volte si vuole: le righe già presenti (stesso slug) si aggiornano, quelle nuove si aggiungono, e non
@@ -99,6 +99,15 @@ if (problemi.length > 0) {
   process.exit(1)
 }
 
+const gif = trovaGif(
+  fileURLToPath(new URL('../public/gif-esercizi', import.meta.url)),
+  voci.map((voce) => ({ id: voce.id, slug: voce.slug })),
+)
+if (gif.doppie.length > 0) {
+  console.error(`Ci sono due gif per lo stesso esercizio, tienine una sola. Non carico niente:\n- ${gif.doppie.join('\n- ')}`)
+  process.exit(1)
+}
+
 const immagini = trovaImmagini(
   fileURLToPath(new URL('../public/esercizi', import.meta.url)),
   voci.map((voce) => ({ id: voce.id, slug: voce.slug })),
@@ -181,6 +190,7 @@ async function main() {
             muscoliSecondari: (voce.muscoliSecondari ?? '').trim(),
             tipoMovimento: voce.tipoMovimento.trim(),
             immagine: immagini.perSlug.get(voce.slug) ?? null,
+            gif: gif.perSlug.get(voce.slug) ?? null,
             esecuzione: voce.esecuzione?.trim() ? voce.esecuzione.trim() : null,
             accortezze: voce.accortezze?.trim() ? voce.accortezze.trim() : null,
           }
@@ -296,6 +306,11 @@ async function main() {
     for (const riga of restano) console.log(`  ${riga}`)
   }
   console.log(`\nImmagini trovate in public/esercizi: ${immagini.perSlug.size} su ${voci.length} esercizi.`)
+  console.log(`Gif trovate in public/gif-esercizi: ${gif.perSlug.size} su ${voci.length} esercizi (le altre restano senza gif).`)
+  if (gif.senzaEsercizio.length > 0) {
+    console.log(`Gif che non corrispondono a nessun esercizio (controlla il nome): ${gif.senzaEsercizio.length}`)
+    for (const file of gif.senzaEsercizio) console.log(`  ${file}`)
+  }
   if (immagini.senzaEsercizio.length > 0) {
     console.log(`File che non corrispondono a nessun esercizio (controlla il nome): ${immagini.senzaEsercizio.length}`)
     for (const file of immagini.senzaEsercizio) console.log(`  ${file}`)
