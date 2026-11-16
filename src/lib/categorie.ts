@@ -2,8 +2,8 @@
 // server sia dal browser.
 //
 // In `Esercizio.categoria` e in `CatalogoEsercizio.categoria` finisce la chiave (per esempio `petto`), mai l'etichetta.
-// Il database accetta soltanto queste undici chiavi (vincoli scritti a mano nelle migrazioni `catalogo_esercizi`,
-// `categorie_riscaldamento`, `categoria_glutei` e `bicipiti_tricipiti_avambracci`, che ha diviso «braccia» in tre).
+// Il database accetta soltanto queste dodici chiavi (vincoli scritti a mano nelle migrazioni `catalogo_esercizi`,
+// `categorie_riscaldamento`, `categoria_glutei`, `bicipiti_tricipiti_avambracci`, che ha diviso «braccia» in tre, e `gif_e_categoria_isometria`).
 
 export const CATEGORIE = [
   { chiave: 'petto', etichetta: 'Petto' },
@@ -15,6 +15,7 @@ export const CATEGORIE = [
   { chiave: 'gambe', etichetta: 'Gambe' },
   { chiave: 'glutei', etichetta: 'Glutei' },
   { chiave: 'addome', etichetta: 'Addome' },
+  { chiave: 'isometria', etichetta: 'Isometria' },
   { chiave: 'cardio', etichetta: 'Cardio' },
   { chiave: 'riscaldamento', etichetta: 'Riscaldamento' },
 ] as const
@@ -27,11 +28,11 @@ export function etichettaCategoria(chiave: Categoria): string {
   return CATEGORIE.find((categoria) => categoria.chiave === chiave)!.etichetta
 }
 
-// La categoria scritta in un testo (senza badare alle maiuscole), oppure null se è vuoto o non è una delle undici.
+// La categoria scritta in un testo (senza badare alle maiuscole), oppure null se è vuoto o non è una delle dodici.
 export function categoriaDa(testo: string): Categoria | null {
   const chiave = testo.trim().toLowerCase()
   return CATEGORIE.find((categoria) => categoria.chiave === chiave)?.chiave ?? null
 }
 
 // Le categorie senza kg da sommare: non entrano nel grafico dei kg per categoria della panoramica.
-export const CATEGORIE_SENZA_KG: readonly Categoria[] = ['addome', 'cardio', 'riscaldamento']
+export const CATEGORIE_SENZA_KG: readonly Categoria[] = ['addome', 'isometria', 'cardio', 'riscaldamento']

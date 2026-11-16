@@ -94,8 +94,8 @@ model GiornoScheda {
 // Catalogo degli esercizi, uguale per tutti e non modificabile dall'app: si carica con `npm run db:catalogo` dal file
 // prisma/dati/catalogo-esercizi.json. Gli esercizi di una persona (Esercizio) si collegano qui con catalogoId.
 // slug è il nome inglese in minuscolo e con i trattini: è la chiave con cui lo script ritrova una riga già caricata, e
-// anche il nome del file della foto. categoria è una di undici chiavi (vincolo CatalogoEsercizio_categoria, scritto a mano
-// nelle migrazioni perché Prisma non lo descrive). immagine è il percorso della foto, vuoto finché non c'è.
+// anche il nome del file della foto. categoria è una di dodici chiavi (vincolo CatalogoEsercizio_categoria, scritto a mano
+// nelle migrazioni perché Prisma non lo descrive). immagine è il percorso della foto e gif quello dell'animazione (nel «Come si fa» si vede la gif, e senza gif la foto), vuoti finché non ci sono.
 // esecuzione: come si fa l'esercizio, un passo per riga. accortezze: gli errori da evitare e le cautele, una per riga.
 // Si mostrano nella scheda dell'esercizio, dopo averlo scelto. Vuoti finché non sono scritti.
 model CatalogoEsercizio {
@@ -109,6 +109,7 @@ model CatalogoEsercizio {
   muscoliSecondari  String
   tipoMovimento     String
   immagine          String?
+  gif               String?
   esecuzione        String?
   accortezze        String?
   esercizi          Esercizio[]
@@ -118,7 +119,7 @@ model CatalogoEsercizio {
 
 // Esercizi noti a una persona: quelli presi dal catalogo e quelli che ha scritto lei.
 // L'unicità (userId, id) serve alle chiavi esterne composte di voci e serie.
-// categoria: una delle undici categorie (stesso vincolo del catalogo, Esercizio_categoria), oppure il testo vuoto per gli
+// categoria: una delle dodici categorie (stesso vincolo del catalogo, Esercizio_categoria), oppure il testo vuoto per gli
 // esercizi arrivati da un CSV, finché non si sceglie la categoria dalla scheda. Quando c'è catalogoId la categoria è
 // quella del catalogo. Un esercizio con catalogoId vuoto è personale.
 model Esercizio {
