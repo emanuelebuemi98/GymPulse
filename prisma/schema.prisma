@@ -146,7 +146,9 @@ model Esercizio {
 //   (ripMin e ripMax restano il minimo e il massimo, così chi legge solo quelli vede comunque un intervallo giusto).
 // gruppo: esercizi consecutivi con lo stesso numero si fanno senza pausa (superset, triset, gigantset); recuperoGruppoSec è
 //   il recupero dopo ogni giro del gruppo, uguale su tutti i suoi esercizi. Vuoti entrambi per un esercizio singolo.
-//   I CHECK "VoceScheda_tipo", "VoceScheda_ripSerie" e "VoceScheda_gruppo" stanno nella migrazione: Prisma non li descrive.
+// durataSec: solo per gli esercizi a tempo (categoria isometria): la durata di ogni serie in secondi, uguale per tutte. Una voce a
+//   tempo ha ripMin e ripMax a 1 e non sta in una super serie. Vuota per tutti gli altri esercizi.
+//   I CHECK "VoceScheda_tipo", "VoceScheda_ripSerie", "VoceScheda_gruppo" e "VoceScheda_durataSec" stanno nella migrazione: Prisma non li descrive.
 model VoceScheda {
   id           String       @id @default(cuid())
   userId       Int
@@ -166,6 +168,7 @@ model VoceScheda {
   ripSerie          String?
   gruppo            Int?
   recuperoGruppoSec Int?
+  durataSec         Int?
   giorno       GiornoScheda @relation(fields: [userId, giornoId], references: [userId, id], onDelete: Cascade)
   esercizio    Esercizio    @relation(fields: [userId, esercizioId], references: [userId, id], onDelete: NoAction)
 
@@ -195,6 +198,8 @@ model Sessione {
 }
 
 // Una serie registrata. Il peso è vuoto per gli esercizi a corpo libero.
+// durataSec: i secondi tenuti, solo per gli esercizi a tempo (isometria). Una serie a tempo ha ripetizioni = 1 e nessun peso (il CHECK
+// "SerieEseguita_durataSec" lo impone); non confonderla con Sessione.durataSecondi, che è la durata dell'intera seduta.
 // ordine = posizione della serie nella sessione (1, 2, 3, ...), anche tra esercizi diversi.
 // userId deve essere lo stesso della sessione e dell'esercizio: lo garantiscono le due chiavi esterne.
 model SerieEseguita {
@@ -205,6 +210,7 @@ model SerieEseguita {
   ordine      Int
   pesoKg      Float?
   ripetizioni Int
+  durataSec   Int?
   sessione    Sessione  @relation(fields: [sessioneId, userId], references: [id, userId], onDelete: Cascade)
   esercizio   Esercizio @relation(fields: [userId, esercizioId], references: [userId, id], onDelete: NoAction)
 
