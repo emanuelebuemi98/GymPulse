@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { EliminaSessione } from '@/components/EliminaSessione'
 import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
+import { formatRecupero } from '@/lib/allenamento'
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
 import { formatData, formatDataLunga, formatDurata, formatNumero } from '@/lib/formato'
 import { dettaglioSessione } from '@/lib/storico'
@@ -77,24 +78,47 @@ export default async function DettaglioSessionePage({ params }: Props) {
               </Link>
             </div>
 
-            <table className="mt-3 w-full text-sm">
-              <thead className="text-left text-xs text-muto">
-                <tr>
-                  <th className="pb-1 font-semibold">Serie</th>
-                  <th className="pb-1 font-semibold">Kg</th>
-                  <th className="pb-1 font-semibold">Rip.{sessione.datiIniziali && ' *'}</th>
-                </tr>
-              </thead>
-              <tbody className="tabular-nums">
-                {esercizio.serie.map((serie, indice) => (
-                  <tr key={indice} className="border-t border-bordo">
-                    <td className="py-2 text-muto">{indice + 1}</td>
-                    <td className="py-2 font-semibold">{serie.pesoKg === null ? '—' : formatNumero(serie.pesoKg)}</td>
-                    <td className="py-2">{serie.ripetizioni}</td>
+            {/* Un esercizio a tempo (isometria) ha i secondi tenuti al posto di kg e ripetizioni. Le serie fatte prima del timer, con
+                le ripetizioni, restano com'erano. */}
+            {esercizio.serie.some((serie) => serie.durataSec !== null) ? (
+              <table className="mt-3 w-full text-sm">
+                <thead className="text-left text-xs text-muto">
+                  <tr>
+                    <th className="pb-1 font-semibold">Serie</th>
+                    <th className="pb-1 font-semibold">Tenuta</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="tabular-nums">
+                  {esercizio.serie.map((serie, indice) => (
+                    <tr key={indice} className="border-t border-bordo">
+                      <td className="py-2 text-muto">{indice + 1}</td>
+                      <td className="py-2 font-semibold">
+                        {serie.durataSec !== null ? formatRecupero(serie.durataSec) : `${serie.ripetizioni} rip`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="mt-3 w-full text-sm">
+                <thead className="text-left text-xs text-muto">
+                  <tr>
+                    <th className="pb-1 font-semibold">Serie</th>
+                    <th className="pb-1 font-semibold">Kg</th>
+                    <th className="pb-1 font-semibold">Rip.{sessione.datiIniziali && ' *'}</th>
+                  </tr>
+                </thead>
+                <tbody className="tabular-nums">
+                  {esercizio.serie.map((serie, indice) => (
+                    <tr key={indice} className="border-t border-bordo">
+                      <td className="py-2 text-muto">{indice + 1}</td>
+                      <td className="py-2 font-semibold">{serie.pesoKg === null ? '—' : formatNumero(serie.pesoKg)}</td>
+                      <td className="py-2">{serie.ripetizioni}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </li>
         ))}
       </ul>

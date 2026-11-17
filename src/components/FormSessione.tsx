@@ -4,8 +4,11 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaSessione } from '@/app/actions'
 import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
-import { descrizioneObiettivo, formatTimer, haRipetizioniPerSerie, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
+import { descrizioneObiettivo, formatRecupero, formatTimer, haRipetizioniPerSerie, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
+import { èATempo } from '@/lib/categorie'
 import { giroCompleto, nomeGruppo } from '@/lib/gruppi'
+import { preparaSegnale } from '@/lib/segnale'
+import { DURATA_PREDEFINITA } from '@/lib/voci'
 import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
 import { secondiDaTimer } from '@/lib/durata'
 import { formatDataNumerica, formatNumero } from '@/lib/formato'
@@ -14,12 +17,19 @@ import { suggerimentoSerie, suggerisciCarichi, type SuggerimentoCarico } from '@
 import type { UltimeVolte, VoceElenco } from '@/lib/tipi'
 import { ElencoEsercizi } from './ElencoEsercizi'
 import { ImmagineEsercizio } from './ImmagineEsercizio'
-import { IconaCestino, IconaMeno, IconaPiu, IconaSpunta } from './icone'
+import { IconaCestino, IconaMeno, IconaPiu, IconaPlay, IconaSpunta } from './icone'
 import { IstruzioniEsercizio } from './IstruzioniEsercizio'
 import { TempoTrascorso } from './TempoTrascorso'
+import { TimerTenuta } from './TimerTenuta'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
 
-type RigaSerie = { pesoKg: string; ripetizioni: string; confermata: boolean }
+// `durataSec`: i secondi tenuti, solo nelle serie degli esercizi a tempo (isometria), dove le ripetizioni valgono 1 e non c'è il
+// peso. Una bozza scritta prima non ce l'ha.
+type RigaSerie = { pesoKg: string; ripetizioni: string; durataSec?: string; confermata: boolean }
+
+// La serie a tempo che sta contando: `inizio` è l'ora di avvio (millisecondi) e `totale` la durata prevista. Non va nella bozza: se
+// la pagina si ricarica a metà tenuta, la serie non è confermata e si riparte con «Avvia».
+type Tenuta = { chiave: string; indice: number; inizio: number; totale: number }
 
 // Un esercizio è già della persona (esercizioId) oppure preso dal catalogo e non ancora suo (catalogoId): uno solo dei due.
 // nomeEn serve alla riga piccola sotto il nome. Una bozza salvata prima del catalogo non ha catalogoId e nomeEn, e può avere
@@ -89,6 +99,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
   const [sceltaAperta, setSceltaAperta] = useState(false)
   const [timer, setTimer] = useState<{ fine: number; totale: number } | null>(null)
   const [restano, setRestano] = useState(0)
+  const [tenuta, setTenuta] = useState<Tenuta | null>(null)
   const [bozzaPronta, setBozzaPronta] = useState(false)
   // Quando è iniziata la sessione: serve a calcolare la durata. Si imposta all'apertura, insieme alla bozza (il server non
   // vede l'orologio del telefono).
@@ -171,6 +182,50 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     return es.esercizioId ? ultime[es.esercizioId] : undefined
   }
 
+  // La categoria di un esercizio della sessione: quella della scheda, oppure (se è stato aggiunto a metà sessione) quella dell'elenco.
+  function categoriaDi(es: EsSessione): string {
+    const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
+    if (definizione) return definizione.categoria
+    const chiaveElenco = es.esercizioId ? `e${es.esercizioId}` : `c${es.catalogoId ?? 0}`
+    return elenco.find((voce) => voce.chiave === chiaveElenco)?.categoria ?? ''
+  }
+
+  // La durata prevista di ogni serie se l'esercizio è a tempo (isometria), altrimenti null. Un esercizio aggiunto a metà sessione non
+  // ha una durata nella scheda: prende quella predefinita.
+  function durataPrevista(es: EsSessione): number | null {
+    const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
+    return definizione?.obiettivo.durataSec ?? (èATempo(categoriaDi(es)) ? DURATA_PREDEFINITA : null)
+  }
+
+  // La tenuta in corso conta solo se la sua serie c'è ancora e non è già confermata (l'esercizio o la serie possono essere stati tolti).
+  const tenutaValida =
+    tenuta !== null &&
+    esercizi.some((es) => es.chiave === tenuta.chiave && es.serie[tenuta.indice] !== undefined && !es.serie[tenuta.indice].confermata)
+
+  function avviaTenuta(es: EsSessione, indice: number) {
+    const totale = durataPrevista(es)
+    if (totale === null) return
+    // Il suono ha bisogno di un tocco per essere permesso: si prepara qui, mentre la persona preme «Avvia».
+    preparaSegnale()
+    setTimer(null)
+    setErroreEsercizio(null)
+    setTenuta({ chiave: es.chiave, indice, inizio: Date.now(), totale })
+  }
+
+  // La tenuta è finita (a zero, o fermata prima): la serie si conferma da sola con i secondi tenuti.
+  function concludiTenuta(tenuti: number) {
+    if (!tenuta) return
+    const es = esercizi.find((corrente) => corrente.chiave === tenuta.chiave)
+    setTenuta(null)
+    if (!es || es.serie[tenuta.indice] === undefined || es.serie[tenuta.indice].confermata) return
+    conferma(es, tenuta.indice, tenuti)
+  }
+
+  function fermaTenuta() {
+    if (!tenuta) return
+    concludiTenuta(Math.min(tenuta.totale, Math.max(1, Math.round((Date.now() - tenuta.inizio) / 1000))))
+  }
+
   function suggerimento(es: EsSessione, indice: number) {
     const ultima = ultimaDi(es)
     const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
@@ -194,30 +249,38 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     }))
   }
 
-  function conferma(es: EsSessione, indice: number) {
+  // `tenuti`: per un esercizio a tempo, i secondi tenuti (dal timer); senza, vale la durata prevista (serie fatta senza timer).
+  function conferma(es: EsSessione, indice: number, tenuti?: number) {
     const riga = es.serie[indice]
     if (riga.confermata) {
       modificaRiga(es.chiave, indice, { confermata: false })
       return
     }
 
-    // Con i campi vuoti vale quello che l'app suggeriva in grigio.
-    const proposto = suggerimento(es, indice)
-    const kg = riga.pesoKg.trim() !== '' ? riga.pesoKg : proposto.pesoKg === null ? '' : String(proposto.pesoKg)
-    const rip = riga.ripetizioni.trim() !== '' ? riga.ripetizioni : proposto.ripetizioni === null ? '' : String(proposto.ripetizioni)
+    const prevista = durataPrevista(es)
+    if (prevista !== null) {
+      // Esercizio a tempo: niente peso né ripetizioni, solo i secondi (le ripetizioni valgono 1).
+      setErroreEsercizio(null)
+      modificaRiga(es.chiave, indice, { pesoKg: '', ripetizioni: '1', durataSec: String(tenuti ?? prevista), confermata: true })
+    } else {
+      // Con i campi vuoti vale quello che l'app suggeriva in grigio.
+      const proposto = suggerimento(es, indice)
+      const kg = riga.pesoKg.trim() !== '' ? riga.pesoKg : proposto.pesoKg === null ? '' : String(proposto.pesoKg)
+      const rip = riga.ripetizioni.trim() !== '' ? riga.ripetizioni : proposto.ripetizioni === null ? '' : String(proposto.ripetizioni)
 
-    if (kg.trim() !== '' && parseNumero(kg) === null) {
-      setErroreEsercizio({ chiave: es.chiave, testo: `Serie ${indice + 1}: il peso non è valido` })
-      return
-    }
-    const ripetizioni = parseIntero(rip)
-    if (ripetizioni === null || ripetizioni < 1) {
-      setErroreEsercizio({ chiave: es.chiave, testo: `Serie ${indice + 1}: indica le ripetizioni fatte` })
-      return
-    }
+      if (kg.trim() !== '' && parseNumero(kg) === null) {
+        setErroreEsercizio({ chiave: es.chiave, testo: `Serie ${indice + 1}: il peso non è valido` })
+        return
+      }
+      const ripetizioni = parseIntero(rip)
+      if (ripetizioni === null || ripetizioni < 1) {
+        setErroreEsercizio({ chiave: es.chiave, testo: `Serie ${indice + 1}: indica le ripetizioni fatte` })
+        return
+      }
 
-    setErroreEsercizio(null)
-    modificaRiga(es.chiave, indice, { pesoKg: kg, ripetizioni: String(ripetizioni), confermata: true })
+      setErroreEsercizio(null)
+      modificaRiga(es.chiave, indice, { pesoKg: kg, ripetizioni: String(ripetizioni), confermata: true })
+    }
 
     const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
     if (definizione?.gruppo) {
@@ -255,11 +318,14 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     // Toglie l'ultima serie non confermata; se sono tutte confermate non toglie nulla.
     const indice = es.serie.map((s) => s.confermata).lastIndexOf(false)
     if (indice === -1) return
+    // Se è la serie che sta contando, il timer si ferma insieme a lei.
+    if (tenuta && tenuta.chiave === es.chiave && tenuta.indice === indice) setTenuta(null)
     aggiorna(es.chiave, (corrente) => ({ ...corrente, serie: corrente.serie.filter((_, i) => i !== indice) }))
   }
 
   function rimuoviEsercizio(es: EsSessione) {
     if (es.serie.some((s) => s.confermata) && !window.confirm(`Rimuovere ${es.nome}? Le serie confermate andranno perse.`)) return
+    if (tenuta && tenuta.chiave === es.chiave) setTenuta(null)
     setEsercizi((prec) => prec.filter((corrente) => corrente.chiave !== es.chiave))
   }
 
@@ -295,7 +361,11 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
       catalogoId: es.esercizioId === null ? (es.catalogoId ?? null) : null,
       serie: es.serie
         .filter((riga) => riga.confermata)
-        .map((riga) => ({ pesoKg: parseNumero(riga.pesoKg), ripetizioni: parseIntero(riga.ripetizioni) })),
+        .map((riga) => ({
+          pesoKg: parseNumero(riga.pesoKg),
+          ripetizioni: parseIntero(riga.ripetizioni),
+          durataSec: riga.durataSec ? parseIntero(riga.durataSec) : null,
+        })),
     }))
 
     if (invio.every((es) => es.serie.length === 0)) return setErrore('Conferma almeno una serie con ✓')
@@ -395,6 +465,8 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
             definizioni.get(precedente.esercizioId)?.gruppo?.numero === numeroGruppo
           const carico = es.esercizioId ? suggerimentiCarico[es.esercizioId] : undefined
           const errorePerQuesto = erroreEsercizio?.chiave === es.chiave ? erroreEsercizio.testo : null
+          // La durata di ogni serie se l'esercizio è a tempo (isometria): al posto di kg e ripetizioni, un timer.
+          const prevista = durataPrevista(es)
 
           return (
             <li
@@ -425,7 +497,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                   {es.nomeEn && <p className="text-xs text-muto">{es.nomeEn}</p>}
                   <p className="text-sm text-muto">
                     {definizione ? `Target ${descrizioneObiettivo(definizione.obiettivo)}` : 'Esercizio aggiunto'}
-                    {ultima && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
+                    {ultima && prevista === null && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
                   </p>
                   {carico && <p className="mt-1 text-sm font-semibold text-accento">{testoSuggerimento(carico)}</p>}
                   {/* La nota della scheda (di chi l'ha scritta: tu o il tuo personal trainer) sta qui, ben visibile: serve proprio
@@ -451,6 +523,35 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                 </button>
               </div>
 
+              {prevista !== null ? (
+                // Esercizio a tempo: ogni serie si fa con un conto alla rovescia (avvio manuale). A zero suona, vibra e la serie si
+                // conferma da sola; fermandolo prima si registrano i secondi tenuti.
+                <div className="grid grid-cols-[1.75rem_1fr_3rem] items-center gap-x-2 gap-y-2">
+                  <span className="text-xs font-semibold text-muto">#</span>
+                  <span className="text-center text-xs font-semibold text-muto">Tenuta di {formatRecupero(prevista)}</span>
+                  <span className="text-center text-xs font-semibold text-muto">Conferma</span>
+
+                  {es.serie.map((riga, indice) => {
+                    const inCorso = tenutaValida && tenuta !== null && tenuta.chiave === es.chiave && tenuta.indice === indice ? tenuta : null
+                    return (
+                      <RigaSerieTempo
+                        key={indice}
+                        nome={es.nome}
+                        indice={indice}
+                        riga={riga}
+                        prevista={prevista}
+                        ultima={ultima?.serie[indice]?.durataSec ?? ultima?.serie[ultima.serie.length - 1]?.durataSec ?? null}
+                        inCorso={inCorso}
+                        altraInCorso={tenutaValida && inCorso === null}
+                        alAvvia={() => avviaTenuta(es, indice)}
+                        alFerma={fermaTenuta}
+                        alFinito={() => concludiTenuta(prevista)}
+                        alConferma={() => conferma(es, indice)}
+                      />
+                    )
+                  })}
+                </div>
+              ) : (
               <div className="grid grid-cols-[1.75rem_1fr_1fr_3rem] items-center gap-x-2 gap-y-2">
                 <span className="text-xs font-semibold text-muto">#</span>
                 <span className="text-center text-xs font-semibold text-muto">Kg</span>
@@ -473,6 +574,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                   )
                 })}
               </div>
+              )}
 
               {errorePerQuesto && (
                 <p role="alert" className="text-sm text-errore">
@@ -480,10 +582,12 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                 </p>
               )}
 
-              <div className="grid grid-cols-3 gap-2">
-                <button type="button" onClick={() => applicaSuggeriti(es)} disabled={!ultima && !definizione} className={stileBottoneChiaro}>
-                  Suggeriti
-                </button>
+              <div className={`grid gap-2 ${prevista !== null ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {prevista === null && (
+                  <button type="button" onClick={() => applicaSuggeriti(es)} disabled={!ultima && !definizione} className={stileBottoneChiaro}>
+                    Suggeriti
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => aggiorna(es.chiave, (corrente) => ({ ...corrente, serie: [...corrente.serie, rigaVuota()] }))}
@@ -497,7 +601,11 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                   Serie
                 </button>
               </div>
-              <p className="text-xs text-muto">I valori grigi sono solo suggerimenti: la serie conta solo dopo ✓.</p>
+              <p className="text-xs text-muto">
+                {prevista !== null
+                  ? 'Premi Avvia: a zero suona e la serie si conferma da sola. Con Ferma registri i secondi tenuti; con ✓ la serie vale la durata intera.'
+                  : 'I valori grigi sono solo suggerimenti: la serie conta solo dopo ✓.'}
+              </p>
             </li>
           )
         })}
@@ -569,6 +677,75 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
         </div>
       )}
     </div>
+  )
+}
+
+// Una serie a tempo: «Avvia» fa partire il conto alla rovescia, che mostra il tempo che resta e «Ferma»; la serie confermata mostra i
+// secondi tenuti. Il ✓ conferma la serie con la durata intera (senza timer), oppure la annulla.
+function RigaSerieTempo(props: {
+  nome: string
+  indice: number
+  riga: RigaSerie
+  prevista: number
+  ultima: number | null
+  inCorso: Tenuta | null
+  altraInCorso: boolean
+  alAvvia: () => void
+  alFerma: () => void
+  alFinito: () => void
+  alConferma: () => void
+}) {
+  const { nome, indice, riga, prevista, ultima, inCorso, altraInCorso, alAvvia, alFerma, alFinito, alConferma } = props
+  const tenuti = riga.durataSec ? Number(riga.durataSec) : prevista
+  return (
+    <>
+      <span className="text-sm font-semibold text-muto">{indice + 1}</span>
+      <div className="min-w-0">
+        {riga.confermata ? (
+          <p className="rounded-2xl border border-ok/60 bg-carta px-3 py-3 text-center text-base font-extrabold tabular-nums">
+            {formatRecupero(tenuti)} <span className="text-xs font-semibold text-muto">tenuti</span>
+          </p>
+        ) : inCorso ? (
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-carta-alta px-3 py-1.5">
+            <TimerTenuta inizio={inCorso.inizio} totale={inCorso.totale} alFinito={alFinito} />
+            <button
+              type="button"
+              aria-label={`Ferma la serie ${indice + 1} di ${nome}`}
+              onClick={alFerma}
+              className={`${stileBottoneChiaro} min-h-11 touch-manipulation`}
+            >
+              Ferma
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              aria-label={`Avvia il timer della serie ${indice + 1} di ${nome}: ${formatRecupero(prevista)}`}
+              disabled={altraInCorso}
+              onClick={alAvvia}
+              className="flex min-h-12 w-full touch-manipulation items-center justify-center gap-1.5 rounded-full bg-accento px-4 py-3 text-sm font-extrabold text-su-accento transition active:opacity-80 disabled:opacity-40"
+            >
+              <IconaPlay className="size-4" />
+              Avvia · {formatRecupero(prevista)}
+            </button>
+            {ultima !== null && <p className="mt-1 text-center text-xs text-muto">ultima volta {formatRecupero(ultima)}</p>}
+          </>
+        )}
+      </div>
+      <button
+        type="button"
+        aria-pressed={riga.confermata}
+        aria-label={`${riga.confermata ? 'Annulla conferma della' : 'Conferma la'} serie ${indice + 1} di ${nome}`}
+        disabled={inCorso !== null}
+        onClick={alConferma}
+        className={`grid size-12 place-items-center justify-self-center rounded-full transition disabled:opacity-40 ${
+          riga.confermata ? 'bg-ok text-su-accento' : 'border border-bordo bg-carta-alta text-muto'
+        }`}
+      >
+        <IconaSpunta className="size-5" />
+      </button>
+    </>
   )
 }
 

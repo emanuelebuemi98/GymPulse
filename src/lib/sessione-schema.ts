@@ -4,18 +4,31 @@ import { istanteDaData } from './formato'
 
 // Regole per una sessione registrata. Il browser non è fidato: il server ricontrolla tutto.
 
-export const serieSchema = z.object({
-  pesoKg: z
-    .number({ error: 'Peso non valido' })
-    .min(0, 'Il peso non può essere negativo')
-    .max(500, 'Peso troppo alto')
-    .nullable(),
-  ripetizioni: z
-    .number({ error: 'Ripetizioni non valide' })
-    .int('Le ripetizioni devono essere un numero intero')
-    .min(1, 'Almeno una ripetizione')
-    .max(999, 'Ripetizioni troppo alte'),
-})
+export const serieSchema = z
+  .object({
+    pesoKg: z
+      .number({ error: 'Peso non valido' })
+      .min(0, 'Il peso non può essere negativo')
+      .max(500, 'Peso troppo alto')
+      .nullable(),
+    ripetizioni: z
+      .number({ error: 'Ripetizioni non valide' })
+      .int('Le ripetizioni devono essere un numero intero')
+      .min(1, 'Almeno una ripetizione')
+      .max(999, 'Ripetizioni troppo alte'),
+    // I secondi tenuti in una serie a tempo (isometria). Se manca vale "nessuno": una pagina rimasta aperta da prima non lo manda.
+    durataSec: z
+      .number({ error: 'Durata non valida' })
+      .int('La durata deve essere in secondi interi')
+      .min(1, 'La durata deve essere di almeno 1 secondo')
+      .max(3600, 'Durata troppo lunga')
+      .nullable()
+      .default(null),
+  })
+  // Una serie a tempo conta come una ripetizione e non ha peso: lo chiede anche il database.
+  .refine((s) => s.durataSec === null || (s.ripetizioni === 1 && s.pesoKg === null), {
+    message: 'Una serie a tempo non ha peso né ripetizioni',
+  })
 
 // Un esercizio già della persona (esercizioId) oppure preso dal catalogo (catalogoId): uno solo dei due. Gli esercizi non
 // si scrivono più a mano.

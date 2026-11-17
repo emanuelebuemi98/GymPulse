@@ -54,12 +54,12 @@ export async function salvaSessione(
 
   const id = await db.$transaction(async (tx) => {
     let ordine = 0
-    const serie: { esercizioId: number; ordine: number; pesoKg: number | null; ripetizioni: number }[] = []
+    const serie: { esercizioId: number; ordine: number; pesoKg: number | null; ripetizioni: number; durataSec: number | null }[] = []
     for (const esercizio of esercizi) {
       // Un esercizio è della persona oppure del catalogo (lo garantisce la validazione): quello del catalogo nasce qui.
       const esercizioId = esercizio.esercizioId ?? (await esercizioDalCatalogo(tx, userId, esercizio.catalogoId!))
       for (const s of esercizio.serie) {
-        serie.push({ esercizioId, ordine: ++ordine, pesoKg: s.pesoKg, ripetizioni: s.ripetizioni })
+        serie.push({ esercizioId, ordine: ++ordine, pesoKg: s.pesoKg, ripetizioni: s.ripetizioni, durataSec: s.durataSec })
       }
     }
 

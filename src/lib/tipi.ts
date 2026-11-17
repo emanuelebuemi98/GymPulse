@@ -1,5 +1,6 @@
 // Una serie come è salvata nel database. Il peso è vuoto per gli esercizi a corpo libero.
-export type SerieRegistrata = { pesoKg: number | null; ripetizioni: number }
+// `durataSec`: i secondi tenuti, solo per gli esercizi a tempo (isometria): in quel caso le ripetizioni valgono 1 e non c'è il peso.
+export type SerieRegistrata = { pesoKg: number | null; ripetizioni: number; durataSec: number | null }
 
 // L'ultima volta che hai fatto un esercizio: serve a precompilare i suggerimenti.
 // datiIniziali = true: serie importate a mano, con ripetizioni non registrate davvero.

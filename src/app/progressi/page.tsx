@@ -6,6 +6,7 @@ import { SchedeProgressi } from '@/components/SchedeProgressi'
 import { SelettoreEsercizio } from '@/components/SelettoreEsercizio'
 import { stileCarta } from '@/components/stili'
 import { PesoPerGruppo } from '@/components/PesoPerGruppo'
+import { formatRecupero } from '@/lib/allenamento'
 import { dataIso, formatData, formatDataBreve, formatDataNumerica, formatNumero } from '@/lib/formato'
 import { istanteDaIso, lunediDi, pesoPerGruppo, perGiornata, perSettimana, riepilogoGenerale, spostaSettimane } from '@/lib/panoramica'
 import { descriviSomma } from '@/lib/progressi'
@@ -125,7 +126,7 @@ async function Panoramica({
         <div>
           <h2 className="text-lg font-extrabold">Kg per gruppo muscolare</h2>
           <p className="text-sm text-muto">
-            I kg di tutte le serie della settimana, sommati per gruppo. Addome, cardio e riscaldamento non hanno kg da sommare e non compaiono.
+            I kg di tutte le serie della settimana, sommati per gruppo. Addome, isometria, cardio e riscaldamento non hanno kg da sommare e non compaiono.
           </p>
         </div>
         <div className="flex items-center justify-between gap-2">
@@ -247,6 +248,66 @@ async function PerEsercizio({
     etichetta: formatDataBreve(seduta.data),
     descrizione: formatData(seduta.data),
   })
+
+  // Un esercizio a tempo (isometria): si segue la tenuta, in secondi, non le ripetizioni. Le sedute fatte prima del timer (con le
+  // ripetizioni) non hanno secondi e non compaiono nei grafici, che restano comunque veri.
+  if (andamento.some((s) => s.serie.some((x) => x.durataSec !== null))) {
+    const conTenuta = andamento.flatMap((seduta) => {
+      const secondi = seduta.serie.flatMap((s) => (s.durataSec === null ? [] : [s.durataSec]))
+      return secondi.length === 0 ? [] : [{ seduta, secondi }]
+    })
+    const puntiMassima: PuntoSerie[] = conTenuta.map(({ seduta, secondi }) => {
+      const massima = Math.max(...secondi)
+      return { ...comuni(seduta), valore: massima, testo: formatRecupero(massima) }
+    })
+    const puntiTotale: PuntoSerie[] = conTenuta.map(({ seduta, secondi }) => {
+      const totale = secondi.reduce((somma, s) => somma + s, 0)
+      return {
+        ...comuni(seduta),
+        valore: totale,
+        testo: formatRecupero(totale),
+        dettaglio: secondi.length > 1 ? `${descriviSomma(secondi)} s` : undefined,
+      }
+    })
+
+    return (
+      <div className="space-y-5">
+        <h1 className="text-3xl font-extrabold tracking-tight">Progressi</h1>
+        <SchedeProgressi attiva="esercizio" primoEsercizio={scelto.id} />
+        <SelettoreEsercizio esercizi={esercizi} scelto={scelto.id} />
+
+        <section className={`${stileCarta} space-y-3 p-4`}>
+          <div>
+            <h2 className="text-lg font-extrabold">Tenuta più lunga</h2>
+            <p className="text-sm text-muto">La serie tenuta più a lungo di questo esercizio, seduta per seduta, in secondi.</p>
+          </div>
+          <GraficoSerie
+            tipo="linea"
+            punti={puntiMassima}
+            titolo={`Tenuta più lunga di ${scelto.nome}`}
+            colonnaEtichetta="Data"
+            colonnaValore="Tenuta più lunga"
+            interi
+          />
+        </section>
+
+        <section className={`${stileCarta} space-y-3 p-4`}>
+          <div>
+            <h2 className="text-lg font-extrabold">Tempo totale per seduta</h2>
+            <p className="text-sm text-muto">I secondi di tutte le serie di questo esercizio sommati, seduta per seduta.</p>
+          </div>
+          <GraficoSerie
+            tipo="barre"
+            punti={puntiTotale}
+            titolo={`Tempo totale di ${scelto.nome}`}
+            colonnaEtichetta="Data"
+            colonnaValore="Tempo totale"
+            interi
+          />
+        </section>
+      </div>
+    )
+  }
 
   // Con i pesi si segue il carico massimo di ogni seduta; a corpo libero, le ripetizioni totali.
   const puntiPrincipale: PuntoSerie[] = andamento.flatMap((seduta) => {

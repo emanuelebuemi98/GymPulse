@@ -106,7 +106,7 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
       categoria: riga.esercizio.categoria,
       serie: [],
     }
-    gruppo.serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni })
+    gruppo.serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni, durataSec: riga.durataSec })
     gruppi.set(riga.esercizioId, gruppo)
   }
 
@@ -144,7 +144,7 @@ export async function ultimeVolte(userId: number, esercizioIds: number[]): Promi
       datiIniziali: riga.sessione.datiIniziali,
       serie: [],
     }
-    risultato[riga.esercizioId].serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni })
+    risultato[riga.esercizioId].serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni, durataSec: riga.durataSec })
   }
   return risultato
 }
@@ -182,7 +182,7 @@ export async function andamentoEsercizio(userId: number, esercizioId: number): P
       datiIniziali: riga.sessione.datiIniziali,
       serie: [],
     }
-    gruppo.serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni })
+    gruppo.serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni, durataSec: riga.durataSec })
     perSessione.set(riga.sessioneId, gruppo)
   }
 
