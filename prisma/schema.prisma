@@ -148,7 +148,9 @@ model Esercizio {
 //   il recupero dopo ogni giro del gruppo, uguale su tutti i suoi esercizi. Vuoti entrambi per un esercizio singolo.
 // durataSec: solo per gli esercizi a tempo (categoria isometria): la durata di ogni serie in secondi, uguale per tutte. Una voce a
 //   tempo ha ripMin e ripMax a 1 e non sta in una super serie. Vuota per tutti gli altri esercizi.
-//   I CHECK "VoceScheda_tipo", "VoceScheda_ripSerie", "VoceScheda_gruppo" e "VoceScheda_durataSec" stanno nella migrazione: Prisma non li descrive.
+// velocitaKmh e inclinazionePct: per il cardio con velocità (tapis roulant, corsa all'aperto): la velocità e la pendenza di partenza di ogni
+//   tratto. In quel caso durataSec è la durata di ogni tratto. Vuote per tutto il resto.
+//   I CHECK "VoceScheda_tipo", "VoceScheda_ripSerie", "VoceScheda_gruppo", "VoceScheda_durataSec" e "VoceScheda_velocita" stanno nella migrazione: Prisma non li descrive.
 model VoceScheda {
   id           String       @id @default(cuid())
   userId       Int
@@ -169,6 +171,8 @@ model VoceScheda {
   gruppo            Int?
   recuperoGruppoSec Int?
   durataSec         Int?
+  velocitaKmh       Float?
+  inclinazionePct   Float?
   giorno       GiornoScheda @relation(fields: [userId, giornoId], references: [userId, id], onDelete: Cascade)
   esercizio    Esercizio    @relation(fields: [userId, esercizioId], references: [userId, id], onDelete: NoAction)
 
@@ -188,6 +192,8 @@ model Sessione {
   // le durate già salvate sono state riportate in secondi dalla migrazione `durata_in_secondi`.
   durataSecondi Int?
   durataMinuti Int?
+  // Il peso di quel giorno, in kg: serve a stimare le calorie del cardio. Vuoto per le sedute senza cardio con velocità.
+  pesoCorporeoKg Float?
   datiIniziali Boolean         @default(false)
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   giorno       GiornoScheda    @relation(fields: [userId, giornoId], references: [userId, id], onDelete: NoAction)
@@ -200,6 +206,9 @@ model Sessione {
 // Una serie registrata. Il peso è vuoto per gli esercizi a corpo libero.
 // durataSec: i secondi tenuti, solo per gli esercizi a tempo (isometria). Una serie a tempo ha ripetizioni = 1 e nessun peso (il CHECK
 // "SerieEseguita_durataSec" lo impone); non confonderla con Sessione.durataSecondi, che è la durata dell'intera seduta.
+// Un tratto di cardio è una serie a tempo: durataSec è il suo tempo e velocitaKmh, inclinazionePct, km, kcal e bpm i suoi dati (km e kcal
+// si calcolano dalla velocità, oppure si scrivono a mano per le macchine senza velocità). Il CHECK "SerieEseguita_tratto" li tiene
+// dentro limiti sensati e solo insieme alla durata.
 // ordine = posizione della serie nella sessione (1, 2, 3, ...), anche tra esercizi diversi.
 // userId deve essere lo stesso della sessione e dell'esercizio: lo garantiscono le due chiavi esterne.
 model SerieEseguita {
@@ -211,6 +220,11 @@ model SerieEseguita {
   pesoKg      Float?
   ripetizioni Int
   durataSec   Int?
+  velocitaKmh     Float?
+  inclinazionePct Float?
+  km              Float?
+  kcal            Int?
+  bpm             Int?
   sessione    Sessione  @relation(fields: [sessioneId, userId], references: [id, userId], onDelete: Cascade)
   esercizio   Esercizio @relation(fields: [userId, esercizioId], references: [userId, id], onDelete: NoAction)
 
