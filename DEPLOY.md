@@ -20,11 +20,12 @@ Cosa è già stato pubblicato, deploy per deploy, è in `STORICO_RILASCI.md`. I 
 
 *Si riscrive a ogni deploy, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
 
-**Nessun deploy in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
-- **Migrazioni:** i nomi, e se aggiungono soltanto colonne o indici (il codice vecchio funziona ancora) oppure rinominano o tolgono qualcosa (passi 5-9 di fila).
-- **Catalogo:** cambiato o no (passi 6 e 7).
-- **Variabili nuove su Vercel:** i nomi (passo 9).
-- **Da provare dopo la pubblicazione:** l'elenco delle prove (passo 11).
+*(Dopo ogni deploy il riquadro si svuota e si riscrive con questi quattro punti: migrazioni, catalogo, variabili, prove.)*
+
+- **Migrazioni:** nessuna nuova (passi 2, 3, 4, 5 e 8 si saltano). Se l'ultima, `20261118100000_cardio_a_tratti`, non fosse ancora su Neon (il rilascio 13 la dà «da verificare»), il passo 4 la elenca e va applicata prima del resto.
+- **Catalogo:** cambiato, quindi passi 6 e 7. Sono **24 voci nuove** (452-475: 4 di Isometria e 20 di Addome, da 451 a 475 esercizi), la **213** con il nome italiano «Sollevamento punte dei piedi alla sbarra», e **54 gif** in `public/gif-esercizi` (30 per voci che avevano solo la foto, 24 per le voci nuove). La prova del passo 6 deve dire **24 nuovi** e **nessun esercizio sostituito**. La voce **457** ha solo la gif, senza foto: «Immagini trovate» sarà 474 su 475, ed è giusto così.
+- **Variabili nuove su Vercel:** nessuna.
+- **Da provare dopo la pubblicazione:** il «Catalogo degli esercizi» (`/catalogo`) con la linguetta Addome a 49 voci e Isometria a 21; aprire il «Come si fa» di una voce nuova (per esempio 458 V-up con fitball) e della 457, che mostra solo la gif; la pagina iniziale con «Catalogo di 475 esercizi».
 
 ---
 
@@ -135,7 +136,7 @@ set PROVA=
 
 - [ ] Compare `*** PROVA: non è stato scritto niente ***`.
 - [ ] Nessun errore tipo "qualcuno li usa". Se compare, lo script **non ha cambiato niente**: significa che una persona ha in scheda o nello storico un esercizio che nel file è stato sostituito da un altro sullo stesso numero. Se la sostituzione è voluta (per esempio un esercizio rinominato, o la cui foto e il cui testo erano di un altro), si rilancia la prova con `set SOSTITUISCI_IN_USO=1` (su una riga da solo, come `PROVA`): la prova elenca le voci coinvolte, e gli esercizi di quella persona restano agganciati alla stessa riga, con serie e storico intatti; cambiano il nome e la categoria. Poi `set SOSTITUISCI_IN_USO=` (vuota) alla fine del passo 7.
-- [ ] Immagini trovate: tutte (ora sono 451 su 451). Anche le gif: «Gif trovate» può essere meno del totale (gli esercizi senza gif restano senza), ma nessun file deve comparire tra quelli che non corrispondono a nessun esercizio.
+- [ ] Immagini trovate: tutte tranne la 457 (ora sono 474 su 475: la 457 ha solo la gif, quindi nel catalogo resta senza foto). Anche le gif: «Gif trovate» può essere meno del totale (gli esercizi senza gif restano senza), ma nessun file deve comparire tra quelli che non corrispondono a nessun esercizio.
 - [ ] Gli esercizi personali non riconosciuti sono **0**. Se ne resta qualcuno, ci si ferma: il suo nome non coincide con il nome italiano o inglese di nessuna voce, e va corretto.
 - [ ] Gli esercizi collegati al catalogo e le voci nuove sono quelli che ti aspetti dalle modifiche del passo A (la prima volta: 23 collegati e 246 nuovi; a catalogo già caricato e invariato, la prova dice 0 e 0).
 
