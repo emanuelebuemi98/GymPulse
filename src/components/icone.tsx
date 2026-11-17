@@ -54,6 +54,14 @@ export const IconaPlay = (p: Props) => (
   </Icona>
 )
 
+export const IconaCronometro = (p: Props) => (
+  <Icona {...p}>
+    <circle cx="12" cy="13.5" r="7" />
+    <path d="M12 10v3.5l2 1.5" />
+    <path d="M9.5 3.5h5" />
+  </Icona>
+)
+
 export const IconaSpunta = (p: Props) => (
   <Icona {...p}>
     <path d="M5 12.5 10 17.5 19 7" />

@@ -472,6 +472,118 @@ export function SchermataCsv() {
   )
 }
 
+// Un esercizio a tempo (isometria) nella scheda: niente ripetizioni né kg, ma serie, durata (la stessa per tutte le serie) e recupero.
+export function SchermataTenuteScheda() {
+  return (
+    <Telefono>
+      <Barra attiva="Scheda" />
+      <p className="text-[13px] font-extrabold">Personalizza A</p>
+      <div className="space-y-2 rounded-2xl border border-bordo bg-carta p-2">
+        <div className="flex items-center gap-2">
+          <Miniatura nome="Plank addominale isometrico" file="198_plank" className="size-10" />
+          <span className="min-w-0">
+            <span className="block text-[11px] leading-tight font-extrabold">Plank addominale isometrico</span>
+            <span className="block text-[9px] text-muto">
+              Categoria: <span className="font-bold text-testo">Isometria</span>
+            </span>
+          </span>
+        </div>
+        <p className="text-[9.5px] font-semibold text-muto">Tenuta</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {[
+            ['Serie', '3'],
+            ['Durata (s)', '45'],
+            ['Recupero (s)', '60'],
+          ].map(([etichetta, valore]) => (
+            <span key={etichetta} className="block">
+              <span className="block text-[8.5px] text-muto">{etichetta}</span>
+              <span className="mt-0.5 block rounded-xl border border-bordo bg-fondo py-1.5 text-center text-[12px] font-bold">{valore}</span>
+            </span>
+          ))}
+        </div>
+        <p className="text-[9px] text-muto">
+          Ora: <span className="font-semibold text-testo">3 × 45 s · recupero 1 min</span>. La stessa durata per tutte le serie.
+        </p>
+      </div>
+      <p className="rounded-xl bg-carta-alta px-2 py-1.5 text-[9px] text-muto">
+        Niente ripetizioni, carico a salire o super serie: l&apos;esercizio si fa a tempo.
+      </p>
+    </Telefono>
+  )
+}
+
+// La sessione con una serie a tempo: la prima è fatta, la seconda sta contando alla rovescia, la terza aspetta il suo «Avvia».
+export function SchermataTimerTenuta() {
+  const riga = 'grid grid-cols-[1rem_1fr_1.6rem] items-center gap-1.5'
+  const spunta = (fatta: boolean) => (
+    <span className={`grid size-6 place-items-center rounded-full text-[11px] font-extrabold ${fatta ? 'bg-ok text-fondo' : 'bg-carta-alta text-muto'}`}>
+      ✓
+    </span>
+  )
+  return (
+    <Telefono>
+      <div className="flex items-center gap-2">
+        <ImmagineEsercizio src="/esercizi/198_plank.jpg" nome="Plank addominale isometrico" className="size-10 rounded-lg" />
+        <span>
+          <span className="block text-[13px] leading-tight font-extrabold">Plank addominale isometrico</span>
+          <span className="block text-[9.5px] text-muto">Target 3 × 45 s</span>
+        </span>
+      </div>
+      <p className="mt-1 text-center text-[9px] font-semibold text-muto">Tenuta di 45 s</p>
+      <div className={riga}>
+        <span className="text-[10px] font-bold text-muto">1</span>
+        <span className="rounded-xl border border-ok/60 bg-carta py-1.5 text-center text-[12px] font-extrabold tabular-nums">
+          45 s <span className="text-[9px] font-semibold text-muto">tenuti</span>
+        </span>
+        {spunta(true)}
+      </div>
+      <div className={riga}>
+        <span className="text-[10px] font-bold text-muto">2</span>
+        <span className="flex items-center justify-between rounded-xl bg-carta-alta py-1 pr-1 pl-2.5">
+          <span className="text-[18px] leading-none font-extrabold text-accento tabular-nums">0:23</span>
+          <span className="rounded-full border border-bordo bg-carta px-2.5 py-1 text-[9.5px] font-bold">Ferma</span>
+        </span>
+        {spunta(false)}
+      </div>
+      <div className={riga}>
+        <span className="text-[10px] font-bold text-muto">3</span>
+        <span className="rounded-full bg-accento py-1.5 text-center text-[10.5px] font-extrabold text-su-accento opacity-50">▷ Avvia · 45 s</span>
+        {spunta(false)}
+      </div>
+      <p className="rounded-xl bg-ok/10 px-2 py-1 text-[10px] font-semibold text-ok">A zero suona e la serie si conferma da sola</p>
+    </Telefono>
+  )
+}
+
+// Il personal trainer: la scheda di un utente della sua palestra, che può modificare. Dell'allievo vede il nome e la scheda; niente
+// kg, storico o grafici.
+export function SchermataTrainer() {
+  return (
+    <Telefono>
+      <Barra attiva="Home" />
+      <p className="text-[9.5px] font-semibold text-accento">‹ I tuoi allievi</p>
+      <p className="text-[15px] leading-tight font-extrabold">Giulia Bianchi</p>
+      <div className="grid grid-cols-5 gap-0.5 rounded-2xl bg-carta-alta p-0.5 text-center">
+        {['A', 'B', 'C'].map((sigla) => (
+          <span key={sigla} className={`rounded-xl py-1 text-[13px] font-extrabold ${sigla === 'A' ? 'bg-carta text-testo shadow-sm' : 'text-muto'}`}>
+            {sigla}
+          </span>
+        ))}
+        <span className="rounded-xl py-1 text-[13px] font-extrabold text-muto">+</span>
+      </div>
+      <div className="flex items-end justify-between">
+        <span>
+          <span className="block text-[9px] font-semibold text-muto">Allenamento A</span>
+          <span className="block text-[13px] leading-tight font-extrabold">Gambe e glutei</span>
+        </span>
+        <span className="rounded-full border border-bordo bg-carta px-2 py-1 text-[9px] font-semibold">Modifica</span>
+      </div>
+      <Esercizio immagine={foto('172_barbell-back-squat')} nome="Squat con bilanciere" dettaglio="4 × 6-8 · recupero 2 min" />
+      <Esercizio immagine={foto('198_plank')} nome="Plank addominale isometrico" dettaglio="3 × 45 s · recupero 1 min" />
+    </Telefono>
+  )
+}
+
 function BarraOrizzontale({ nome, kg, quota }: { nome: string; kg: string; quota: number }) {
   return (
     <div>

@@ -16,10 +16,14 @@ import {
   SchermataSessione,
   SchermataStorico,
   SchermataSuperSerie,
+  SchermataTenuteScheda,
+  SchermataTimerTenuta,
+  SchermataTrainer,
 } from '@/components/benvenuto/Index'
 import {
   IconaCarica,
   IconaChevronGiu,
+  IconaCronometro,
   IconaPlay,
   IconaProgressi,
   IconaRegolazioni,
@@ -64,6 +68,11 @@ const schermate = [
     schermata: <SchermataSuperSerie />,
   },
   {
+    titolo: 'Esercizi a tempo',
+    testo: 'Plank, wall sit e gli altri esercizi di isometria si tengono per un tempo: nella scheda scegli le serie, la durata (la stessa per tutte le serie) e il recupero. Niente kg né ripetizioni, e non entrano nelle super serie (come cardio e riscaldamento).',
+    schermata: <SchermataTenuteScheda />,
+  },
+  {
     titolo: 'Il catalogo',
     testo: 'Tutti i 451 esercizi divisi per categoria (Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio, Riscaldamento), con la foto o l\'animazione di ognuno, la ricerca per nome e le linguette per scegliere.',
     schermata: <SchermataCatalogo />,
@@ -74,8 +83,13 @@ const schermate = [
     schermata: <SchermataSessione />,
   },
   {
+    titolo: 'Il timer della tenuta',
+    testo: 'Per un esercizio a tempo tocchi Avvia e il conto alla rovescia scende. A zero suona e vibra (dove il telefono lo permette), la serie si conferma da sola con la durata intera e parte il recupero. Con Ferma registri i secondi tenuti.',
+    schermata: <SchermataTimerTenuta />,
+  },
+  {
     titolo: 'Come si fa',
-    testo: 'Ogni esercizio ha l\'immagine, i passi dell\'esecuzione e gli errori da evitare.',
+    testo: 'Ogni esercizio ha la foto (e, per quasi tutti, un\'animazione che mostra il movimento), i passi dell\'esecuzione e gli errori da evitare.',
     schermata: <SchermataComeSiFa />,
   },
   {
@@ -108,13 +122,18 @@ const schermate = [
     testo: 'Scarichi il catalogo in un file, tieni solo gli esercizi che ti servono, scrivi la lettera della giornata e lo importi: la scheda è fatta.',
     schermata: <SchermataCsv />,
   },
+  {
+    titolo: 'Per i personal trainer',
+    testo: 'Se indichi la tua palestra, il suo personal trainer vede le tue giornate e le può modificare: esercizi, serie, durate, recuperi e note. Non vede i kg, lo storico né i grafici. Chi ha già un account può passare a personal trainer dalla pagina Account, con il codice d\'invito.',
+    schermata: <SchermataTrainer />,
+  },
 ]
 
 const passi = [
   {
     titolo: 'Costruisci la scheda',
     testo:
-      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 451, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni (serie fisse, con un minimo e un massimo, oppure serie piramidale come 12-10-8-6) e recupero, e se vuoi metti insieme più esercizi in un superset, un triset o un gigantset.',
+      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 451, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni (serie fisse, con un minimo e un massimo, oppure serie piramidale come 12-10-8-6; per plank e simili la durata) e recupero, e se vuoi metti insieme più esercizi in un superset, un triset o un gigantset.',
   },
   {
     titolo: 'Allenati',
@@ -139,6 +158,11 @@ const funzioni = [
     testo: 'Parte dopo ogni serie con il tempo previsto dalla scheda, e vibra quando è finito. Nei superset, nei triset e nei gigantset parte alla fine del giro.',
   },
   {
+    icona: IconaCronometro,
+    titolo: 'Esercizi a tempo',
+    testo: 'Plank, wall sit, trazioni isometriche e corde navali si tengono per un tempo, non per ripetizioni: nella scheda scegli serie, durata (la stessa per tutte le serie) e recupero. In palestra tocchi Avvia e il conto alla rovescia scende: a zero suona e vibra (dove il telefono lo permette), la serie si conferma da sola e parte il recupero. Se ti fermi prima, registri i secondi tenuti; nello storico e nei grafici vedi la tenuta più lunga e il tempo totale.',
+  },
+  {
     icona: IconaSpunta,
     titolo: 'Non perdi niente',
     testo: 'Se il telefono si spegne a metà allenamento, le serie confermate restano e riprendi da dove eri.',
@@ -146,7 +170,7 @@ const funzioni = [
   {
     icona: IconaRegolazioni,
     titolo: 'Ripetizioni e super serie',
-    testo: 'Per ogni esercizio scegli le serie fisse, con un minimo e un massimo, oppure la serie piramidale: una ripetizione diversa per ogni serie, a scendere o a salire (12-10-8-6). E puoi unire più esercizi in un superset, un triset o un gigantset.',
+    testo: 'Per ogni esercizio scegli le serie fisse, con un minimo e un massimo, oppure la serie piramidale: una ripetizione diversa per ogni serie, a scendere o a salire (12-10-8-6). E puoi unire più esercizi in un superset, un triset o un gigantset (non gli esercizi di isometria, cardio e riscaldamento).',
   },
   {
     icona: IconaStorico,
