@@ -1,3 +1,4 @@
+import { numeroInTesto } from './cardio'
 import { dataIso } from './formato'
 import { lunediDi } from './panoramica'
 import type { Gruppo, Obiettivo } from './scheda-tipi'
@@ -56,6 +57,12 @@ function obiettivoSerie(ripSerie: number[], indice: number): number {
 }
 
 export function descrizioneObiettivo(obiettivo: Obiettivo): string {
+  // Il cardio, a tratti: "1 × 20 min a 8 km/h", "3 × 5 min a 10,7 km/h · 5%". Senza velocità (cyclette, ellittica...): "1 × 20 min".
+  if (obiettivo.cardio && obiettivo.durataSec !== undefined) {
+    const velocita = obiettivo.velocitaKmh !== undefined ? ` a ${numeroInTesto(obiettivo.velocitaKmh)} km/h` : ''
+    const pendenza = obiettivo.inclinazionePct ? ` · ${numeroInTesto(obiettivo.inclinazionePct)}%` : ''
+    return `${obiettivo.serie} × ${formatRecupero(obiettivo.durataSec)}${velocita}${pendenza}`
+  }
   // Un esercizio a tempo: "3 × 45 s", "3 × 1 min 30 s".
   if (obiettivo.durataSec !== undefined) return `${obiettivo.serie} × ${formatRecupero(obiettivo.durataSec)}`
   // Ripetizioni diverse per ogni serie: "4 × 12-10-8-6".

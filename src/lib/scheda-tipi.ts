@@ -4,8 +4,8 @@
 // Recupero in secondi, carico in kg.
 // `ripSerie`: le ripetizioni di ogni serie, quando sono diverse (12, 10, 8, 6): c'è solo in quel caso, e ha tante voci quante sono le
 // serie. In quel caso `ripMin` e `ripMax` sono il minimo e il massimo della lista. Senza, le ripetizioni sono le stesse per tutte.
-// `durataSec`: c'è solo per gli esercizi a tempo (isometria): la durata di ogni serie in secondi, uguale per tutte. In quel caso
-// `ripMin` e `ripMax` valgono 1 (una tenuta conta come una ripetizione) e non c'è `ripSerie`.
+// `durataSec`: c'è solo per gli esercizi a tempo (isometria) e per il cardio: la durata di ogni serie (o tratto) in secondi, uguale per
+// tutte. In quel caso `ripMin` e `ripMax` valgono 1 (una tenuta conta come una ripetizione) e non c'è `ripSerie`.
 export type Obiettivo = {
   tipo: 'serie'
   serie: number
@@ -14,6 +14,11 @@ export type Obiettivo = {
   recuperoSec: number
   ripSerie?: number[]
   durataSec?: number
+  // Solo per il cardio: ogni «serie» è un tratto, lungo `durataSec`. `velocitaKmh` e `inclinazionePct` ci sono solo sulle macchine che li
+  // hanno (tapis roulant, corsa all'aperto). `cardio` dice che è un tratto e non una tenuta (isometria): il testo e la sessione cambiano.
+  cardio?: true
+  velocitaKmh?: number
+  inclinazionePct?: number
 }
 
 // Un gruppo di esercizi consecutivi senza pausa tra uno e l'altro: superset (2), triset (3), gigantset (4 o più). `numero` è uguale per

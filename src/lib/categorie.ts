@@ -46,6 +46,12 @@ export function èATempo(categoria: string): boolean {
   return chiave !== null && CATEGORIE_A_TEMPO.includes(chiave)
 }
 
+// Il cardio si fa a tratti: ogni tratto ha una durata e, sulle macchine con la velocità, la velocità e la pendenza. Da lì km e calorie
+// (vedi cardio.ts). Nella scheda non ha ripetizioni, recupero né carico a salire.
+export function èCardio(categoria: string): boolean {
+  return categoriaDa(categoria) === 'cardio'
+}
+
 // Le categorie i cui esercizi non fanno parte di una super serie (superset, triset, gigantset): quelli a tempo hanno un timer, il
 // cardio si fa su una macchina e il riscaldamento si fa a parte. Un esercizio senza categoria (da un vecchio file) non è escluso.
 export const CATEGORIE_FUORI_DA_SUPER_SERIE: readonly Categoria[] = ['isometria', 'cardio', 'riscaldamento']

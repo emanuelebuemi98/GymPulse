@@ -23,6 +23,7 @@ import {
 } from '@/lib/gruppi'
 import type { Giorno } from '@/lib/scheda-tipi'
 import { formatRecupero } from '@/lib/allenamento'
+import { kmTratto, secondiDaMinuti, numeroDaTestoCardio } from '@/lib/cardio'
 import { parseIntero } from '@/lib/numeri'
 import {
   campiRipSerie,
@@ -31,6 +32,8 @@ import {
   voceFormDaEsercizio,
   vocePerInvio,
   èVoceATempo,
+  èVoceCardio,
+  macchinaDi,
   type VoceForm,
 } from '@/lib/scheda-form'
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
@@ -436,7 +439,32 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
 
             {/* Un esercizio a tempo (isometria) non ha ripetizioni: ha le serie e la durata di ogni serie, uguale per tutte, più il
                 recupero. In sessione c'è un timer. Niente carico a salire né super serie. */}
-            {èVoceATempo(voce) ? (
+            {èVoceCardio(voce) ? (
+              // Il cardio si fa a tratti: quanti, quanti minuti dura ognuno (uguale per tutti) e, sulle macchine che le hanno, la velocità
+              // e la pendenza di partenza. Niente recupero: tra un tratto e l'altro si passa subito al successivo. In sessione ogni tratto
+              // si può cambiare (la velocità di un tratto può essere diversa) e ha il suo timer.
+              <fieldset className="space-y-3">
+                <legend className="mb-1 text-sm text-muto">Cardio a tratti</legend>
+                <div className="grid grid-cols-2 gap-3">
+                  <Numero etichetta="Tratti" valore={voce.serie} alCambio={(v) => modifica(voce.chiave, { serie: v })} />
+                  <Numero etichetta="Minuti per tratto" valore={voce.durataSec} decimale alCambio={(v) => modifica(voce.chiave, { durataSec: v })} />
+                </div>
+                {macchinaDi(voce) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Numero etichetta="Velocità (km/h)" valore={voce.velocitaKmh} decimale alCambio={(v) => modifica(voce.chiave, { velocitaKmh: v })} />
+                    {macchinaDi(voce)?.pendenza && (
+                      <Numero etichetta="Pendenza (%)" valore={voce.inclinazionePct} decimale alCambio={(v) => modifica(voce.chiave, { inclinazionePct: v })} />
+                    )}
+                  </div>
+                )}
+                <p className="text-sm text-muto">
+                  Ora: <span className="font-semibold text-testo">{riepilogoCardio(voce)}</span>.{' '}
+                  {macchinaDi(voce)
+                    ? 'In sessione ogni tratto parte con questa velocità e la puoi cambiare; km e calorie si calcolano da soli.'
+                    : 'Su questa macchina si scrive il tempo; i km e le calorie del display si possono aggiungere in sessione.'}
+                </p>
+              </fieldset>
+            ) : èVoceATempo(voce) ? (
               <fieldset className="space-y-3">
                 <legend className="mb-1 text-sm text-muto">Tenuta</legend>
                 <div className="grid grid-cols-3 gap-3">
@@ -624,6 +652,18 @@ function riepilogoRip(voce: VoceForm, inGruppo: boolean): string {
         : `${min || '?'}-${max}`
   const recupero = inGruppo ? 'senza pausa' : `recupero ${voce.recuperoSec.trim() || '?'} s`
   return `${voce.serie.trim() || '?'} × ${rip} · ${recupero}`
+}
+
+// Il cardio a parole, per il pannello: «3 × 5 min a 10,7 km/h · 5% (circa 0,9 km a tratto)».
+function riepilogoCardio(voce: VoceForm): string {
+  const secondi = numeroDaTestoCardio(voce.durataSec)
+  const secondiOk = secondi === null ? null : secondiDaMinuti(secondi)
+  const velocita = numeroDaTestoCardio(voce.velocitaKmh)
+  const tratti = voce.serie.trim() || '?'
+  const durata = secondiOk === null ? '? min' : formatRecupero(secondiOk)
+  const conVelocita = macchinaDi(voce) && velocita !== null ? ` a ${voce.velocitaKmh.trim()} km/h${voce.inclinazionePct.trim() ? ` · ${voce.inclinazionePct.trim()}%` : ''}` : ''
+  const km = secondiOk !== null && velocita !== null && macchinaDi(voce) ? ` · circa ${String(kmTratto(velocita, secondiOk)).replace('.', ',')} km a tratto` : ''
+  return `${tratti} × ${durata}${conVelocita}${km}`
 }
 
 // Un esercizio a tempo a parole, per il pannello della tenuta: «3 × 45 s · recupero 1 min».

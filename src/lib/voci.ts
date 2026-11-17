@@ -1,4 +1,5 @@
-import { èATempo, fuoriDaSuperSerie } from './categorie'
+import { TRATTO_PREDEFINITO_SEC } from './cardio'
+import { èATempo, èCardio, fuoriDaSuperSerie } from './categorie'
 import type { Esercizio, Obiettivo } from './scheda-tipi'
 
 // Una voce della scheda come è salvata nel database: l'obiettivo è spezzato in colonne facoltative. C'è un solo tipo di obiettivo,
@@ -18,8 +19,11 @@ export type VoceDb = {
   // Il gruppo (superset, triset, gigantset) e il suo recupero: tutti e due scritti, o tutti e due vuoti.
   gruppo: number | null
   recuperoGruppoSec: number | null
-  // La durata di ogni serie in secondi, solo per gli esercizi a tempo (isometria); vuota per gli altri.
+  // La durata di ogni serie in secondi, solo per gli esercizi a tempo (isometria) e di cardio; vuota per gli altri.
   durataSec?: number | null
+  // Solo per il cardio con velocità (tapis roulant, corsa all'aperto): la velocità e la pendenza di partenza di ogni tratto.
+  velocitaKmh?: number | null
+  inclinazionePct?: number | null
   esercizio: {
     id: number
     nome: string
@@ -38,6 +42,8 @@ export type CampiObiettivo = {
   recuperoSec: number
   ripSerie: string | null
   durataSec: number | null
+  velocitaKmh: number | null
+  inclinazionePct: number | null
 }
 
 export const RECUPERO_PREDEFINITO = 90
@@ -60,11 +66,15 @@ export function esercizioDaVoce(voce: VoceDb): Esercizio {
   // Un esercizio a tempo (isometria) ha una durata al posto delle ripetizioni. Si riconosce dalla categoria oppure dalla durata
   // scritta: una voce di isometria salvata prima del timer non ha la durata e prende quella predefinita, senza toccare il database.
   // Una voce a tempo non ha ripetizioni, carico a salire né super serie, qualunque cosa dica la riga.
-  const tempo = (voce.durataSec ?? null) !== null || èATempo(voce.esercizio.categoria)
+  const cardio = èCardio(voce.esercizio.categoria)
+  const tempo = cardio || (voce.durataSec ?? null) !== null || èATempo(voce.esercizio.categoria)
   // Né un esercizio a tempo né uno di cardio o riscaldamento fa parte di una super serie, anche se una scheda di prima ce l'ha messo:
   // il gruppo si toglie qui, in lettura, senza toccare il database (lo scioglie poi scheda-db.ts se resta un esercizio solo).
   const senzaGruppo = tempo || fuoriDaSuperSerie(voce.esercizio.categoria)
-  const serie = voce.serie ?? voce.serieMin ?? 3
+  // Il cardio si fa a tratti. Una voce di cardio salvata prima (3 × 8-10 con il recupero) si legge come un solo tratto da 20 minuti,
+  // senza recupero: il database non si tocca, e salvando la giornata la voce diventa a tratti davvero.
+  const cardioDiPrima = cardio && (voce.durataSec ?? null) === null
+  const serie = cardioDiPrima ? 1 : (voce.serie ?? voce.serieMin ?? 3)
   const ripSerie = tempo ? undefined : leggiRipSerie(voce.ripSerie, serie)
   const ripMin = tempo ? 1 : ripSerie ? Math.min(...ripSerie) : (voce.ripMin ?? 8)
   const obiettivo: Obiettivo = {
@@ -72,9 +82,12 @@ export function esercizioDaVoce(voce: VoceDb): Esercizio {
     serie,
     ripMin,
     ripMax: tempo ? 1 : ripSerie ? Math.max(...ripSerie) : (voce.ripMax ?? ripMin),
-    recuperoSec: voce.recuperoSec ?? RECUPERO_PREDEFINITO,
+    recuperoSec: cardio ? (cardioDiPrima ? 0 : (voce.recuperoSec ?? 0)) : (voce.recuperoSec ?? RECUPERO_PREDEFINITO),
     ...(ripSerie ? { ripSerie } : {}),
-    ...(tempo ? { durataSec: voce.durataSec ?? DURATA_PREDEFINITA } : {}),
+    ...(tempo ? { durataSec: voce.durataSec ?? (cardio ? TRATTO_PREDEFINITO_SEC : DURATA_PREDEFINITA) } : {}),
+    ...(cardio ? { cardio: true as const } : {}),
+    ...(cardio && voce.velocitaKmh != null ? { velocitaKmh: voce.velocitaKmh } : {}),
+    ...(cardio && voce.velocitaKmh != null && voce.inclinazionePct != null ? { inclinazionePct: voce.inclinazionePct } : {}),
   }
 
   return {
@@ -103,5 +116,7 @@ export function campiObiettivo(obiettivo: Obiettivo): CampiObiettivo {
     recuperoSec: obiettivo.recuperoSec,
     ripSerie: obiettivo.ripSerie ? obiettivo.ripSerie.join(',') : null,
     durataSec: obiettivo.durataSec ?? null,
+    velocitaKmh: obiettivo.velocitaKmh ?? null,
+    inclinazionePct: obiettivo.velocitaKmh !== undefined ? (obiettivo.inclinazionePct ?? null) : null,
   }
 }

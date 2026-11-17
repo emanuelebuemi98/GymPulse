@@ -46,7 +46,7 @@ function voceValida(valore: unknown): valore is VoceForm {
   // L'immagine è un file dell'app o niente: un percorso diverso non si carica.
   const immagine = v.immagine as string
   if (immagine !== '' && !immagine.startsWith('/esercizi/')) return false
-  if (!èTestoFacoltativo(v.ripSerie) || !èTestoFacoltativo(v.recuperoGruppo) || !èTestoFacoltativo(v.durataSec)) return false
+  if (!èTestoFacoltativo(v.ripSerie) || !èTestoFacoltativo(v.recuperoGruppo) || !èTestoFacoltativo(v.durataSec) || !èTestoFacoltativo(v.velocitaKmh) || !èTestoFacoltativo(v.inclinazionePct)) return false
   if (v.gruppo !== undefined && !èGruppo(v.gruppo)) return false
   return èIdOnull(v.esercizioId) && èIdOnull(v.catalogoId) && èIdOnull(v.catalogoRif)
 }
@@ -63,6 +63,8 @@ function completa(voce: VoceForm & { tipo?: unknown; ripTotali?: unknown; serieM
     gruppo: voce.gruppo ?? null,
     recuperoGruppo: voce.recuperoGruppo ?? '',
     durataSec: voce.durataSec ?? '',
+    velocitaKmh: voce.velocitaKmh ?? '',
+    inclinazionePct: voce.inclinazionePct ?? '',
   }
 }
 

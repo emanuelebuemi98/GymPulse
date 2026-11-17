@@ -31,6 +31,20 @@ const voceSchema = z
     // La durata di ogni serie in secondi, per gli esercizi a tempo (isometria): al posto delle ripetizioni, uguale per tutte le serie.
     // Come gli altri campi nati dopo: se manca vale "nessuna".
     durataSec: intero(1, 3600, 'La durata deve essere da 1 a 3600 secondi').default(null),
+    // Per il cardio con velocità (tapis roulant, corsa all'aperto): la velocità e la pendenza di ogni tratto. Come gli altri campi
+    // nati dopo, se mancano valgono "nessuna". Hanno senso solo insieme alla durata (un tratto).
+    velocitaKmh: z
+      .number({ error: 'La velocità deve essere da 0,5 a 30 km/h' })
+      .min(0.5, 'La velocità deve essere da 0,5 a 30 km/h')
+      .max(30, 'La velocità deve essere da 0,5 a 30 km/h')
+      .nullable()
+      .default(null),
+    inclinazionePct: z
+      .number({ error: 'La pendenza deve essere da 0 a 40%' })
+      .min(0, 'La pendenza deve essere da 0 a 40%')
+      .max(40, 'La pendenza deve essere da 0 a 40%')
+      .nullable()
+      .default(null),
     // Il numero del gruppo (super serie) e il suo recupero. Il numero è solo un'etichetta per dire quali esercizi vanno insieme: il
     // server li rinumera 1, 2, ... Anche questi hanno un valore se mancano.
     gruppo: z.number({ error: 'Super serie non valida' }).int('Super serie non valida').min(1, 'Super serie non valida').max(999, 'Super serie non valida').nullable().default(null),
@@ -96,6 +110,10 @@ export function validaScheda(input: unknown): EsitoScheda {
       // una ripetizione (ripMin e ripMax a 1), così chi legge solo quelle non si rompe.
       if (voce.serie === null) return { ok: false, errore: 'Indica serie e durata di ogni esercizio a tempo' }
       if (voce.gruppo !== null) return { ok: false, errore: 'Un esercizio a tempo non fa parte di una super serie' }
+      // La pendenza si può dare solo con la velocità: sul tapis roulant è una salita a quella velocità.
+      if (voce.inclinazionePct !== null && voce.velocitaKmh === null) {
+        return { ok: false, errore: 'La pendenza si scrive solo insieme alla velocità' }
+      }
       obiettivo = {
         tipo: 'serie',
         serie: voce.serie,
@@ -103,6 +121,9 @@ export function validaScheda(input: unknown): EsitoScheda {
         ripMax: 1,
         recuperoSec: voce.recuperoSec ?? RECUPERO_PREDEFINITO,
         durataSec: voce.durataSec,
+        ...(voce.velocitaKmh !== null
+          ? { velocitaKmh: voce.velocitaKmh, ...(voce.inclinazionePct !== null ? { inclinazionePct: voce.inclinazionePct } : {}) }
+          : {}),
       }
     } else if (voce.serie === null || (voce.ripMin === null && (voce.ripSerie === null || voce.ripSerie.length === 0))) {
       return { ok: false, errore: 'Indica serie e ripetizioni di ogni esercizio' }
