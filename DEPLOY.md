@@ -20,15 +20,7 @@ Cosa è già stato pubblicato, deploy per deploy, è in `STORICO_RILASCI.md`. I 
 
 *Si riscrive a ogni deploy, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
 
-**Cardio a tratti** (tempo, velocità e pendenza per tratto; km e calorie calcolati; peso a ogni seduta).
-- **Migrazioni:** `20261118100000_cardio_a_tratti`. Aggiunge soltanto colonne (`VoceScheda.velocitaKmh` e `inclinazionePct`; `SerieEseguita.velocitaKmh`, `inclinazionePct`, `km`, `kcal` e `bpm`; `Sessione.pesoCorporeoKg`, quella tolta a ottobre) e tre CHECK: il codice vecchio funziona anche sul database nuovo, quindi tra la migrazione e la pubblicazione non c'è una finestra di errori e per tornare indietro non serve ripristinare il database. Nessun dato esistente cambia.
-- **Catalogo:** cambia (passi 6 e 7 da fare). La 182 è sostituita («Crunch ai cavi in piedi»), la 185 è rinominata («Crunch ai cavi in ginocchio»), la 190 è sostituita («Addominali avanti con disco») e la 193 «Hollow Body Hold» passa da Addome a Isometria (Isometria 17, Addome 29). Le foto di 182, 185 e 190 hanno un nome nuovo: se `db:catalogo` non viene lanciato su Neon, quelle tre voci restano senza foto online. Se qualcuno ha in scheda la 182, la 185 o la 190, lo script si ferma senza scrivere niente: si guarda chi la usa e solo dopo si rilancia con `SOSTITUISCI_IN_USO=1`. La 193 non lo richiede: chi ce l'ha la segue in Isometria e la sua scheda 3 × 8-10 si legge «3 × 30 s» (le serie già fatte restano com'erano).
-- **Variabili nuove su Vercel:** nessuna.
-- **Da provare dopo la pubblicazione:** le righe del passo 11.
-
-Il deploy del database va fatto **sia in locale sia su Neon** (`npm run db:deploy`): in locale prima di provare l'app, su Neon ai passi 4 e 5.
-
-*Il modello per un deploy futuro, quando questo sarà pubblicato e il riquadro si svuota:*
+**Nessun deploy in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
 - **Migrazioni:** i nomi, e se aggiungono soltanto colonne o indici (il codice vecchio funziona ancora) oppure rinominano o tolgono qualcosa (passi 5-9 di fila).
 - **Catalogo:** cambiato o no (passi 6 e 7).
 - **Variabili nuove su Vercel:** i nomi (passo 9).
@@ -213,12 +205,7 @@ git checkout dev
 
 **Solo per le novità di questo deploy**: una riga per ogni cosa elencata nel riquadro «Cosa cambia», con la prova che la funzione si veda e funzioni. Per le funzioni che scrivono o cancellano dati, **si usa un account di prova creato apposta, mai il tuo**, e a fine controllo si elimina (dall'app, con «Elimina il mio account»).
 
-- [ ] **Cardio, scheda:** con un account di prova, Personalizza → aggiungi «Corsa su Tapis Roulant»: il riquadro si chiama «Cardio a tratti» (Tratti, Minuti per tratto, Velocità, Pendenza), parte con 1 tratto da 20 minuti a 8 km/h e 0%, e non ci sono ripetizioni, recupero né carico a salire. Metti 3 tratti da 0,5 minuti, 10,7 km/h e 2%: la scheda mostra «3 × 30 s a 10,7 km/h · 2%». Aggiungi anche «Cyclette»: ha solo Tratti e Minuti, senza velocità né pendenza.
-- [ ] **Cardio, sessione:** nella sessione compare «Peso di oggi» (solo se c'è un cardio con la velocità). Scrivi 80 kg: sotto ogni tratto si vede «circa X km · Y kcal» e a 10 km/h per 3 minuti dà «circa 0,5 km · 44 kcal». Cambia la velocità di un tratto: i numeri si aggiornano. «Avvia» fa partire il conto alla rovescia (uno alla volta), a zero suona e il tratto si conferma da solo, e **non parte nessun recupero**; «Ferma» registra i minuti fatti; il ✓ vale i minuti scritti. Sulla cyclette ci sono Km e Kcal facoltativi.
-- [ ] **Cardio, storico e progressi:** salva la seduta: il dettaglio mostra «peso 80 kg» e per il tapis la tabella Tratto | Durata | Km/h | Km | Kcal con il totale; la card dello storico ha i km e le kcal totali. «Andamento» del tapis mostra «Km per seduta», «Kcal per seduta» e «Tempo totale per seduta». Un esercizio normale (per esempio la Lat Machine) è come prima.
-- [ ] **Voci di prima:** se in una scheda c'era già un cardio con le ripetizioni (per esempio 3 × 8-10), ora si legge «1 × 20 min» e, aprendo Personalizza, la velocità resta da scrivere: salvando senza, dice «Scrivi la velocità di…».
-- [ ] **Excel:** il catalogo e «La mia scheda» hanno 20 colonne (le ultime `durata_sec`, `velocita_kmh`, `inclinazione_pct`); le 7 voci di cardio sono 1 tratto da 20 minuti (`durata_sec` 1200), con 8 km/h solo su tapis, camminata inclinata e corsa all'aperto. Un file di prima (17 o 18 colonne) si importa ancora.
-- [ ] **Catalogo:** Catalogo → Isometria ha 17 voci (c'è «Hollow Body Hold») e Addome 29. Le voci 182, 185 e 190 si aprono con la loro foto (nessuna immagine mancante nell'elenco) e hanno i nomi nuovi.*
+- [ ] *(Le prove di questo deploy: si scrivono qui, una riga per novità, e si cancellano a fine deploy. Per le funzioni che scrivono o cancellano dati, solo con un account di prova.)*
 
 ---
 
