@@ -1,6 +1,7 @@
 import type { Prisma } from '@/generated/prisma/client'
 import { cercaPerNome } from './catalogo'
-import { èATempo } from './categorie'
+import { macchinaCardio, partenzaCardio, TRATTO_PREDEFINITO_SEC } from './cardio'
+import { èATempo, èCardio } from './categorie'
 import { leggiCsvScheda, type RigaScheda } from './csv-scheda'
 import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from './giornate'
 import { controllaSuperSerie } from './scheda-scrittura'
@@ -100,25 +101,50 @@ export async function pianoImportScheda(
     for (const riga of righe) {
       const dove = trovati.get(riga.nome.trim().toLowerCase())!
       // Gli esercizi a tempo (isometria) hanno una durata al posto delle ripetizioni: se il file non la scrive vale quella
-      // predefinita; e una durata su un esercizio che non è a tempo è un errore, non si ignora in silenzio.
-      const aTempo = èATempo(dove.categoria)
+      // predefinita; e una durata su un esercizio che non è a tempo è un errore, non si ignora in silenzio. Il cardio si fa a tratti:
+      // le serie sono i tratti, la durata è quella di ognuno e, sulle macchine con la velocità, c'è la velocità (e la pendenza).
+      const cardio = èCardio(dove.categoria)
+      const aTempo = èATempo(dove.categoria) || cardio
+      const macchina = cardio ? macchinaCardio(dove.nomeEn) : null
+      const partenza = cardio ? partenzaCardio(dove.nomeEn) : null
       if (riga.durataSec !== null && !aTempo) {
         return {
           ok: false,
-          errore: `Riga ${riga.riga}: la durata (durata_sec) si scrive solo per gli esercizi di isometria, e «${dove.nome}» non lo è: usa le ripetizioni`,
+          errore: `Riga ${riga.riga}: la durata (durata_sec) si scrive solo per gli esercizi di isometria e di cardio, e «${dove.nome}» non lo è: usa le ripetizioni`,
+        }
+      }
+      if (!cardio && (riga.velocitaKmh !== null || riga.inclinazionePct !== null)) {
+        return {
+          ok: false,
+          errore: `Riga ${riga.riga}: la velocità e la pendenza si scrivono solo per il cardio, e «${dove.nome}» non lo è`,
+        }
+      }
+      if (cardio && !macchina && riga.velocitaKmh !== null) {
+        return {
+          ok: false,
+          errore: `Riga ${riga.riga}: «${dove.nome}» non ha la velocità: cancella velocita_kmh e scrivi solo i tratti e la durata`,
+        }
+      }
+      if (cardio && !macchina?.pendenza && riga.inclinazionePct !== null) {
+        return {
+          ok: false,
+          errore: `Riga ${riga.riga}: «${dove.nome}» non ha la pendenza: cancella inclinazione_pct`,
         }
       }
       const voce = {
         esercizioId: dove.esercizioId,
         catalogoId: dove.catalogoId,
-        serie: riga.serie,
+        // Un cardio senza durata (un file di prima) è un solo tratto da 20 minuti: le sue «serie 3 × 8-10» non avevano senso.
+        serie: cardio ? (riga.durataSec === null ? 1 : (riga.serie ?? 1)) : (riga.serie ?? 3),
         ripMin: aTempo ? null : riga.ripMin,
         ripMax: aTempo ? null : riga.ripMax,
-        recuperoSec: riga.recuperoSec ?? (aTempo ? RECUPERO_PREDEFINITO_TEMPO : null),
+        recuperoSec: cardio ? 0 : (riga.recuperoSec ?? (aTempo ? RECUPERO_PREDEFINITO_TEMPO : null)),
         nota: riga.nota,
         incrementoKg: aTempo ? null : riga.incrementoKg,
         ripSerie: aTempo ? null : riga.ripSerie,
-        durataSec: aTempo ? (riga.durataSec ?? DURATA_PREDEFINITA) : null,
+        durataSec: cardio ? (riga.durataSec ?? TRATTO_PREDEFINITO_SEC) : aTempo ? (riga.durataSec ?? DURATA_PREDEFINITA) : null,
+        velocitaKmh: macchina && partenza ? (riga.velocitaKmh ?? partenza.velocitaKmh) : null,
+        inclinazionePct: macchina?.pendenza && partenza ? (riga.inclinazionePct ?? partenza.inclinazionePct) : null,
       }
       // Prima ogni riga da sola, così l'errore dice quale riga del file è sbagliata.
       const singola = validaScheda({ giornoId: lettera, titolo, voci: [voce] })
@@ -189,5 +215,7 @@ function datiObiettivo(voce: VoceNormalizzata) {
     recuperoSec: o.recuperoSec,
     ripSerie: o.ripSerie ?? null,
     durataSec: o.durataSec ?? null,
+    velocitaKmh: o.velocitaKmh ?? null,
+    inclinazionePct: o.inclinazionePct ?? null,
   }
 }

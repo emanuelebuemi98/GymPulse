@@ -1,4 +1,5 @@
-import { CATEGORIE, categoriaDa, etichettaCategoria, èATempo } from './categorie'
+import { partenzaCardio, numeroInTesto, TRATTO_PREDEFINITO_SEC } from './cardio'
+import { CATEGORIE, categoriaDa, etichettaCategoria, èATempo, èCardio } from './categorie'
 import type { VoceCatalogo } from './catalogo-db'
 import { SEPARATORE, campo, dividi, proteggi, scopri, separatoreDi } from './csv'
 import type { Giorno } from './scheda-tipi'
@@ -45,6 +46,10 @@ export const COLONNE_SCHEDA = [
   // Ancora in coda per lo stesso motivo. `durata_sec`: la durata di ogni serie in secondi, solo per gli esercizi a tempo (categoria
   // Isometria): al posto di rip_min, rip_max e rip_per_serie, uguale per tutte le serie. Vuota per tutti gli altri.
   'durata_sec',
+  // Ancora in coda. Solo per il cardio con la velocità (tapis roulant, corsa all'aperto): la velocità in km/h e la pendenza in % di ogni tratto.
+  // Per il cardio `serie` sono i tratti e `durata_sec` la durata di ognuno (1200 = 20 minuti); non c'è recupero né ripetizioni.
+  'velocita_kmh',
+  'inclinazione_pct',
 ] as const
 
 const OBBLIGATORIE = ['giornata', 'esercizio'] as const
@@ -64,9 +69,12 @@ export type RigaScheda = {
   // L'etichetta scritta nel file (1, 2, a…): vale dentro la giornata, e non è il numero che finisce nel database.
   gruppo: string | null
   recuperoGruppoSec: number | null
-  // La durata di ogni serie scritta nel file, per gli esercizi a tempo; vuota se non c'è (lo decide poi l'importazione, in base
-  // alla categoria dell'esercizio).
+  // La durata di ogni serie scritta nel file, per gli esercizi a tempo e di cardio; vuota se non c'è (lo decide poi l'importazione, in
+  // base alla categoria dell'esercizio).
   durataSec: number | null
+  // La velocità (km/h) e la pendenza (%) di ogni tratto di cardio; vuote se non ci sono.
+  velocitaKmh: number | null
+  inclinazionePct: number | null
 }
 
 export type EsitoCsvScheda = { ok: true; righe: RigaScheda[] } | { ok: false; errore: string }
@@ -91,16 +99,19 @@ export function creaCsvCatalogo(voci: VoceCatalogo[]): string {
   const righe: string[][] = [[...COLONNE_SCHEDA]]
   for (const voce of ordinate) {
     const aTempo = èATempo(voce.categoria)
+    // Il cardio: un solo tratto da 20 minuti (e, per le macchine con la velocità, quella di partenza), senza ripetizioni né recupero.
+    const cardio = èCardio(voce.categoria)
+    const partenza = cardio ? partenzaCardio(voce.nomeEn) : null
     righe.push([
       SEGNAPOSTO_GIORNATA,
       '',
       proteggi(voce.nome),
       etichettaDi(voce.categoria),
       'serie',
-      '3',
-      aTempo ? '' : '8',
-      aTempo ? '' : '10',
-      aTempo ? String(RECUPERO_PREDEFINITO_TEMPO) : '90',
+      cardio ? '1' : '3',
+      aTempo || cardio ? '' : '8',
+      aTempo || cardio ? '' : '10',
+      cardio ? '0' : aTempo ? String(RECUPERO_PREDEFINITO_TEMPO) : '90',
       '',
       '',
       '',
@@ -109,7 +120,9 @@ export function creaCsvCatalogo(voci: VoceCatalogo[]): string {
       '',
       '',
       '',
-      aTempo ? String(DURATA_PREDEFINITA) : '',
+      cardio ? String(TRATTO_PREDEFINITO_SEC) : aTempo ? String(DURATA_PREDEFINITA) : '',
+      partenza ? numeroInTesto(partenza.velocitaKmh) : '',
+      partenza?.inclinazionePct != null ? numeroInTesto(partenza.inclinazionePct) : '',
     ])
   }
   return scrivi(righe)
@@ -128,7 +141,7 @@ export function creaCsvScheda(giorni: Giorno[]): string {
         etichettaDi(esercizio.categoria),
         'serie',
         String(o.serie),
-        // Un esercizio a tempo non ha ripetizioni: la sua durata sta in coda, in «durata_sec».
+        // Un esercizio a tempo (e il cardio) non ha ripetizioni: la sua durata sta in coda, in «durata_sec».
         o.durataSec !== undefined ? '' : String(o.ripMin),
         o.durataSec !== undefined ? '' : String(o.ripMax),
         String(o.recuperoSec),
@@ -142,6 +155,8 @@ export function creaCsvScheda(giorni: Giorno[]): string {
         esercizio.gruppo ? String(esercizio.gruppo.numero) : '',
         esercizio.gruppo ? String(esercizio.gruppo.recuperoSec) : '',
         o.durataSec !== undefined ? String(o.durataSec) : '',
+        o.velocitaKmh !== undefined ? numeroInTesto(o.velocitaKmh) : '',
+        o.inclinazionePct !== undefined ? numeroInTesto(o.inclinazionePct) : '',
       ])
     }
   }
@@ -267,6 +282,20 @@ export function leggiCsvScheda(testo: string): EsitoCsvScheda {
       return errore(`la durata "${cella('durata_sec')}" non va bene: scrivi i secondi di ogni serie, da 1 a 3600`)
     }
 
+    // La velocità (km/h) e la pendenza (%) di ogni tratto di cardio. La virgola vale come il punto; Excel le scrive come numeri.
+    const decimale = (nome: string, minimo: number, massimo: number, cosa: string): { ok: true; valore: number | null } | { ok: false; errore: string } => {
+      const scritto = cella(nome)
+      if (scritto === '') return { ok: true, valore: null }
+      if (!/^\d+([.,]\d+)?$/.test(scritto)) return { ok: false, errore: `${cosa} "${scritto}" non è un numero` }
+      const valore = Number(scritto.replace(',', '.'))
+      if (valore < minimo || valore > massimo) return { ok: false, errore: `${cosa} "${scritto}" non va bene: scrivi un numero da ${minimo} a ${massimo}` }
+      return { ok: true, valore }
+    }
+    const velocita = decimale('velocita_kmh', 0.5, 30, 'la velocità')
+    if (!velocita.ok) return errore(velocita.errore)
+    const pendenza = decimale('inclinazione_pct', 0, 40, 'la pendenza')
+    if (!pendenza.ok) return errore(pendenza.errore)
+
     // Le celle vuote prendono i valori dell'editor. Una riga di un vecchio tipo (totale, libero) non porta i numeri delle serie: ha
     // 3 serie da 8-10 ripetizioni.
     risultato.push({
@@ -274,7 +303,8 @@ export function leggiCsvScheda(testo: string): EsitoCsvScheda {
       giornata,
       titolo: titolo === '' ? null : titolo,
       nome,
-      serie: vecchioTipo ? 3 : (n('serie') ?? rip.valori?.length ?? 3),
+      // Se le serie non sono scritte le decide l'importazione, in base all'esercizio (3 per quasi tutti, 1 tratto per il cardio).
+      serie: vecchioTipo ? 3 : (n('serie') ?? rip.valori?.length ?? null),
       ripMin: vecchioTipo ? 8 : (n('ripMin') ?? 8),
       ripMax: vecchioTipo ? 10 : n('ripMax'),
       recuperoSec: vecchioTipo ? null : n('recuperoSec'),
@@ -284,6 +314,8 @@ export function leggiCsvScheda(testo: string): EsitoCsvScheda {
       gruppo: gruppoTesto === '' ? null : gruppoTesto,
       recuperoGruppoSec: recuperoGruppo.valore,
       durataSec: vecchioTipo ? null : durata.valore,
+      velocitaKmh: vecchioTipo ? null : velocita.valore,
+      inclinazionePct: vecchioTipo ? null : pendenza.valore,
     })
   }
 
