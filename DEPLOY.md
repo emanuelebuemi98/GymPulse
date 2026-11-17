@@ -19,7 +19,15 @@ Cosa è già stato pubblicato, deploy per deploy, è in `STORICO_RILASCI.md`. I 
 
 *Si riscrive a ogni deploy, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
 
-**Nessun deploy in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
+**Isometria a tempo** (esercizi della categoria Isometria con serie e durata, e un timer in sessione).
+- **Migrazioni:** `20261117100000_isometria_a_tempo`. Aggiunge soltanto due colonne (`VoceScheda.durataSec`, `SerieEseguita.durataSec`, vuote) e due CHECK: il codice vecchio funziona anche sul database nuovo, quindi tra la migrazione e la pubblicazione non c'è una finestra di errori e per tornare indietro non serve ripristinare il database. Nessun dato esistente cambia.
+- **Catalogo:** non cambia (passi 6 e 7 si saltano: nessun file in `prisma/dati` né in `public` è toccato da questa novità).
+- **Variabili nuove su Vercel:** nessuna.
+- **Da provare dopo la pubblicazione:** le righe del passo 11.
+
+Il deploy del database va fatto **sia in locale sia su Neon** (`npm run db:deploy`): in locale prima di provare l'app, su Neon ai passi 4 e 5.
+
+*Il modello per un deploy futuro, quando questo sarà pubblicato e il riquadro si svuota:*
 - **Migrazioni:** i nomi, e se aggiungono soltanto colonne o indici (il codice vecchio funziona ancora) oppure rinominano o tolgono qualcosa (passi 5-9 di fila).
 - **Catalogo:** cambiato o no (passi 6 e 7).
 - **Variabili nuove su Vercel:** i nomi (passo 9).
@@ -204,7 +212,12 @@ git checkout dev
 
 **Solo per le novità di questo deploy**: una riga per ogni cosa elencata nel riquadro «Cosa cambia», con la prova che la funzione si veda e funzioni. Per le funzioni che scrivono o cancellano dati, **si usa un account di prova creato apposta, mai il tuo**, e a fine controllo si elimina (dall'app, con «Elimina il mio account»).
 
-- [ ] *(Le prove di questo deploy: si scrivono qui, una riga per novità, e si cancellano a fine deploy. Per le funzioni che scrivono o cancellano dati, solo con un account di prova.)*
+- [ ] **Isometria, scheda:** con un account di prova, Personalizza → aggiungi «Plank addominale isometrico»: il riquadro si chiama «Tenuta» (Serie, Durata, Recupero), parte con 3 serie da 30 s e recupero 60 s, e non ci sono «Serie fisse», «Serie piramidale» né «Carico a salire». Metti 10 s e salva: la scheda mostra «3 × 10 s».
+- [ ] **Super serie:** nel pannello «Super Serie» il plank (e gli esercizi di Cardio e Riscaldamento) non compaiono tra quelli da scegliere.
+- [ ] **Isometria, sessione:** nella sessione il plank mostra «Tenuta di 10 s» e il tasto «Avvia · 10 s». Premilo: il conto scende, gli altri «Avvia» si spengono; a zero suona/vibra, la serie si conferma da sola («10 s tenuti») e parte il recupero. Su un'altra serie premi «Ferma» dopo 2-3 secondi: si registrano i secondi tenuti. Con ✓ la serie vale la durata intera.
+- [ ] **Isometria, storico e progressi:** salva la seduta: il dettaglio ha la colonna «Tenuta» (e non Kg/Rip.) e «Andamento» mostra «Tenuta più lunga» e «Tempo totale per seduta». Un esercizio normale (per esempio la Lat Machine) è come prima.
+- [ ] **Voci di prima:** se in una scheda c'era già un esercizio di isometria con le ripetizioni (per esempio 3 × 8-10), ora si legge «3 × 30 s» e, aprendo Personalizza e salvando, diventa a tempo davvero.
+- [ ] **Excel:** il catalogo e «La mia scheda» hanno 18 colonne (l'ultima `durata_sec`); le voci di isometria hanno `durata_sec` 30 e `rip_min`/`rip_max` vuote. Un file di prima (17 colonne) si importa ancora.
 
 ---
 
