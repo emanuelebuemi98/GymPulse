@@ -37,7 +37,8 @@ export async function esercizioDalCatalogo(
 
 // Dove sta un esercizio scritto per nome in un file: `esercizioId` se la persona lo ha già, altrimenti `catalogoId` (e
 // l'esercizio nasce al salvataggio, con esercizioDalCatalogo). Uno dei due è sempre pieno.
-export type EsercizioTrovato = { esercizioId: number | null; catalogoId: number | null; nome: string }
+// `categoria` è quella dell'esercizio trovato (vuota per un esercizio personale senza categoria): serve a sapere se è a tempo.
+export type EsercizioTrovato = { esercizioId: number | null; catalogoId: number | null; nome: string; categoria: string }
 
 // Cerca molti nomi insieme senza scrivere niente: serve all'anteprima dell'importazione della scheda. Prima tra gli esercizi
 // della persona (nome italiano), poi nel catalogo per nome italiano o inglese, senza badare alle maiuscole. Un nome che non si
@@ -48,8 +49,8 @@ export async function cercaPerNome(
   nomi: string[],
 ): Promise<Map<string, EsercizioTrovato>> {
   const [propri, catalogo] = await Promise.all([
-    tx.esercizio.findMany({ where: { userId }, select: { id: true, nome: true, catalogoId: true } }),
-    tx.catalogoEsercizio.findMany({ select: { id: true, nomeIt: true, nomeEn: true } }),
+    tx.esercizio.findMany({ where: { userId }, select: { id: true, nome: true, catalogoId: true, categoria: true } }),
+    tx.catalogoEsercizio.findMany({ select: { id: true, nomeIt: true, nomeEn: true, categoria: true } }),
   ])
   const perNomeProprio = new Map(propri.map((riga) => [minuscolo(riga.nome), riga]))
   const proprioDelCatalogo = new Map(propri.flatMap((riga) => (riga.catalogoId === null ? [] : [[riga.catalogoId, riga] as const])))
@@ -65,7 +66,7 @@ export async function cercaPerNome(
     if (trovati.has(chiave)) continue
     const proprio = perNomeProprio.get(chiave)
     if (proprio) {
-      trovati.set(chiave, { esercizioId: proprio.id, catalogoId: null, nome: proprio.nome })
+      trovati.set(chiave, { esercizioId: proprio.id, catalogoId: null, nome: proprio.nome, categoria: proprio.categoria })
       continue
     }
     const voce = perNomeCatalogo.get(chiave)
@@ -74,8 +75,8 @@ export async function cercaPerNome(
     trovati.set(
       chiave,
       giaSuo
-        ? { esercizioId: giaSuo.id, catalogoId: null, nome: giaSuo.nome }
-        : { esercizioId: null, catalogoId: voce.id, nome: voce.nomeIt },
+        ? { esercizioId: giaSuo.id, catalogoId: null, nome: giaSuo.nome, categoria: giaSuo.categoria }
+        : { esercizioId: null, catalogoId: voce.id, nome: voce.nomeIt, categoria: voce.categoria },
     )
   }
   return trovati

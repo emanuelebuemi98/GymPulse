@@ -1,7 +1,8 @@
-import { CATEGORIE, categoriaDa, etichettaCategoria } from './categorie'
+import { CATEGORIE, categoriaDa, etichettaCategoria, èATempo } from './categorie'
 import type { VoceCatalogo } from './catalogo-db'
 import { SEPARATORE, campo, dividi, proteggi, scopri, separatoreDi } from './csv'
 import type { Giorno } from './scheda-tipi'
+import { DURATA_PREDEFINITA, RECUPERO_PREDEFINITO_TEMPO } from './voci'
 
 // La scheda in CSV: una riga per ogni esercizio di ogni giornata. Serve a costruirsi la scheda in Excel: si scarica il
 // catalogo intero, si cancellano le righe degli esercizi che non servono, si cambia la lettera della giornata dove occorre e
@@ -41,6 +42,9 @@ export const COLONNE_SCHEDA = [
   'rip_per_serie',
   'gruppo',
   'recupero_gruppo_sec',
+  // Ancora in coda per lo stesso motivo. `durata_sec`: la durata di ogni serie in secondi, solo per gli esercizi a tempo (categoria
+  // Isometria): al posto di rip_min, rip_max e rip_per_serie, uguale per tutte le serie. Vuota per tutti gli altri.
+  'durata_sec',
 ] as const
 
 const OBBLIGATORIE = ['giornata', 'esercizio'] as const
@@ -60,6 +64,9 @@ export type RigaScheda = {
   // L'etichetta scritta nel file (1, 2, a…): vale dentro la giornata, e non è il numero che finisce nel database.
   gruppo: string | null
   recuperoGruppoSec: number | null
+  // La durata di ogni serie scritta nel file, per gli esercizi a tempo; vuota se non c'è (lo decide poi l'importazione, in base
+  // alla categoria dell'esercizio).
+  durataSec: number | null
 }
 
 export type EsitoCsvScheda = { ok: true; righe: RigaScheda[] } | { ok: false; errore: string }
@@ -74,7 +81,8 @@ const etichettaDi = (categoria: string) => {
 }
 
 // Tutto il catalogo, nell'ordine delle categorie e poi alfabetico, già pronto per diventare una scheda: ogni riga ha 3 serie da
-// 8-10 ripetizioni e il segnaposto al posto della giornata. Si tolgono le righe che non servono e nelle altre si scrive la lettera.
+// 8-10 ripetizioni e il segnaposto al posto della giornata (gli esercizi a tempo, 3 serie da 30 secondi). Si tolgono le righe che
+// non servono e nelle altre si scrive la lettera.
 export function creaCsvCatalogo(voci: VoceCatalogo[]): string {
   const ordine = new Map<string, number>(CATEGORIE.map((categoria, indice) => [categoria.chiave, indice]))
   const ordinate = [...voci].sort(
@@ -82,6 +90,7 @@ export function creaCsvCatalogo(voci: VoceCatalogo[]): string {
   )
   const righe: string[][] = [[...COLONNE_SCHEDA]]
   for (const voce of ordinate) {
+    const aTempo = èATempo(voce.categoria)
     righe.push([
       SEGNAPOSTO_GIORNATA,
       '',
@@ -89,9 +98,9 @@ export function creaCsvCatalogo(voci: VoceCatalogo[]): string {
       etichettaDi(voce.categoria),
       'serie',
       '3',
-      '8',
-      '10',
-      '90',
+      aTempo ? '' : '8',
+      aTempo ? '' : '10',
+      aTempo ? String(RECUPERO_PREDEFINITO_TEMPO) : '90',
       '',
       '',
       '',
@@ -100,6 +109,7 @@ export function creaCsvCatalogo(voci: VoceCatalogo[]): string {
       '',
       '',
       '',
+      aTempo ? String(DURATA_PREDEFINITA) : '',
     ])
   }
   return scrivi(righe)
@@ -118,8 +128,9 @@ export function creaCsvScheda(giorni: Giorno[]): string {
         etichettaDi(esercizio.categoria),
         'serie',
         String(o.serie),
-        String(o.ripMin),
-        String(o.ripMax),
+        // Un esercizio a tempo non ha ripetizioni: la sua durata sta in coda, in «durata_sec».
+        o.durataSec !== undefined ? '' : String(o.ripMin),
+        o.durataSec !== undefined ? '' : String(o.ripMax),
         String(o.recuperoSec),
         '',
         '',
@@ -130,6 +141,7 @@ export function creaCsvScheda(giorni: Giorno[]): string {
         o.ripSerie ? o.ripSerie.join(' ') : '',
         esercizio.gruppo ? String(esercizio.gruppo.numero) : '',
         esercizio.gruppo ? String(esercizio.gruppo.recuperoSec) : '',
+        o.durataSec !== undefined ? String(o.durataSec) : '',
       ])
     }
   }
@@ -247,6 +259,14 @@ export function leggiCsvScheda(testo: string): EsitoCsvScheda {
     const recuperoGruppo = intero(cella('recupero_gruppo_sec'), 'il recupero del gruppo')
     if (!recuperoGruppo.ok) return errore(recuperoGruppo.errore)
 
+    // La durata di ogni serie, per gli esercizi a tempo. Se manca la colonna (un file scritto prima) o la cella è vuota, vale
+    // «nessuna»: l'importazione decide in base alla categoria dell'esercizio.
+    const durata = intero(cella('durata_sec'), 'la durata')
+    if (!durata.ok) return errore(durata.errore)
+    if (durata.valore !== null && (durata.valore < 1 || durata.valore > 3600)) {
+      return errore(`la durata "${cella('durata_sec')}" non va bene: scrivi i secondi di ogni serie, da 1 a 3600`)
+    }
+
     // Le celle vuote prendono i valori dell'editor. Una riga di un vecchio tipo (totale, libero) non porta i numeri delle serie: ha
     // 3 serie da 8-10 ripetizioni.
     risultato.push({
@@ -263,6 +283,7 @@ export function leggiCsvScheda(testo: string): EsitoCsvScheda {
       ripSerie: vecchioTipo ? null : rip.valori,
       gruppo: gruppoTesto === '' ? null : gruppoTesto,
       recuperoGruppoSec: recuperoGruppo.valore,
+      durataSec: vecchioTipo ? null : durata.valore,
     })
   }
 

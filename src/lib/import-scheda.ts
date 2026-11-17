@@ -1,8 +1,11 @@
 import type { Prisma } from '@/generated/prisma/client'
 import { cercaPerNome } from './catalogo'
+import { èATempo } from './categorie'
 import { leggiCsvScheda, type RigaScheda } from './csv-scheda'
 import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from './giornate'
+import { controllaSuperSerie } from './scheda-scrittura'
 import { validaScheda, type VoceNormalizzata } from './scheda-schema'
+import { DURATA_PREDEFINITA, RECUPERO_PREDEFINITO_TEMPO } from './voci'
 
 // Dal file CSV della scheda a quello che si scriverebbe nel database, senza scrivere niente. Lo usano l'anteprima (che fa
 // vedere cosa cambia) e l'importazione vera (che lo rifà dentro la transazione, con i dati di quel momento).
@@ -96,16 +99,26 @@ export async function pianoImportScheda(
     const voci: VoceNormalizzata[] = []
     for (const riga of righe) {
       const dove = trovati.get(riga.nome.trim().toLowerCase())!
+      // Gli esercizi a tempo (isometria) hanno una durata al posto delle ripetizioni: se il file non la scrive vale quella
+      // predefinita; e una durata su un esercizio che non è a tempo è un errore, non si ignora in silenzio.
+      const aTempo = èATempo(dove.categoria)
+      if (riga.durataSec !== null && !aTempo) {
+        return {
+          ok: false,
+          errore: `Riga ${riga.riga}: la durata (durata_sec) si scrive solo per gli esercizi di isometria, e «${dove.nome}» non lo è: usa le ripetizioni`,
+        }
+      }
       const voce = {
         esercizioId: dove.esercizioId,
         catalogoId: dove.catalogoId,
         serie: riga.serie,
-        ripMin: riga.ripMin,
-        ripMax: riga.ripMax,
-        recuperoSec: riga.recuperoSec,
+        ripMin: aTempo ? null : riga.ripMin,
+        ripMax: aTempo ? null : riga.ripMax,
+        recuperoSec: riga.recuperoSec ?? (aTempo ? RECUPERO_PREDEFINITO_TEMPO : null),
         nota: riga.nota,
-        incrementoKg: riga.incrementoKg,
-        ripSerie: riga.ripSerie,
+        incrementoKg: aTempo ? null : riga.incrementoKg,
+        ripSerie: aTempo ? null : riga.ripSerie,
+        durataSec: aTempo ? (riga.durataSec ?? DURATA_PREDEFINITA) : null,
       }
       // Prima ogni riga da sola, così l'errore dice quale riga del file è sbagliata.
       const singola = validaScheda({ giornoId: lettera, titolo, voci: [voce] })
@@ -138,7 +151,7 @@ export async function pianoImportScheda(
       voci: voci.map((voce, indice) => ({
         esercizioId: voce.esercizioId,
         catalogoId: voce.catalogoId,
-        ...datiObiettivo(voce, righe[indice]),
+        ...datiObiettivo(voce),
         nota: voce.nota,
         incrementoKg: voce.incrementoKg,
         gruppo: righe[indice].gruppo === null ? null : numeri.get(righe[indice].gruppo!)!,
@@ -146,6 +159,9 @@ export async function pianoImportScheda(
       })),
     })
     if (!intera.ok) return { ok: false, errore: `Giornata ${lettera}: ${minuscola(intera.errore)}` }
+    // Isometria, cardio e riscaldamento non stanno in una super serie: si guarda la categoria vera, nel database.
+    const superSerieSbagliata = await controllaSuperSerie(tx, userId, intera.dati.voci)
+    if (superSerieSbagliata) return { ok: false, errore: `Giornata ${lettera}: ${minuscola(superSerieSbagliata)}` }
 
     giornate.push({
       id: lettera,
@@ -161,13 +177,17 @@ export async function pianoImportScheda(
 
 const minuscola = (testo: string) => testo.charAt(0).toLowerCase() + testo.slice(1)
 
-// Le colonne dell'obiettivo come le vuole validaScheda, prese dalla riga del file.
-function datiObiettivo(_voce: VoceNormalizzata, riga: RigaScheda) {
+// Le colonne dell'obiettivo come le vuole validaScheda, prese dalla voce già controllata riga per riga: così i valori che l'importazione
+// ha scelto (la durata e il recupero di un esercizio a tempo, le ripetizioni di quelli normali) restano gli stessi nel controllo
+// della giornata intera.
+function datiObiettivo(voce: VoceNormalizzata) {
+  const o = voce.obiettivo
   return {
-    serie: riga.serie,
-    ripMin: riga.ripMin,
-    ripMax: riga.ripMax,
-    recuperoSec: riga.recuperoSec,
-    ripSerie: riga.ripSerie,
+    serie: o.serie,
+    ripMin: o.ripMin,
+    ripMax: o.ripMax,
+    recuperoSec: o.recuperoSec,
+    ripSerie: o.ripSerie ?? null,
+    durataSec: o.durataSec ?? null,
   }
 }
