@@ -22,12 +22,15 @@ import {
   spostaNelGruppo,
 } from '@/lib/gruppi'
 import type { Giorno } from '@/lib/scheda-tipi'
+import { formatRecupero } from '@/lib/allenamento'
+import { parseIntero } from '@/lib/numeri'
 import {
   campiRipSerie,
   nuovaVoceForm,
   testoRipSerie,
   voceFormDaEsercizio,
   vocePerInvio,
+  èVoceATempo,
   type VoceForm,
 } from '@/lib/scheda-form'
 import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
@@ -431,6 +434,23 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
 
             <IstruzioniEsercizio catalogoId={voce.catalogoId ?? voce.catalogoRif} esercizioId={voce.esercizioId} nome={voce.nome} />
 
+            {/* Un esercizio a tempo (isometria) non ha ripetizioni: ha le serie e la durata di ogni serie, uguale per tutte, più il
+                recupero. In sessione c'è un timer. Niente carico a salire né super serie. */}
+            {èVoceATempo(voce) ? (
+              <fieldset className="space-y-3">
+                <legend className="mb-1 text-sm text-muto">Tenuta</legend>
+                <div className="grid grid-cols-3 gap-3">
+                  <Numero etichetta="Serie" valore={voce.serie} alCambio={(v) => modifica(voce.chiave, { serie: v })} />
+                  <Numero etichetta="Durata (s)" valore={voce.durataSec} alCambio={(v) => modifica(voce.chiave, { durataSec: v })} />
+                  <Numero etichetta="Recupero (s)" valore={voce.recuperoSec} alCambio={(v) => modifica(voce.chiave, { recuperoSec: v })} />
+                </div>
+                <p className="text-sm text-muto">
+                  Ora: <span className="font-semibold text-testo">{riepilogoTempo(voce)}</span>. La stessa durata per tutte le serie: in
+                  sessione parte un timer.
+                </p>
+              </fieldset>
+            ) : (
+            <>
             {/* Le ripetizioni. Due tasti, spenti all'inizio: toccandone uno compaiono i suoi campi (serie e recupero, poi le
                 ripetizioni), toccandolo di nuovo si richiudono. «Serie fisse»: un minimo e un massimo, uguali per tutte le serie.
                 «Serie piramidale»: una casella per ogni serie (12, 10, 8, 6 a scendere; 6, 8, 10, 12 a salire). Finché sono chiusi
@@ -507,6 +527,8 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
                 </div>
               )}
             </fieldset>
+            </>
+            )}
 
             {/* Il gruppo: il nome, il recupero (uguale per tutti gli esercizi) e come scioglierlo. Sta nell'ultimo esercizio. */}
             {blocco && èUltimo && (
@@ -527,12 +549,14 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
               <input value={voce.nota} maxLength={120} onChange={(e) => modifica(voce.chiave, { nota: e.target.value })} className={`${stileTesto} text-left`} />
             </label>
 
-            <Numero
-              etichetta="Carico a salire di (kg), vuoto = no"
-              valore={voce.incrementoKg}
-              decimale
-              alCambio={(v) => modifica(voce.chiave, { incrementoKg: v })}
-            />
+            {!èVoceATempo(voce) && (
+              <Numero
+                etichetta="Carico a salire di (kg), vuoto = no"
+                valore={voce.incrementoKg}
+                decimale
+                alCambio={(v) => modifica(voce.chiave, { incrementoKg: v })}
+              />
+            )}
           </li>
           )
         })}
@@ -600,6 +624,13 @@ function riepilogoRip(voce: VoceForm, inGruppo: boolean): string {
         : `${min || '?'}-${max}`
   const recupero = inGruppo ? 'senza pausa' : `recupero ${voce.recuperoSec.trim() || '?'} s`
   return `${voce.serie.trim() || '?'} × ${rip} · ${recupero}`
+}
+
+// Un esercizio a tempo a parole, per il pannello della tenuta: «3 × 45 s · recupero 1 min».
+function riepilogoTempo(voce: VoceForm): string {
+  const durata = parseIntero(voce.durataSec)
+  const recupero = parseIntero(voce.recuperoSec)
+  return `${voce.serie.trim() || '?'} × ${durata === null ? '? s' : formatRecupero(durata)} · recupero ${recupero === null ? '? s' : formatRecupero(recupero)}`
 }
 
 function Numero(props: { etichetta: string; valore: string; alCambio: (valore: string) => void; decimale?: boolean }) {

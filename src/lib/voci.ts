@@ -1,3 +1,4 @@
+import { èATempo, fuoriDaSuperSerie } from './categorie'
 import type { Esercizio, Obiettivo } from './scheda-tipi'
 
 // Una voce della scheda come è salvata nel database: l'obiettivo è spezzato in colonne facoltative. C'è un solo tipo di obiettivo,
@@ -17,6 +18,8 @@ export type VoceDb = {
   // Il gruppo (superset, triset, gigantset) e il suo recupero: tutti e due scritti, o tutti e due vuoti.
   gruppo: number | null
   recuperoGruppoSec: number | null
+  // La durata di ogni serie in secondi, solo per gli esercizi a tempo (isometria); vuota per gli altri.
+  durataSec?: number | null
   esercizio: {
     id: number
     nome: string
@@ -34,9 +37,14 @@ export type CampiObiettivo = {
   ripMax: number
   recuperoSec: number
   ripSerie: string | null
+  durataSec: number | null
 }
 
 export const RECUPERO_PREDEFINITO = 90
+// Il recupero che propone l'app per un esercizio a tempo: una tenuta stanca meno di una serie con il carico.
+export const RECUPERO_PREDEFINITO_TEMPO = 60
+// La durata di una serie a tempo quando la scheda non ne dice una (una voce di isometria salvata prima del timer).
+export const DURATA_PREDEFINITA = 30
 
 // Dal testo del database ("12,10,8,6") all'elenco delle ripetizioni. Si usa solo se è fatto bene e ha tante voci quante sono le
 // serie: altrimenti si ignora, e l'esercizio torna ad avere le stesse ripetizioni per tutte.
@@ -49,16 +57,24 @@ function leggiRipSerie(testo: string | null, serie: number): number[] | undefine
 // Dalla riga del database all'esercizio che usa l'app. I valori mancanti prendono dei predefiniti sensati (anche per una riga di
 // un vecchio tipo non ancora convertita: per «serie a scelta» le serie sono il minimo di prima).
 export function esercizioDaVoce(voce: VoceDb): Esercizio {
+  // Un esercizio a tempo (isometria) ha una durata al posto delle ripetizioni. Si riconosce dalla categoria oppure dalla durata
+  // scritta: una voce di isometria salvata prima del timer non ha la durata e prende quella predefinita, senza toccare il database.
+  // Una voce a tempo non ha ripetizioni, carico a salire né super serie, qualunque cosa dica la riga.
+  const tempo = (voce.durataSec ?? null) !== null || èATempo(voce.esercizio.categoria)
+  // Né un esercizio a tempo né uno di cardio o riscaldamento fa parte di una super serie, anche se una scheda di prima ce l'ha messo:
+  // il gruppo si toglie qui, in lettura, senza toccare il database (lo scioglie poi scheda-db.ts se resta un esercizio solo).
+  const senzaGruppo = tempo || fuoriDaSuperSerie(voce.esercizio.categoria)
   const serie = voce.serie ?? voce.serieMin ?? 3
-  const ripSerie = leggiRipSerie(voce.ripSerie, serie)
-  const ripMin = ripSerie ? Math.min(...ripSerie) : (voce.ripMin ?? 8)
+  const ripSerie = tempo ? undefined : leggiRipSerie(voce.ripSerie, serie)
+  const ripMin = tempo ? 1 : ripSerie ? Math.min(...ripSerie) : (voce.ripMin ?? 8)
   const obiettivo: Obiettivo = {
     tipo: 'serie',
     serie,
     ripMin,
-    ripMax: ripSerie ? Math.max(...ripSerie) : (voce.ripMax ?? ripMin),
+    ripMax: tempo ? 1 : ripSerie ? Math.max(...ripSerie) : (voce.ripMax ?? ripMin),
     recuperoSec: voce.recuperoSec ?? RECUPERO_PREDEFINITO,
     ...(ripSerie ? { ripSerie } : {}),
+    ...(tempo ? { durataSec: voce.durataSec ?? DURATA_PREDEFINITA } : {}),
   }
 
   return {
@@ -70,8 +86,8 @@ export function esercizioDaVoce(voce: VoceDb): Esercizio {
     categoria: voce.esercizio.categoria,
     obiettivo,
     ...(voce.nota ? { nota: voce.nota } : {}),
-    ...(voce.incrementoKg ? { incrementoKg: voce.incrementoKg } : {}),
-    ...(voce.gruppo !== null && voce.recuperoGruppoSec !== null
+    ...(!tempo && voce.incrementoKg ? { incrementoKg: voce.incrementoKg } : {}),
+    ...(!senzaGruppo && voce.gruppo !== null && voce.recuperoGruppoSec !== null
       ? { gruppo: { numero: voce.gruppo, recuperoSec: voce.recuperoGruppoSec } }
       : {}),
   }
@@ -86,5 +102,6 @@ export function campiObiettivo(obiettivo: Obiettivo): CampiObiettivo {
     ripMax: obiettivo.ripMax,
     recuperoSec: obiettivo.recuperoSec,
     ripSerie: obiettivo.ripSerie ? obiettivo.ripSerie.join(',') : null,
+    durataSec: obiettivo.durataSec ?? null,
   }
 }

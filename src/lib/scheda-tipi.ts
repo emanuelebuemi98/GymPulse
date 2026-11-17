@@ -4,7 +4,17 @@
 // Recupero in secondi, carico in kg.
 // `ripSerie`: le ripetizioni di ogni serie, quando sono diverse (12, 10, 8, 6): c'è solo in quel caso, e ha tante voci quante sono le
 // serie. In quel caso `ripMin` e `ripMax` sono il minimo e il massimo della lista. Senza, le ripetizioni sono le stesse per tutte.
-export type Obiettivo = { tipo: 'serie'; serie: number; ripMin: number; ripMax: number; recuperoSec: number; ripSerie?: number[] }
+// `durataSec`: c'è solo per gli esercizi a tempo (isometria): la durata di ogni serie in secondi, uguale per tutte. In quel caso
+// `ripMin` e `ripMax` valgono 1 (una tenuta conta come una ripetizione) e non c'è `ripSerie`.
+export type Obiettivo = {
+  tipo: 'serie'
+  serie: number
+  ripMin: number
+  ripMax: number
+  recuperoSec: number
+  ripSerie?: number[]
+  durataSec?: number
+}
 
 // Un gruppo di esercizi consecutivi senza pausa tra uno e l'altro: superset (2), triset (3), gigantset (4 o più). `numero` è uguale per
 // tutti gli esercizi del gruppo (1, 2, ... nella giornata) e `recuperoSec` è il recupero dopo ogni giro, uguale per tutti.

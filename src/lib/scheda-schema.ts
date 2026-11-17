@@ -28,6 +28,9 @@ const voceSchema = z
       .max(20, 'Le serie devono essere da 1 a 20')
       .nullable()
       .default(null),
+    // La durata di ogni serie in secondi, per gli esercizi a tempo (isometria): al posto delle ripetizioni, uguale per tutte le serie.
+    // Come gli altri campi nati dopo: se manca vale "nessuna".
+    durataSec: intero(1, 3600, 'La durata deve essere da 1 a 3600 secondi').default(null),
     // Il numero del gruppo (super serie) e il suo recupero. Il numero è solo un'etichetta per dire quali esercizi vanno insieme: il
     // server li rinumera 1, 2, ... Anche questi hanno un valore se mancano.
     gruppo: z.number({ error: 'Super serie non valida' }).int('Super serie non valida').min(1, 'Super serie non valida').max(999, 'Super serie non valida').nullable().default(null),
@@ -88,11 +91,23 @@ export function validaScheda(input: unknown): EsitoScheda {
     }
 
     let obiettivo: Obiettivo
-    if (voce.serie === null || (voce.ripMin === null && (voce.ripSerie === null || voce.ripSerie.length === 0))) {
+    if (voce.durataSec !== null) {
+      // Un esercizio a tempo: serie e durata, niente ripetizioni, niente carico a salire, niente super serie. La tenuta conta come
+      // una ripetizione (ripMin e ripMax a 1), così chi legge solo quelle non si rompe.
+      if (voce.serie === null) return { ok: false, errore: 'Indica serie e durata di ogni esercizio a tempo' }
+      if (voce.gruppo !== null) return { ok: false, errore: 'Un esercizio a tempo non fa parte di una super serie' }
+      obiettivo = {
+        tipo: 'serie',
+        serie: voce.serie,
+        ripMin: 1,
+        ripMax: 1,
+        recuperoSec: voce.recuperoSec ?? RECUPERO_PREDEFINITO,
+        durataSec: voce.durataSec,
+      }
+    } else if (voce.serie === null || (voce.ripMin === null && (voce.ripSerie === null || voce.ripSerie.length === 0))) {
       return { ok: false, errore: 'Indica serie e ripetizioni di ogni esercizio' }
-    }
-    // Ripetizioni diverse per ogni serie: una per serie, né più né meno. Il minimo e il massimo si ricavano dall'elenco.
-    if (voce.ripSerie !== null && voce.ripSerie.length > 0) {
+    } else if (voce.ripSerie !== null && voce.ripSerie.length > 0) {
+      // Ripetizioni diverse per ogni serie: una per serie, né più né meno. Il minimo e il massimo si ricavano dall'elenco.
       if (voce.ripSerie.length !== voce.serie) {
         return { ok: false, errore: 'Scrivi le ripetizioni di ogni serie: tante quante sono le serie' }
       }
@@ -122,7 +137,7 @@ export function validaScheda(input: unknown): EsitoScheda {
       catalogoId: voce.catalogoId,
       obiettivo,
       nota: voce.nota ? voce.nota : null,
-      incrementoKg: voce.incrementoKg ? voce.incrementoKg : null,
+      incrementoKg: voce.durataSec === null && voce.incrementoKg ? voce.incrementoKg : null,
       gruppo: null,
     })
     gruppiGrezzi.push({ gruppo: voce.gruppo, recuperoSec: voce.recuperoGruppoSec ?? RECUPERO_PREDEFINITO })

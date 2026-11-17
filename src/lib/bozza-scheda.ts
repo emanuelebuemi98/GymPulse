@@ -31,7 +31,7 @@ const CAMPI_TESTO = [
 ] as const
 
 // Campi nati dopo la prima versione della bozza: una bozza scritta prima non li ha, e non per questo va buttata. In lettura si
-// completano con "nessuno" (ripetizioni uguali per tutte, nessuna super serie).
+// completano con "nessuno" (ripetizioni uguali per tutte, nessuna super serie, nessuna durata).
 const èIdOnull = (valore: unknown) => valore === null || (typeof valore === 'number' && Number.isInteger(valore))
 const èGruppo = (valore: unknown) => valore === null || (typeof valore === 'number' && Number.isInteger(valore) && valore >= 1 && valore <= 999)
 const èTestoFacoltativo = (valore: unknown) => valore === undefined || (typeof valore === 'string' && valore.length <= 300)
@@ -46,7 +46,7 @@ function voceValida(valore: unknown): valore is VoceForm {
   // L'immagine è un file dell'app o niente: un percorso diverso non si carica.
   const immagine = v.immagine as string
   if (immagine !== '' && !immagine.startsWith('/esercizi/')) return false
-  if (!èTestoFacoltativo(v.ripSerie) || !èTestoFacoltativo(v.recuperoGruppo)) return false
+  if (!èTestoFacoltativo(v.ripSerie) || !èTestoFacoltativo(v.recuperoGruppo) || !èTestoFacoltativo(v.durataSec)) return false
   if (v.gruppo !== undefined && !èGruppo(v.gruppo)) return false
   return èIdOnull(v.esercizioId) && èIdOnull(v.catalogoId) && èIdOnull(v.catalogoRif)
 }
@@ -57,7 +57,13 @@ function completa(voce: VoceForm & { tipo?: unknown; ripTotali?: unknown; serieM
   // altrimenti risulterebbe sempre diversa.
   const { tipo: _tipo, ripTotali: _ripTotali, serieMin: _serieMin, serieMax: _serieMax, ...resto } = voce
   void _tipo, _ripTotali, _serieMin, _serieMax
-  return { ...resto, ripSerie: voce.ripSerie ?? '', gruppo: voce.gruppo ?? null, recuperoGruppo: voce.recuperoGruppo ?? '' }
+  return {
+    ...resto,
+    ripSerie: voce.ripSerie ?? '',
+    gruppo: voce.gruppo ?? null,
+    recuperoGruppo: voce.recuperoGruppo ?? '',
+    durataSec: voce.durataSec ?? '',
+  }
 }
 
 function leggiVoce(grezzo: string, ora: number): BozzaScheda | null {

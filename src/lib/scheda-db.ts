@@ -1,5 +1,6 @@
-import type { Giorno } from './scheda-tipi'
+import type { Esercizio, Giorno } from './scheda-tipi'
 import { db } from './db'
+import { normalizzaGruppi } from './gruppi'
 import type { VoceElenco } from './tipi'
 import { esercizioDaVoce } from './voci'
 
@@ -21,12 +22,28 @@ type RigaGiorno = {
   voci: Parameters<typeof esercizioDaVoce>[0][]
 }
 
+// Un esercizio a tempo non sta in una super serie (esercizioDaVoce gli toglie il gruppo): se in una scheda di prima ne era dentro,
+// i suoi vicini possono restare soli. Si rinumera, e un gruppo con un solo esercizio si scioglie.
+function senzaGruppiRotti(esercizi: Esercizio[]): Esercizio[] {
+  const nuovi = normalizzaGruppi(esercizi.map((esercizio) => ({ gruppo: esercizio.gruppo?.numero ?? null })))
+  return esercizi.map((esercizio, indice) => {
+    const numero = nuovi[indice].gruppo
+    if (esercizio.gruppo === undefined) return esercizio
+    if (numero === null) {
+      const { gruppo: _gruppo, ...senza } = esercizio
+      void _gruppo
+      return senza
+    }
+    return { ...esercizio, gruppo: { numero, recuperoSec: esercizio.gruppo.recuperoSec } }
+  })
+}
+
 // Dalla riga del database alla giornata che usa l'app, con chi l'ha modificata per ultimo.
 function giornoDaRiga(riga: RigaGiorno): Giorno {
   return {
     id: riga.id,
     titolo: riga.titolo,
-    esercizi: riga.voci.map(esercizioDaVoce),
+    esercizi: senzaGruppiRotti(riga.voci.map(esercizioDaVoce)),
     ...(riga.modificatoIl
       ? {
           modificata: {

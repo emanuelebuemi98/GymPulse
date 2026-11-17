@@ -1,4 +1,5 @@
 import type { Prisma } from '@/generated/prisma/client'
+import { fuoriDaSuperSerie } from './categorie'
 import { esercizioDalCatalogo } from './catalogo'
 import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from './giornate'
 import type { SchedaNormalizzata, VoceNormalizzata } from './scheda-schema'
@@ -14,6 +15,30 @@ import { campiObiettivo } from './voci'
 // non scelgono la stessa sigla.
 
 export type Esito<T> = ({ ok: true } & T) | { ok: false; errore: string }
+
+// Gli esercizi di isometria, cardio e riscaldamento non fanno parte di una super serie. L'editor non li offre, ma il browser non è
+// fidato (e un file Excel può scriverli): qui si guarda la categoria vera, nel database. Restituisce il messaggio di errore, o null.
+export async function controllaSuperSerie(
+  tx: Prisma.TransactionClient,
+  userId: number,
+  voci: VoceNormalizzata[],
+): Promise<string | null> {
+  const inGruppo = voci.filter((voce) => voce.gruppo !== null)
+  if (inGruppo.length === 0) return null
+  const idPropri = inGruppo.flatMap((voce) => (voce.esercizioId !== null ? [voce.esercizioId] : []))
+  const idCatalogo = inGruppo.flatMap((voce) => (voce.catalogoId !== null ? [voce.catalogoId] : []))
+  const [propri, catalogo] = await Promise.all([
+    tx.esercizio.findMany({ where: { userId, id: { in: idPropri } }, select: { nome: true, categoria: true } }),
+    tx.catalogoEsercizio.findMany({ where: { id: { in: idCatalogo } }, select: { nomeIt: true, categoria: true } }),
+  ])
+  const nomi = [
+    ...propri.filter((riga) => fuoriDaSuperSerie(riga.categoria)).map((riga) => riga.nome),
+    ...catalogo.filter((riga) => fuoriDaSuperSerie(riga.categoria)).map((riga) => riga.nomeIt),
+  ]
+  return nomi.length === 0
+    ? null
+    : `Gli esercizi di isometria, cardio e riscaldamento non fanno parte di una super serie (${nomi.map((nome) => `«${nome}»`).join(', ')})`
+}
 
 // Scrive gli esercizi di una giornata già esistente: cambia il titolo, toglie le voci di prima e crea quelle nuove, nell'ordine
 // dato. La storia non si tocca: le serie già registrate puntano agli esercizi, non alle voci della scheda. Un esercizio è
@@ -92,6 +117,9 @@ export async function salvaGiornata(
     const gia = await tx.esercizio.count({ where: { userId, id: { in: idPropri }, catalogoId: { in: delCatalogo } } })
     if (gia > 0) return { ok: false, errore: 'Esercizio ripetuto' }
   }
+
+  const superSerieSbagliata = await controllaSuperSerie(tx, userId, scheda.voci)
+  if (superSerieSbagliata) return { ok: false, errore: superSerieSbagliata }
 
   await scriviVoci(tx, userId, scheda.giornoId, scheda.titolo, scheda.voci, chi)
   return { ok: true }

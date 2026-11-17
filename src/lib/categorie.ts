@@ -36,3 +36,21 @@ export function categoriaDa(testo: string): Categoria | null {
 
 // Le categorie senza kg da sommare: non entrano nel grafico dei kg per categoria della panoramica.
 export const CATEGORIE_SENZA_KG: readonly Categoria[] = ['addome', 'isometria', 'cardio', 'riscaldamento']
+
+// Le categorie degli esercizi a tempo: si tengono o si fanno per una durata, non per ripetizioni e kg. Nella scheda hanno serie e
+// durata (uguale per tutte le serie), in sessione un timer.
+export const CATEGORIE_A_TEMPO: readonly Categoria[] = ['isometria']
+
+export function èATempo(categoria: string): boolean {
+  const chiave = categoriaDa(categoria)
+  return chiave !== null && CATEGORIE_A_TEMPO.includes(chiave)
+}
+
+// Le categorie i cui esercizi non fanno parte di una super serie (superset, triset, gigantset): quelli a tempo hanno un timer, il
+// cardio si fa su una macchina e il riscaldamento si fa a parte. Un esercizio senza categoria (da un vecchio file) non è escluso.
+export const CATEGORIE_FUORI_DA_SUPER_SERIE: readonly Categoria[] = ['isometria', 'cardio', 'riscaldamento']
+
+export function fuoriDaSuperSerie(categoria: string): boolean {
+  const chiave = categoriaDa(categoria)
+  return chiave !== null && CATEGORIE_FUORI_DA_SUPER_SERIE.includes(chiave)
+}

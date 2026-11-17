@@ -1,7 +1,8 @@
+import { èATempo, fuoriDaSuperSerie } from './categorie'
 import type { Esercizio } from './scheda-tipi'
 import { parseIntero, parseNumero } from './numeri'
 import type { VoceElenco } from './tipi'
-import { RECUPERO_PREDEFINITO } from './voci'
+import { DURATA_PREDEFINITA, RECUPERO_PREDEFINITO, RECUPERO_PREDEFINITO_TEMPO } from './voci'
 
 // Una riga dell'editor della scheda: tutti i numeri sono testo, come nei campi del form.
 // Un esercizio è già della persona (esercizioId) oppure preso dal catalogo e non ancora suo (catalogoId): uno solo dei due.
@@ -32,6 +33,20 @@ export type VoceForm = {
   gruppo: number | null
   // Il recupero dopo ogni giro della super serie, scritto uguale su tutti i suoi esercizi; vuoto se non è in un gruppo.
   recuperoGruppo: string
+  // La durata di ogni serie in secondi, solo per gli esercizi a tempo (isometria); vuota per gli altri. Una bozza scritta prima
+  // non ce l'ha (vedi bozza-scheda.ts).
+  durataSec: string
+}
+
+// Un esercizio a tempo ha serie e durata (uguale per tutte le serie) al posto di ripetizioni e carico a salire, e non sta in una super
+// serie. Lo è se la sua categoria è a tempo, oppure se la scheda ha già una durata per lui.
+export function èVoceATempo(voce: Pick<VoceForm, 'categoria' | 'durataSec'>): boolean {
+  return èATempo(voce.categoria) || voce.durataSec !== ''
+}
+
+// Gli esercizi di isometria (a tempo), cardio e riscaldamento non si mettono in una super serie.
+export function èFuoriDaSuperSerie(voce: Pick<VoceForm, 'categoria' | 'durataSec'>): boolean {
+  return èVoceATempo(voce) || fuoriDaSuperSerie(voce.categoria)
 }
 
 export type VocePerInvio = {
@@ -47,6 +62,7 @@ export type VocePerInvio = {
   ripSerie: number[] | null
   gruppo: number | null
   recuperoGruppoSec: number | null
+  durataSec: number | null
 }
 
 const predefiniti = {
@@ -59,6 +75,7 @@ const predefiniti = {
   ripSerie: '',
   gruppo: null,
   recuperoGruppo: '',
+  durataSec: '',
 }
 
 export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
@@ -82,13 +99,16 @@ export function voceFormDaEsercizio(esercizio: Esercizio): VoceForm {
     incrementoKg: esercizio.incrementoKg ? String(esercizio.incrementoKg) : '',
     gruppo: esercizio.gruppo?.numero ?? null,
     recuperoGruppo: esercizio.gruppo ? String(esercizio.gruppo.recuperoSec) : '',
+    durataSec: o.durataSec !== undefined ? String(o.durataSec) : '',
   }
 }
 
-// Nuova riga per un esercizio scelto dall'elenco (della persona o del catalogo).
+// Nuova riga per un esercizio scelto dall'elenco (della persona o del catalogo). Se è a tempo parte con 3 serie da 30 secondi.
 export function nuovaVoceForm(chiave: string, scelta: VoceElenco): VoceForm {
+  const aTempo = èATempo(scelta.categoria)
   return {
     ...predefiniti,
+    ...(aTempo ? { ripMin: '1', ripMax: '1', recuperoSec: String(RECUPERO_PREDEFINITO_TEMPO), durataSec: String(DURATA_PREDEFINITA) } : {}),
     chiave,
     esercizioId: scelta.id,
     catalogoId: scelta.id === null ? scelta.catalogoId : null,
@@ -132,10 +152,32 @@ export function vocePerInvio(voce: VoceForm): VocePerInvio | { errore: string } 
   const incrementoKg = campo(voce.incrementoKg, false)
   const recuperoGruppo = campo(voce.recuperoGruppo, true)
 
-  const tutti = [serie, ripMin, ripMax, recuperoSec, incrementoKg, recuperoGruppo]
+  const durataSec = campo(voce.durataSec, true)
+
+  const tutti = [serie, ripMin, ripMax, recuperoSec, incrementoKg, recuperoGruppo, durataSec]
   if (tutti.some((valore) => valore === NON_VALIDO)) return { errore: `Controlla i numeri di ${voce.nome}` }
 
   const numero = (valore: number | null | typeof NON_VALIDO) => (valore === NON_VALIDO ? null : valore)
+
+  // Un esercizio a tempo: serie, durata e recupero. Le ripetizioni, il carico a salire e la super serie non esistono per lui.
+  if (èVoceATempo(voce)) {
+    if (numero(durataSec) === null) return { errore: `Scrivi la durata di ogni serie di ${voce.nome}` }
+    return {
+      esercizioId: voce.esercizioId,
+      catalogoId: voce.catalogoId,
+      tipo: 'serie',
+      serie: numero(serie),
+      ripMin: 1,
+      ripMax: 1,
+      recuperoSec: numero(recuperoSec),
+      nota: voce.nota.trim() === '' ? null : voce.nota.trim(),
+      incrementoKg: null,
+      ripSerie: null,
+      gruppo: null,
+      recuperoGruppoSec: null,
+      durataSec: numero(durataSec),
+    }
+  }
 
   // Serie piramidale: un valore intero per ogni serie.
   let ripSerie: number[] | null = null
@@ -161,5 +203,6 @@ export function vocePerInvio(voce: VoceForm): VocePerInvio | { errore: string } 
     ripSerie,
     gruppo: voce.gruppo,
     recuperoGruppoSec: voce.gruppo !== null ? (numero(recuperoGruppo) ?? RECUPERO_PREDEFINITO) : null,
+    durataSec: null,
   }
 }

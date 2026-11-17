@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { GRUPPO_MAX, GRUPPO_MIN, nomeGruppo } from '@/lib/gruppi'
 import { parseIntero } from '@/lib/numeri'
-import type { VoceForm } from '@/lib/scheda-form'
+import { èFuoriDaSuperSerie, type VoceForm } from '@/lib/scheda-form'
 import { RECUPERO_PREDEFINITO } from '@/lib/voci'
 import { stileBottoneChiaro, stileCarta, stileInput } from './stili'
 
@@ -15,13 +15,14 @@ type Props = {
 
 // Il pulsante «Super Serie»: si scelgono 2 o più esercizi della giornata e si mettono insieme, da fare uno dopo l'altro senza
 // pausa. Con 2 esercizi è un superset, con 3 un triset, con 4 o più un gigantset: il nome compare da solo mentre si sceglie.
-// Si possono scegliere gli esercizi che non sono già in una super serie.
+// Si possono scegliere gli esercizi che non sono già in una super serie. Quelli di isometria (a tempo), cardio e riscaldamento non
+// ci sono: hanno un timer, una macchina o si fanno a parte, non si alternano con altri senza pausa.
 export function CreaSuperSerie({ voci, alCrea }: Props) {
   const [aperto, setAperto] = useState(false)
   const [scelti, setScelti] = useState<string[]>([])
   const [recupero, setRecupero] = useState(String(RECUPERO_PREDEFINITO))
 
-  const disponibili = voci.filter((voce) => voce.gruppo === null)
+  const disponibili = voci.filter((voce) => voce.gruppo === null && !èFuoriDaSuperSerie(voce))
   // Una scelta fatta prima e poi sparita dall'elenco (esercizio tolto, già messo in un gruppo) non conta più.
   const validi = scelti.filter((chiave) => disponibili.some((voce) => voce.chiave === chiave))
   const quanti = validi.length
@@ -68,7 +69,7 @@ export function CreaSuperSerie({ voci, alCrea }: Props) {
         <div className="space-y-3">
           {disponibili.length < GRUPPO_MIN ? (
             <p className="rounded-2xl bg-carta-alta p-3 text-sm text-muto">
-              Servono almeno due esercizi che non siano già in una super serie.
+              Servono almeno due esercizi che non siano già in una super serie. Gli esercizi di isometria, cardio e riscaldamento non ne fanno parte.
             </p>
           ) : (
             <>

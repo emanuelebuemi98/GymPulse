@@ -56,6 +56,8 @@ function obiettivoSerie(ripSerie: number[], indice: number): number {
 }
 
 export function descrizioneObiettivo(obiettivo: Obiettivo): string {
+  // Un esercizio a tempo: "3 × 45 s", "3 × 1 min 30 s".
+  if (obiettivo.durataSec !== undefined) return `${obiettivo.serie} × ${formatRecupero(obiettivo.durataSec)}`
   // Ripetizioni diverse per ogni serie: "4 × 12-10-8-6".
   if (obiettivo.ripSerie) return `${obiettivo.serie} × ${obiettivo.ripSerie.join('-')}`
   return obiettivo.ripMin === obiettivo.ripMax
@@ -103,8 +105,8 @@ export function haRipetizioniPerSerie(obiettivo: Obiettivo): boolean {
 export type RiepilogoGiornata = {
   esercizi: number
   serie: number
-  // Una stima, non un dato misurato: ogni serie dura circa 40 secondi e si aggiunge il recupero previsto tra una serie e
-  // l'altra (non dopo l'ultima). Null se la giornata non ha esercizi.
+  // Una stima, non un dato misurato: ogni serie dura circa 40 secondi (una serie a tempo, la sua durata) e si aggiunge il
+  // recupero previsto tra una serie e l'altra (non dopo l'ultima). Null se la giornata non ha esercizi.
   minutiStimati: number | null
   categorie: string[]
 }
@@ -131,7 +133,9 @@ export function riepilogoGiornata(
 
   for (const { obiettivo, gruppo } of esercizi) {
     serie += obiettivo.serie
-    secondi += obiettivo.serie * SECONDI_PER_SERIE + (gruppo ? 0 : Math.max(0, obiettivo.serie - 1) * obiettivo.recuperoSec)
+    // Una serie a tempo dura quanto la sua durata; le altre circa 40 secondi.
+    const perSerie = obiettivo.durataSec ?? SECONDI_PER_SERIE
+    secondi += obiettivo.serie * perSerie + (gruppo ? 0 : Math.max(0, obiettivo.serie - 1) * obiettivo.recuperoSec)
   }
   const categorie = [...new Set(esercizi.map((esercizio) => esercizio.categoria).filter((categoria) => categoria !== ''))]
   return { esercizi: esercizi.length, serie, minutiStimati: esercizi.length > 0 ? Math.max(1, Math.round(secondi / 60)) : null, categorie }
