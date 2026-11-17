@@ -7,6 +7,8 @@ import { SelettoreEsercizio } from '@/components/SelettoreEsercizio'
 import { stileCarta } from '@/components/stili'
 import { PesoPerGruppo } from '@/components/PesoPerGruppo'
 import { formatRecupero } from '@/lib/allenamento'
+import { totaliCardio } from '@/lib/cardio'
+import { èCardio } from '@/lib/categorie'
 import { dataIso, formatData, formatDataBreve, formatDataNumerica, formatNumero } from '@/lib/formato'
 import { istanteDaIso, lunediDi, pesoPerGruppo, perGiornata, perSettimana, riepilogoGenerale, spostaSettimane } from '@/lib/panoramica'
 import { descriviSomma } from '@/lib/progressi'
@@ -237,8 +239,8 @@ async function PerEsercizio({
   scelto,
 }: {
   userId: number
-  esercizi: { id: number; nome: string }[]
-  scelto: { id: number; nome: string }
+  esercizi: { id: number; nome: string; categoria: string }[]
+  scelto: { id: number; nome: string; categoria: string }
 }) {
   const andamento = await andamentoEsercizio(userId, scelto.id)
   const conCarico = andamento.some((s) => s.massimoKg !== null)
@@ -248,6 +250,63 @@ async function PerEsercizio({
     etichetta: formatDataBreve(seduta.data),
     descrizione: formatData(seduta.data),
   })
+
+  // Il cardio: si seguono i km, le calorie e il tempo di ogni seduta (somma dei suoi tratti). I km e le calorie ci sono solo se le sedute li
+  // hanno (la velocità, o quelli del display): un cardio senza, come la cyclette senza display, mostra solo il tempo.
+  if (èCardio(scelto.categoria) && andamento.some((s) => s.serie.some((x) => x.durataSec !== null))) {
+    const sedute = andamento.flatMap((seduta) => {
+      const tratti = seduta.serie.flatMap((s) =>
+        s.durataSec === null ? [] : [{ durataSec: s.durataSec, velocitaKmh: s.velocitaKmh, inclinazionePct: s.inclinazionePct, km: s.km, kcal: s.kcal }],
+      )
+      return tratti.length === 0 ? [] : [{ seduta, totali: totaliCardio(tratti), tratti: tratti.length }]
+    })
+    const punti = (valore: (x: (typeof sedute)[number]) => number | null, testo: (v: number) => string, dettaglio?: (x: (typeof sedute)[number]) => string | undefined): PuntoSerie[] =>
+      sedute.flatMap((x) => {
+        const v = valore(x)
+        return v === null ? [] : [{ ...comuni(x.seduta), valore: v, testo: testo(v), dettaglio: dettaglio?.(x) }]
+      })
+    const puntiKm = punti((x) => x.totali.km, (v) => `${formatNumero(v, 2)} km`, (x) => (x.tratti > 1 ? `${x.tratti} tratti` : undefined))
+    const puntiKcal = punti((x) => x.totali.kcal, (v) => `${formatNumero(v, 0)} kcal`, (x) => (x.totali.senzaKcal > 0 ? `${x.totali.senzaKcal} tratti senza calorie` : undefined))
+    // Il tempo in minuti (con un decimale): il testo dice minuti e secondi.
+    const puntiTempo = punti((x) => Math.round((x.totali.durataSec / 60) * 10) / 10, () => '')
+      .map((p, i) => ({ ...p, testo: formatRecupero(sedute[i].totali.durataSec) }))
+
+    return (
+      <div className="space-y-5">
+        <h1 className="text-3xl font-extrabold tracking-tight">Progressi</h1>
+        <SchedeProgressi attiva="esercizio" primoEsercizio={scelto.id} />
+        <SelettoreEsercizio esercizi={esercizi} scelto={scelto.id} />
+
+        {puntiKm.length > 0 && (
+          <section className={`${stileCarta} space-y-3 p-4`}>
+            <div>
+              <h2 className="text-lg font-extrabold">Km per seduta</h2>
+              <p className="text-sm text-muto">I km di tutti i tratti di questo esercizio sommati, seduta per seduta.</p>
+            </div>
+            <GraficoSerie tipo="linea" punti={puntiKm} titolo={`Km di ${scelto.nome}`} colonnaEtichetta="Data" colonnaValore="Km" />
+          </section>
+        )}
+
+        {puntiKcal.length > 0 && (
+          <section className={`${stileCarta} space-y-3 p-4`}>
+            <div>
+              <h2 className="text-lg font-extrabold">Kcal per seduta</h2>
+              <p className="text-sm text-muto">Le calorie dei tratti, seduta per seduta. Sono una stima (calorie lorde), calcolata con il peso scritto in quella seduta.</p>
+            </div>
+            <GraficoSerie tipo="barre" punti={puntiKcal} titolo={`Kcal di ${scelto.nome}`} colonnaEtichetta="Data" colonnaValore="Kcal" interi />
+          </section>
+        )}
+
+        <section className={`${stileCarta} space-y-3 p-4`}>
+          <div>
+            <h2 className="text-lg font-extrabold">Tempo totale per seduta</h2>
+            <p className="text-sm text-muto">I minuti di tutti i tratti di questo esercizio sommati, seduta per seduta.</p>
+          </div>
+          <GraficoSerie tipo="barre" punti={puntiTempo} titolo={`Tempo di ${scelto.nome}`} colonnaEtichetta="Data" colonnaValore="Minuti" />
+        </section>
+      </div>
+    )
+  }
 
   // Un esercizio a tempo (isometria): si segue la tenuta, in secondi, non le ripetizioni. Le sedute fatte prima del timer (con le
   // ripetizioni) non hanno secondi e non compaiono nei grafici, che restano comunque veri.

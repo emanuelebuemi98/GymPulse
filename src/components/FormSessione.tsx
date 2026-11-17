@@ -3,9 +3,27 @@
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { salvaSessione } from '@/app/actions'
-import type { Esercizio, Giorno } from '@/lib/scheda-tipi'
+import type { Esercizio, Giorno, Obiettivo } from '@/lib/scheda-tipi'
 import { descrizioneObiettivo, formatRecupero, formatTimer, haRipetizioniPerSerie, ripetizioniTarget, serieIniziali } from '@/lib/allenamento'
-import { èATempo } from '@/lib/categorie'
+import { èATempo, èCardio } from '@/lib/categorie'
+import {
+  kcalTratto,
+  kmTratto,
+  macchinaCardio,
+  numeroDaTestoCardio,
+  numeroInTesto,
+  partenzaCardio,
+  PENDENZA_MAX,
+  PESO_MAX,
+  PESO_MIN,
+  secondiDaMinuti,
+  minutiInTesto,
+  totaliCardio,
+  TRATTO_PREDEFINITO_SEC,
+  VELOCITA_MAX,
+  VELOCITA_MIN,
+  type MacchinaCardio,
+} from '@/lib/cardio'
 import { giroCompleto, nomeGruppo } from '@/lib/gruppi'
 import { preparaSegnale } from '@/lib/segnale'
 import { DURATA_PREDEFINITA } from '@/lib/voci'
@@ -25,7 +43,21 @@ import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stile
 
 // `durataSec`: i secondi tenuti, solo nelle serie degli esercizi a tempo (isometria), dove le ripetizioni valgono 1 e non c'è il
 // peso. Una bozza scritta prima non ce l'ha.
-type RigaSerie = { pesoKg: string; ripetizioni: string; durataSec?: string; confermata: boolean }
+// Il cardio: ogni serie è un tratto. `minuti`, `velocitaKmh` e `inclinazionePct` sono quelli da fare (partono dalla scheda e si cambiano);
+// `km`, `kcal` e `bpm` sono quelli del display, facoltativi (km e kcal solo per le macchine senza velocità). Una volta confermato il tratto,
+// `durataSec` ha i secondi fatti. Una bozza scritta prima non ha questi campi.
+type RigaSerie = {
+  pesoKg: string
+  ripetizioni: string
+  durataSec?: string
+  minuti?: string
+  velocitaKmh?: string
+  inclinazionePct?: string
+  km?: string
+  kcal?: string
+  bpm?: string
+  confermata: boolean
+}
 
 // La serie a tempo che sta contando: `inizio` è l'ora di avvio (millisecondi) e `totale` la durata prevista. Non va nella bozza: se
 // la pagina si ricarica a metà tenuta, la serie non è confermata e si riparte con «Avvia».
@@ -52,6 +84,8 @@ type Bozza = {
   data: string
   note: string
   inizio?: number
+  // Il peso scritto per stimare le calorie del cardio. Una bozza scritta prima non ce l'ha.
+  peso?: string
 }
 
 type Props = {
@@ -59,10 +93,35 @@ type Props = {
   giorno: Giorno
   ultime: UltimeVolte
   elenco: VoceElenco[]
+  // L'ultimo peso scritto in una seduta, per proporlo già pronto; vuoto se non è mai stato scritto.
+  ultimoPesoKg: number | null
   oggi: string
 }
 
 const rigaVuota = (): RigaSerie => ({ pesoKg: '', ripetizioni: '', confermata: false })
+
+// Un tratto di cardio da fare: i minuti, la velocità e la pendenza della scheda (o di partenza), niente di confermato.
+const rigaTratto = (minuti: string, velocitaKmh: string, inclinazionePct: string): RigaSerie => ({
+  pesoKg: '',
+  ripetizioni: '',
+  minuti,
+  velocitaKmh,
+  inclinazionePct,
+  km: '',
+  kcal: '',
+  bpm: '',
+  confermata: false,
+})
+
+function trattoDaObiettivo(o: Obiettivo): RigaSerie {
+  return rigaTratto(minutiInTesto(o.durataSec ?? TRATTO_PREDEFINITO_SEC), o.velocitaKmh !== undefined ? numeroInTesto(o.velocitaKmh) : '', o.inclinazionePct !== undefined ? numeroInTesto(o.inclinazionePct) : '')
+}
+
+// Un tratto per un cardio aggiunto a metà sessione: 20 minuti e, se la macchina ha la velocità, quella di partenza.
+function trattoDiPartenza(nomeEn: string): RigaSerie {
+  const partenza = partenzaCardio(nomeEn)
+  return rigaTratto(minutiInTesto(TRATTO_PREDEFINITO_SEC), partenza ? numeroInTesto(partenza.velocitaKmh) : '', partenza?.inclinazionePct != null ? numeroInTesto(partenza.inclinazionePct) : '')
+}
 
 function esercizioIniziale(esercizio: Esercizio): EsSessione {
   return {
@@ -72,7 +131,7 @@ function esercizioIniziale(esercizio: Esercizio): EsSessione {
     nome: esercizio.nome,
     nomeEn: esercizio.nomeEn,
     immagine: esercizio.immagine,
-    serie: Array.from({ length: serieIniziali(esercizio.obiettivo) }, rigaVuota),
+    serie: Array.from({ length: serieIniziali(esercizio.obiettivo) }, () => (esercizio.obiettivo.cardio ? trattoDaObiettivo(esercizio.obiettivo) : rigaVuota())),
   }
 }
 
@@ -85,7 +144,7 @@ function testoSuggerimento(s: SuggerimentoCarico): string {
       : `Resta a ${formatNumero(s.kg)} kg: completa ${s.ripMax} rip in ogni serie per salire`
 }
 
-export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) {
+export function FormSessione({ utenteId, giorno, ultime, elenco, ultimoPesoKg, oggi }: Props) {
   const router = useRouter()
   const definizioni = new Map(giorno.esercizi.map((e) => [e.id, e]))
   const suggerimentiCarico = suggerisciCarichi(giorno.esercizi, ultime)
@@ -93,6 +152,8 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
   const [esercizi, setEsercizi] = useState<EsSessione[]>(() => giorno.esercizi.map(esercizioIniziale))
   const [data, setData] = useState(oggi)
   const [note, setNote] = useState('')
+  // Il peso di oggi, scritto come testo: parte dall'ultimo salvato e serve solo se la sessione ha cardio con la velocità.
+  const [peso, setPeso] = useState(() => (ultimoPesoKg !== null ? numeroInTesto(ultimoPesoKg) : ''))
   const [errore, setErrore] = useState<string | null>(null)
   const [scaduta, setScaduta] = useState(false)
   const [erroreEsercizio, setErroreEsercizio] = useState<{ chiave: string; testo: string } | null>(null)
@@ -136,6 +197,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
       setEsercizi(riportati)
       setData(bozza.data)
       setNote(bozza.note)
+      if (typeof bozza.peso === 'string') setPeso(bozza.peso)
       // L'allenamento è già iniziato solo se c'è almeno una serie confermata: una pagina aperta e poi lasciata lì non conta.
       const iniziata = riportati.some((es) => es.serie.some((riga) => riga.confermata))
       setInizio(iniziata && typeof bozza.inizio === 'number' && bozza.inizio <= Date.now() ? bozza.inizio : Date.now())
@@ -154,8 +216,8 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
 
   useEffect(() => {
     if (!bozzaPronta || inizio === null) return
-    salvaBozza(utenteId, giorno.id, { esercizi, data, note, inizio } satisfies Bozza)
-  }, [bozzaPronta, utenteId, giorno.id, esercizi, data, note, inizio])
+    salvaBozza(utenteId, giorno.id, { esercizi, data, note, inizio, peso } satisfies Bozza)
+  }, [bozzaPronta, utenteId, giorno.id, esercizi, data, note, inizio, peso])
 
   useEffect(() => {
     if (!timer) return
@@ -177,6 +239,8 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
 
   const righeTotali = esercizi.reduce((totale, e) => totale + e.serie.length, 0)
   const righeConfermate = esercizi.reduce((totale, e) => totale + e.serie.filter((s) => s.confermata).length, 0)
+  // Il campo del peso compare solo se la sessione ha un cardio con la velocità (tapis roulant, corsa): le calorie le stima da lì.
+  const haCardioConVelocita = esercizi.some((es) => èCardio(categoriaDi(es)) && macchinaCardio(es.nomeEn ?? '') !== null)
 
   function ultimaDi(es: EsSessione) {
     return es.esercizioId ? ultime[es.esercizioId] : undefined
@@ -193,8 +257,79 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
   // La durata prevista di ogni serie se l'esercizio è a tempo (isometria), altrimenti null. Un esercizio aggiunto a metà sessione non
   // ha una durata nella scheda: prende quella predefinita.
   function durataPrevista(es: EsSessione): number | null {
+    // Il cardio non è una tenuta: ha i suoi tratti, ognuno con i suoi minuti.
+    if (èCardioEs(es)) return null
     const definizione = es.esercizioId ? definizioni.get(es.esercizioId) : undefined
     return definizione?.obiettivo.durataSec ?? (èATempo(categoriaDi(es)) ? DURATA_PREDEFINITA : null)
+  }
+
+  // Il cardio si fa a tratti. La macchina dice se ha la velocità (e la pendenza): si riconosce dal nome inglese del catalogo.
+  function èCardioEs(es: EsSessione): boolean {
+    return èCardio(categoriaDi(es))
+  }
+
+  function macchinaDi(es: EsSessione): MacchinaCardio | null {
+    return èCardioEs(es) ? macchinaCardio(es.nomeEn ?? '') : null
+  }
+
+  // Il peso scritto, se è un numero giusto; altrimenti niente (le calorie non si calcolano).
+  const pesoNumero = (() => {
+    const p = numeroDaTestoCardio(peso)
+    return p !== null && p >= PESO_MIN && p <= PESO_MAX ? p : null
+  })()
+
+  // Un tratto in più: parte uguale all'ultimo (stessi minuti, velocità e pendenza), e si cambia. Per gli altri esercizi, una serie vuota.
+  function aggiungiSerie(es: EsSessione) {
+    aggiorna(es.chiave, (corrente) => {
+      const ultimo = corrente.serie[corrente.serie.length - 1]
+      const nuova = èCardioEs(corrente)
+        ? rigaTratto(ultimo?.minuti ?? minutiInTesto(TRATTO_PREDEFINITO_SEC), ultimo?.velocitaKmh ?? '', ultimo?.inclinazionePct ?? '')
+        : rigaVuota()
+      return { ...corrente, serie: [...corrente.serie, nuova] }
+    })
+  }
+
+  // Controlla un tratto di cardio e dà i suoi numeri, oppure il motivo per cui non va. `tenuti`: i secondi fatti (dal timer).
+  function controllaTratto(es: EsSessione, indice: number, tenuti?: number) {
+    const riga = es.serie[indice]
+    const macchina = macchinaDi(es)
+    const sbagliato = (testo: string) => ({ errore: `Tratto ${indice + 1}: ${testo}` })
+    let secondi: number | null = tenuti ?? null
+    if (tenuti === undefined) {
+      const minuti = numeroDaTestoCardio(riga.minuti ?? '')
+      secondi = minuti === null ? null : secondiDaMinuti(minuti)
+    }
+    if (secondi === null) return sbagliato('scrivi i minuti, da 1 secondo a 60 minuti')
+    let velocita: number | null = null
+    let pendenza: number | null = null
+    let km: number | null = null
+    let kcal: number | null = null
+    if (macchina) {
+      velocita = numeroDaTestoCardio(riga.velocitaKmh ?? '')
+      if (velocita === null || velocita < VELOCITA_MIN || velocita > VELOCITA_MAX) {
+        return sbagliato(`la velocità deve essere da ${numeroInTesto(VELOCITA_MIN)} a ${VELOCITA_MAX} km/h`)
+      }
+      if (macchina.pendenza && (riga.inclinazionePct ?? '').trim() !== '') {
+        pendenza = numeroDaTestoCardio(riga.inclinazionePct ?? '')
+        if (pendenza === null || pendenza < 0 || pendenza > PENDENZA_MAX) return sbagliato(`la pendenza deve essere da 0 a ${PENDENZA_MAX}%`)
+      }
+    } else {
+      if ((riga.km ?? '').trim() !== '') {
+        km = numeroDaTestoCardio(riga.km ?? '')
+        if (km === null || km < 0 || km > 500) return sbagliato('i km devono essere da 0 a 500')
+      }
+      if ((riga.kcal ?? '').trim() !== '') {
+        const scritte = numeroDaTestoCardio(riga.kcal ?? '')
+        if (scritte === null || scritte < 0 || scritte > 5000) return sbagliato('le calorie devono essere da 0 a 5000')
+        kcal = Math.round(scritte)
+      }
+    }
+    let bpm: number | null = null
+    if ((riga.bpm ?? '').trim() !== '') {
+      bpm = numeroDaTestoCardio(riga.bpm ?? '')
+      if (bpm === null || !Number.isInteger(bpm) || bpm < 30 || bpm > 250) return sbagliato('i battiti devono essere un numero da 30 a 250 al minuto')
+    }
+    return { secondi, velocita, pendenza, km, kcal, bpm }
   }
 
   // La tenuta in corso conta solo se la sua serie c'è ancora e non è già confermata (l'esercizio o la serie possono essere stati tolti).
@@ -203,7 +338,16 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     esercizi.some((es) => es.chiave === tenuta.chiave && es.serie[tenuta.indice] !== undefined && !es.serie[tenuta.indice].confermata)
 
   function avviaTenuta(es: EsSessione, indice: number) {
-    const totale = durataPrevista(es)
+    let totale = durataPrevista(es)
+    if (èCardioEs(es)) {
+      // Un tratto di cardio: il tempo sono i suoi minuti. Se i numeri non vanno, il timer non parte e si dice cosa correggere.
+      const tratto = controllaTratto(es, indice)
+      if ('errore' in tratto) {
+        setErroreEsercizio({ chiave: es.chiave, testo: tratto.errore })
+        return
+      }
+      totale = tratto.secondi
+    }
     if (totale === null) return
     // Il suono ha bisogno di un tocco per essere permesso: si prepara qui, mentre la persona preme «Avvia».
     preparaSegnale()
@@ -254,6 +398,29 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     const riga = es.serie[indice]
     if (riga.confermata) {
       modificaRiga(es.chiave, indice, { confermata: false })
+      return
+    }
+
+    if (èCardioEs(es)) {
+      // Un tratto di cardio: i secondi fatti (dal timer, oppure i minuti scritti), la velocità e la pendenza della macchina. Niente peso
+      // né ripetizioni (valgono 1) e niente recupero: si passa al tratto dopo. Km e calorie si ricalcolano sul server.
+      const tratto = controllaTratto(es, indice, tenuti)
+      if ('errore' in tratto) {
+        setErroreEsercizio({ chiave: es.chiave, testo: tratto.errore })
+        return
+      }
+      setErroreEsercizio(null)
+      modificaRiga(es.chiave, indice, {
+        pesoKg: '',
+        ripetizioni: '1',
+        durataSec: String(tratto.secondi),
+        velocitaKmh: tratto.velocita === null ? '' : numeroInTesto(tratto.velocita),
+        inclinazionePct: tratto.pendenza === null ? '' : numeroInTesto(tratto.pendenza),
+        km: tratto.km === null ? '' : numeroInTesto(tratto.km),
+        kcal: tratto.kcal === null ? '' : String(tratto.kcal),
+        bpm: tratto.bpm === null ? '' : String(tratto.bpm),
+        confermata: true,
+      })
       return
     }
 
@@ -339,7 +506,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
         nome: scelto.nome,
         nomeEn: scelto.nomeEn,
         immagine: scelto.immagine,
-        serie: Array.from({ length: 3 }, rigaVuota),
+        serie: èCardio(scelto.categoria) ? [trattoDiPartenza(scelto.nomeEn)] : Array.from({ length: 3 }, rigaVuota),
       },
     ])
     setErrore(null)
@@ -356,6 +523,13 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
     setScaduta(false)
     setErroreEsercizio(null)
 
+    // Il peso si manda solo se serve (c'è un cardio con la velocità) e se è scritto bene: serve a stimare le calorie sul server.
+    let pesoDaSalvare: number | null = null
+    if (haCardioConVelocita && peso.trim() !== '') {
+      if (pesoNumero === null) return setErrore(`Il peso deve essere da ${PESO_MIN} a ${PESO_MAX} kg: correggilo o toglilo`)
+      pesoDaSalvare = pesoNumero
+    }
+
     const invio = esercizi.map((es) => ({
       esercizioId: es.esercizioId,
       catalogoId: es.esercizioId === null ? (es.catalogoId ?? null) : null,
@@ -365,6 +539,11 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
           pesoKg: parseNumero(riga.pesoKg),
           ripetizioni: parseIntero(riga.ripetizioni),
           durataSec: riga.durataSec ? parseIntero(riga.durataSec) : null,
+          velocitaKmh: numeroDaTestoCardio(riga.velocitaKmh ?? ''),
+          inclinazionePct: numeroDaTestoCardio(riga.inclinazionePct ?? ''),
+          km: numeroDaTestoCardio(riga.km ?? ''),
+          kcal: numeroDaTestoCardio(riga.kcal ?? ''),
+          bpm: numeroDaTestoCardio(riga.bpm ?? ''),
         })),
     }))
 
@@ -381,6 +560,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
           data,
           note: note.trim() === '' ? null : note,
           durataSecondi: durataDaSalvare,
+          pesoCorporeoKg: pesoDaSalvare,
           esercizi: invio,
         })
       } catch {
@@ -445,6 +625,27 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
         </p>
       </section>
 
+      {haCardioConVelocita && (
+        <section className={`${stileCarta} space-y-2 p-4`}>
+          <h2 className="text-lg font-extrabold">Peso di oggi</h2>
+          <label className="block space-y-1 text-sm text-muto">
+            <span>Peso (kg)</span>
+            <input
+              aria-label="Peso di oggi in kg"
+              inputMode="decimal"
+              placeholder="Es. 78,5"
+              value={peso}
+              onChange={(e) => setPeso(e.target.value)}
+              className={stileInput}
+            />
+          </label>
+          <p className="text-xs text-muto">
+            Serve a stimare le calorie del cardio, con le equazioni dell&apos;ACSM: sono una stima (calorie lorde), non una misura.
+            Si salva con la seduta; senza il peso vedi solo i km.
+          </p>
+        </section>
+      )}
+
       <ul className="space-y-4">
         {esercizi.map((es, posizioneEsercizio) => {
           const ultima = ultimaDi(es)
@@ -467,6 +668,23 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
           const errorePerQuesto = erroreEsercizio?.chiave === es.chiave ? erroreEsercizio.testo : null
           // La durata di ogni serie se l'esercizio è a tempo (isometria): al posto di kg e ripetizioni, un timer.
           const prevista = durataPrevista(es)
+          // Il cardio si fa a tratti: al posto di kg e ripetizioni, minuti e (sulle macchine che le hanno) velocità e pendenza.
+          const cardio = èCardioEs(es)
+          const macchina = macchinaDi(es)
+          const trattiFatti = es.serie.filter((s) => s.confermata)
+          const totali = cardio
+            ? totaliCardio(
+                trattiFatti.flatMap((s) => {
+                  const c = calcolaTratto(s, macchina, pesoNumero)
+                  return c.secondi === null ? [] : [{ durataSec: c.secondi, velocitaKmh: null, inclinazionePct: null, km: c.km, kcal: c.kcal }]
+                }),
+              )
+            : null
+          // L'ultima volta: i totali dei tratti dell'ultima seduta di questo cardio (tempo, km, calorie).
+          const totaliUltima =
+            cardio && ultima
+              ? totaliCardio(ultima.serie.flatMap((s) => (s.durataSec === null ? [] : [{ durataSec: s.durataSec, velocitaKmh: s.velocitaKmh, inclinazionePct: s.inclinazionePct, km: s.km, kcal: s.kcal }])))
+              : null
 
           return (
             <li
@@ -497,7 +715,7 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                   {es.nomeEn && <p className="text-xs text-muto">{es.nomeEn}</p>}
                   <p className="text-sm text-muto">
                     {definizione ? `Target ${descrizioneObiettivo(definizione.obiettivo)}` : 'Esercizio aggiunto'}
-                    {ultima && prevista === null && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
+                    {ultima && prevista === null && !cardio && ` · Suggerito da ultima seduta del ${formatDataNumerica(new Date(ultima.data))}`}
                   </p>
                   {carico && <p className="mt-1 text-sm font-semibold text-accento">{testoSuggerimento(carico)}</p>}
                   {/* La nota della scheda (di chi l'ha scritta: tu o il tuo personal trainer) sta qui, ben visibile: serve proprio
@@ -523,7 +741,45 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                 </button>
               </div>
 
-              {prevista !== null ? (
+              {cardio ? (
+                <div className="space-y-3">
+                  {totaliUltima && totaliUltima.durataSec > 0 && (
+                    <p className="text-sm text-muto">
+                      Ultima volta: {formatRecupero(totaliUltima.durataSec)}
+                      {totaliUltima.km !== null ? ` · ${formatNumero(totaliUltima.km, 2)} km` : ''}
+                      {totaliUltima.kcal !== null ? ` · ${formatNumero(totaliUltima.kcal, 0)} kcal` : ''}
+                    </p>
+                  )}
+                  {es.serie.map((riga, indice) => {
+                    const inCorso = tenutaValida && tenuta !== null && tenuta.chiave === es.chiave && tenuta.indice === indice ? tenuta : null
+                    return (
+                      <RigaTratto
+                        key={indice}
+                        nome={es.nome}
+                        indice={indice}
+                        riga={riga}
+                        macchina={macchina}
+                        peso={pesoNumero}
+                        inCorso={inCorso}
+                        altraInCorso={tenutaValida && inCorso === null}
+                        alCambio={(patch) => modificaRiga(es.chiave, indice, patch)}
+                        alAvvia={() => avviaTenuta(es, indice)}
+                        alFerma={fermaTenuta}
+                        alFinito={() => concludiTenuta(inCorso ? inCorso.totale : 0)}
+                        alConferma={() => conferma(es, indice)}
+                      />
+                    )
+                  })}
+                  {totali && trattiFatti.length > 0 && (
+                    <p className="rounded-2xl bg-ok/10 px-3 py-2 text-sm font-semibold text-ok">
+                      Totale: {formatRecupero(totali.durataSec)}
+                      {totali.km !== null ? ` · ${formatNumero(totali.km, 2)} km` : ''}
+                      {totali.kcal !== null ? ` · ${formatNumero(totali.kcal, 0)} kcal` : ''}
+                      {macchina && pesoNumero === null ? ' · scrivi il peso per le calorie' : ''}
+                    </p>
+                  )}
+                </div>
+              ) : prevista !== null ? (
                 // Esercizio a tempo: ogni serie si fa con un conto alla rovescia (avvio manuale). A zero suona, vibra e la serie si
                 // conferma da sola; fermandolo prima si registrano i secondi tenuti.
                 <div className="grid grid-cols-[1.75rem_1fr_3rem] items-center gap-x-2 gap-y-2">
@@ -582,29 +838,31 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, oggi }: Props) 
                 </p>
               )}
 
-              <div className={`grid gap-2 ${prevista !== null ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                {prevista === null && (
+              <div className={`grid gap-2 ${prevista !== null || cardio ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {prevista === null && !cardio && (
                   <button type="button" onClick={() => applicaSuggeriti(es)} disabled={!ultima && !definizione} className={stileBottoneChiaro}>
                     Suggeriti
                   </button>
                 )}
                 <button
                   type="button"
-                  onClick={() => aggiorna(es.chiave, (corrente) => ({ ...corrente, serie: [...corrente.serie, rigaVuota()] }))}
+                  onClick={() => aggiungiSerie(es)}
                   className={stileBottoneChiaro}
                 >
                   <IconaPiu className="size-4" />
-                  Serie
+                  {cardio ? 'Tratto' : 'Serie'}
                 </button>
                 <button type="button" onClick={() => togliSerie(es)} className={stileBottoneChiaro}>
                   <IconaMeno className="size-4" />
-                  Serie
+                  {cardio ? 'Tratto' : 'Serie'}
                 </button>
               </div>
               <p className="text-xs text-muto">
-                {prevista !== null
-                  ? 'Premi Avvia: a zero suona e la serie si conferma da sola. Con Ferma registri i secondi tenuti; con ✓ la serie vale la durata intera.'
-                  : 'I valori grigi sono solo suggerimenti: la serie conta solo dopo ✓.'}
+                {cardio
+                  ? `Premi Avvia: il conto alla rovescia scende e a zero suona e il tratto si conferma da solo. Con Ferma registri i minuti fatti; con ✓ il tratto vale quelli scritti.${macchina ? ' Km e calorie sono una stima.' : ''}`
+                  : prevista !== null
+                    ? 'Premi Avvia: a zero suona e la serie si conferma da sola. Con Ferma registri i secondi tenuti; con ✓ la serie vale la durata intera.'
+                    : 'I valori grigi sono solo suggerimenti: la serie conta solo dopo ✓.'}
               </p>
             </li>
           )
@@ -791,5 +1049,175 @@ function RigaSerieCampi(props: {
         <IconaSpunta className="size-5" />
       </button>
     </>
+  )
+}
+
+// I minuti, la velocità e la pendenza di un tratto di cardio ancora da fare, o i secondi fatti di uno già confermato: da lì km e calorie.
+type TrattoCalcolato = { secondi: number | null; km: number | null; kcal: number | null }
+
+function calcolaTratto(riga: RigaSerie, macchina: MacchinaCardio | null, peso: number | null): TrattoCalcolato {
+  let secondi: number | null = null
+  if (riga.confermata && riga.durataSec) secondi = parseIntero(riga.durataSec)
+  else {
+    const minuti = numeroDaTestoCardio(riga.minuti ?? '')
+    secondi = minuti === null ? null : secondiDaMinuti(minuti)
+  }
+  if (secondi === null) return { secondi: null, km: null, kcal: null }
+  if (macchina) {
+    const velocita = numeroDaTestoCardio(riga.velocitaKmh ?? '')
+    if (velocita === null || velocita < VELOCITA_MIN || velocita > VELOCITA_MAX) return { secondi, km: null, kcal: null }
+    const pendenza = macchina.pendenza ? numeroDaTestoCardio(riga.inclinazionePct ?? '') : null
+    const pendenzaValida = pendenza !== null && pendenza >= 0 && pendenza <= PENDENZA_MAX ? pendenza : null
+    return { secondi, km: kmTratto(velocita, secondi), kcal: kcalTratto(velocita, pendenzaValida, secondi, peso) }
+  }
+  const km = numeroDaTestoCardio(riga.km ?? '')
+  const kcal = numeroDaTestoCardio(riga.kcal ?? '')
+  return { secondi, km, kcal: kcal === null ? null : Math.round(kcal) }
+}
+
+// «circa 2,67 km · 213 kcal», oppure con quello che c'è. Sulle macchine con la velocità, senza peso le calorie non si calcolano e lo dice.
+function testoStima(km: number | null, kcal: number | null, senzaPeso: boolean): string {
+  const parti: string[] = []
+  if (km !== null) parti.push(`${kcal === null && !senzaPeso ? '' : 'circa '}${formatNumero(km, 2)} km`)
+  if (kcal !== null) parti.push(`${formatNumero(kcal, 0)} kcal`)
+  else if (km !== null && senzaPeso) parti.push('scrivi il peso per le calorie')
+  return parti.join(' · ')
+}
+
+// Un campo di un tratto di cardio: un'etichetta piccola e il numero.
+function CampoTratto(props: { etichetta: string; aria: string; valore: string; segnaposto?: string; alCambio: (v: string) => void; intero?: boolean }) {
+  return (
+    <label className="block min-w-0 space-y-1 text-xs font-semibold text-muto">
+      <span>{props.etichetta}</span>
+      <input
+        aria-label={props.aria}
+        inputMode={props.intero ? 'numeric' : 'decimal'}
+        placeholder={props.segnaposto}
+        value={props.valore}
+        onChange={(e) => props.alCambio(e.target.value)}
+        className={stileInput}
+      />
+    </label>
+  )
+}
+
+// Un tratto di cardio: minuti e, sulle macchine che le hanno, velocità e pendenza (sulle altre, i km e le calorie del display, se si vuole).
+// «Avvia» fa partire il conto alla rovescia; a zero il tratto si conferma da solo, e con «Ferma» si registrano i minuti fatti. Km e
+// calorie si vedono mentre si scrive e si ricalcolano sul server prima di salvare.
+function RigaTratto(props: {
+  nome: string
+  indice: number
+  riga: RigaSerie
+  macchina: MacchinaCardio | null
+  peso: number | null
+  inCorso: Tenuta | null
+  altraInCorso: boolean
+  alCambio: (patch: Partial<RigaSerie>) => void
+  alAvvia: () => void
+  alFerma: () => void
+  alFinito: () => void
+  alConferma: () => void
+}) {
+  const { nome, indice, riga, macchina, peso, inCorso, altraInCorso, alCambio, alAvvia, alFerma, alFinito, alConferma } = props
+  const calcolato = calcolaTratto(riga, macchina, peso)
+  const stima = testoStima(calcolato.km, calcolato.kcal, macchina !== null && peso === null)
+  const aria = (cosa: string) => `${nome}, tratto ${indice + 1}: ${cosa}`
+  return (
+    <div className={`space-y-3 rounded-2xl border p-3 ${riga.confermata ? 'border-ok/60 bg-carta' : 'border-bordo bg-carta-alta'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-extrabold">Tratto {indice + 1}</p>
+        {riga.confermata && <span className="text-xs font-semibold text-ok">fatto</span>}
+      </div>
+
+      {riga.confermata ? (
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 space-y-0.5">
+            <p className="font-extrabold tabular-nums">
+              {calcolato.secondi !== null ? formatRecupero(calcolato.secondi) : '—'}
+              {macchina && riga.velocitaKmh ? ` a ${riga.velocitaKmh} km/h` : ''}
+              {macchina?.pendenza && riga.inclinazionePct ? ` · ${riga.inclinazionePct}%` : ''}
+            </p>
+            {(stima !== '' || (riga.bpm ?? '') !== '') && (
+              <p className="text-sm text-muto">
+                {stima}
+                {stima !== '' && (riga.bpm ?? '') !== '' ? ' · ' : ''}
+                {(riga.bpm ?? '') !== '' ? `${riga.bpm} battiti` : ''}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            aria-pressed
+            aria-label={`Annulla conferma del tratto ${indice + 1} di ${nome}`}
+            onClick={alConferma}
+            className="grid size-12 shrink-0 place-items-center rounded-full bg-ok text-su-accento transition"
+          >
+            <IconaSpunta className="size-5" />
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className={`grid gap-2 ${macchina && !macchina.pendenza ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            <CampoTratto etichetta="Minuti" aria={aria('minuti')} valore={riga.minuti ?? ''} alCambio={(v) => alCambio({ minuti: v })} />
+            {macchina ? (
+              <>
+                <CampoTratto etichetta="Km/h" aria={aria('velocità in km/h')} valore={riga.velocitaKmh ?? ''} alCambio={(v) => alCambio({ velocitaKmh: v })} />
+                {macchina.pendenza && (
+                  <CampoTratto etichetta="Pendenza %" aria={aria('pendenza in percentuale')} valore={riga.inclinazionePct ?? ''} alCambio={(v) => alCambio({ inclinazionePct: v })} />
+                )}
+              </>
+            ) : (
+              <>
+                <CampoTratto etichetta="Km (facolt.)" aria={aria('km')} valore={riga.km ?? ''} alCambio={(v) => alCambio({ km: v })} />
+                <CampoTratto etichetta="Kcal (facolt.)" aria={aria('calorie')} valore={riga.kcal ?? ''} intero alCambio={(v) => alCambio({ kcal: v })} />
+              </>
+            )}
+          </div>
+          {stima !== '' && <p className="text-sm font-semibold text-accento">{stima}</p>}
+          <div className="grid grid-cols-2 gap-2">
+            <CampoTratto etichetta="Battiti medi (facolt.)" aria={aria('battiti medi')} valore={riga.bpm ?? ''} intero alCambio={(v) => alCambio({ bpm: v })} />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              {inCorso ? (
+                <div className="flex items-center justify-between gap-2 rounded-2xl bg-carta px-3 py-1.5">
+                  <TimerTenuta inizio={inCorso.inizio} totale={inCorso.totale} alFinito={alFinito} />
+                  <button
+                    type="button"
+                    aria-label={`Ferma il tratto ${indice + 1} di ${nome}`}
+                    onClick={alFerma}
+                    className={`${stileBottoneChiaro} min-h-11 touch-manipulation`}
+                  >
+                    Ferma
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={`Avvia il timer del tratto ${indice + 1} di ${nome}`}
+                  disabled={altraInCorso}
+                  onClick={alAvvia}
+                  className="flex min-h-12 w-full touch-manipulation items-center justify-center gap-1.5 rounded-full bg-accento px-4 py-3 text-sm font-extrabold text-su-accento transition active:opacity-80 disabled:opacity-40"
+                >
+                  <IconaPlay className="size-4" />
+                  {calcolato.secondi !== null ? `Avvia · ${formatRecupero(calcolato.secondi)}` : 'Avvia'}
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-pressed={false}
+              aria-label={`Conferma il tratto ${indice + 1} di ${nome}`}
+              disabled={inCorso !== null}
+              onClick={alConferma}
+              className="grid size-12 shrink-0 place-items-center rounded-full border border-bordo bg-carta text-muto transition disabled:opacity-40"
+            >
+              <IconaSpunta className="size-5" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   )
 }

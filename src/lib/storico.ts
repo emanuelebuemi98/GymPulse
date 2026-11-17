@@ -2,7 +2,8 @@ import { db } from './db'
 import { dataIso } from './formato'
 import { lunediDi, type SerieConGruppo } from './panoramica'
 import { calcolaRecord, massimoKg, pesoTotaleKg, volumeSerie, type RecordEsercizio } from './progressi'
-import type { SerieRegistrata, UltimeVolte } from './tipi'
+import { serieDaRiga, type SerieRegistrata, type UltimeVolte } from './tipi'
+import { totaliCardio } from './cardio'
 
 // Quante miniature di esercizi mostra ogni card dello storico; gli altri esercizi si contano ("+4").
 const ANTEPRIME_IN_STORICO = 4
@@ -40,6 +41,23 @@ export async function riepilogoHome(userId: number, oggi = new Date()) {
   }
 }
 
+// I km e le calorie di una seduta: la somma dei tratti di cardio che li hanno. Vuoti se la seduta non ha cardio con km o calorie.
+function totaliCardioSeduta(serie: SerieRegistrata[]): { km: number | null; kcal: number | null } {
+  const tratti = serie.flatMap((s) => (s.durataSec === null ? [] : [{ durataSec: s.durataSec, velocitaKmh: s.velocitaKmh, inclinazionePct: s.inclinazionePct, km: s.km, kcal: s.kcal }]))
+  const totali = totaliCardio(tratti)
+  return { km: totali.km, kcal: totali.kcal }
+}
+
+// Il peso inserito nell'ultima seduta che lo ha: la sessione lo propone già scritto. Null se non è mai stato scritto.
+export async function ultimoPeso(userId: number): Promise<number | null> {
+  const riga = await db.sessione.findFirst({
+    where: { userId, pesoCorporeoKg: { not: null } },
+    orderBy: { data: 'desc' },
+    select: { pesoCorporeoKg: true },
+  })
+  return riga?.pesoCorporeoKg ?? null
+}
+
 // Riepilogo di ogni allenamento, dal più recente.
 export async function elencoSessioni(userId: number) {
   const sessioni = await db.sessione.findMany({
@@ -72,6 +90,7 @@ export async function elencoSessioni(userId: number) {
       numeroEsercizi: esercizi.size,
       numeroSerie: sessione.serie.length,
       volumeKg: volumeSerie(sessione.serie),
+      cardio: totaliCardioSeduta(sessione.serie),
       durataSecondi: sessione.durataSecondi,
       datiIniziali: sessione.datiIniziali,
       anteprime: conImmagine.slice(0, ANTEPRIME_IN_STORICO),
@@ -106,7 +125,7 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
       categoria: riga.esercizio.categoria,
       serie: [],
     }
-    gruppo.serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni, durataSec: riga.durataSec })
+    gruppo.serie.push(serieDaRiga(riga))
     gruppi.set(riga.esercizioId, gruppo)
   }
 
@@ -116,6 +135,7 @@ export async function dettaglioSessione(userId: number, sessioneId: number) {
     giornoId: sessione.giornoId,
     giornoTitolo: sessione.giorno.titolo,
     durataSecondi: sessione.durataSecondi,
+    pesoCorporeoKg: sessione.pesoCorporeoKg,
     note: sessione.note,
     datiIniziali: sessione.datiIniziali,
     esercizi: [...gruppi.values()],
@@ -144,7 +164,7 @@ export async function ultimeVolte(userId: number, esercizioIds: number[]): Promi
       datiIniziali: riga.sessione.datiIniziali,
       serie: [],
     }
-    risultato[riga.esercizioId].serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni, durataSec: riga.durataSec })
+    risultato[riga.esercizioId].serie.push(serieDaRiga(riga))
   }
   return risultato
 }
@@ -162,7 +182,7 @@ export type SedutaEsercizio = {
 export async function eserciziConDati(userId: number) {
   const righe = await db.esercizio.findMany({
     where: { userId, serie: { some: {} } },
-    select: { id: true, nome: true },
+    select: { id: true, nome: true, categoria: true },
   })
   return righe.sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
 }
@@ -182,7 +202,7 @@ export async function andamentoEsercizio(userId: number, esercizioId: number): P
       datiIniziali: riga.sessione.datiIniziali,
       serie: [],
     }
-    gruppo.serie.push({ pesoKg: riga.pesoKg, ripetizioni: riga.ripetizioni, durataSec: riga.durataSec })
+    gruppo.serie.push(serieDaRiga(riga))
     perSessione.set(riga.sessioneId, gruppo)
   }
 

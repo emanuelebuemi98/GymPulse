@@ -55,6 +55,8 @@ export default async function StoricoPage() {
                   <span className="block text-sm text-muto">
                     {sessione.numeroEsercizi} esercizi · {sessione.numeroSerie} serie
                     {sessione.volumeKg > 0 && ` · ${formatNumero(sessione.volumeKg, 0)} kg`}
+                    {sessione.cardio.km !== null && ` · ${formatNumero(sessione.cardio.km, 2)} km`}
+                    {sessione.cardio.kcal !== null && ` · ${formatNumero(sessione.cardio.kcal, 0)} kcal`}
                     {sessione.durataSecondi !== null && (
                       <>
                         {' · '}

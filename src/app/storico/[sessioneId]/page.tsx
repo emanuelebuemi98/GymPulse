@@ -5,7 +5,8 @@ import { EliminaSessione } from '@/components/EliminaSessione'
 import { ImmagineEsercizio } from '@/components/ImmagineEsercizio'
 import { stileAvviso, stileCarta, stileEtichetta } from '@/components/stili'
 import { formatRecupero } from '@/lib/allenamento'
-import { categoriaDa, etichettaCategoria } from '@/lib/categorie'
+import { totaliCardio } from '@/lib/cardio'
+import { categoriaDa, etichettaCategoria, èCardio } from '@/lib/categorie'
 import { formatData, formatDataLunga, formatDurata, formatNumero } from '@/lib/formato'
 import { dettaglioSessione } from '@/lib/storico'
 import { idDaParametro } from '@/lib/url'
@@ -39,6 +40,12 @@ export default async function DettaglioSessionePage({ params }: Props) {
         <h1 className="mt-2 text-2xl font-extrabold tracking-tight">{formatDataLunga(sessione.data)}</h1>
         <p className="text-muto">
           Allenamento {sessione.giornoId} · {sessione.giornoTitolo}
+          {sessione.pesoCorporeoKg !== null && (
+            <>
+              {' · '}
+              <span className="whitespace-nowrap">peso {formatNumero(sessione.pesoCorporeoKg)} kg</span>
+            </>
+          )}
           {sessione.durataSecondi !== null && (
             <>
               {' · '}
@@ -78,9 +85,55 @@ export default async function DettaglioSessionePage({ params }: Props) {
               </Link>
             </div>
 
-            {/* Un esercizio a tempo (isometria) ha i secondi tenuti al posto di kg e ripetizioni. Le serie fatte prima del timer, con
-                le ripetizioni, restano com'erano. */}
-            {esercizio.serie.some((serie) => serie.durataSec !== null) ? (
+            {/* Un esercizio a tempo (isometria) ha i secondi tenuti al posto di kg e ripetizioni. Il cardio ha i suoi tratti, con la
+                velocità, i km e le calorie. Le serie fatte prima (con le ripetizioni) restano com'erano. */}
+            {èCardio(esercizio.categoria) && esercizio.serie.some((serie) => serie.durataSec !== null) ? (
+              <>
+                <table className="mt-3 w-full text-sm">
+                  <thead className="text-left text-xs text-muto">
+                    <tr>
+                      <th className="pb-1 font-semibold">Tratto</th>
+                      <th className="pb-1 font-semibold">Durata</th>
+                      <th className="pb-1 font-semibold">Km/h</th>
+                      <th className="pb-1 font-semibold">Km</th>
+                      <th className="pb-1 font-semibold">Kcal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="tabular-nums">
+                    {esercizio.serie.map((serie, indice) => (
+                      <tr key={indice} className="border-t border-bordo">
+                        <td className="py-2 text-muto">{indice + 1}</td>
+                        <td className="py-2 font-semibold">{serie.durataSec !== null ? formatRecupero(serie.durataSec) : `${serie.ripetizioni} rip`}</td>
+                        <td className="py-2">
+                          {serie.velocitaKmh !== null ? formatNumero(serie.velocitaKmh) : '—'}
+                          {serie.inclinazionePct ? ` · ${formatNumero(serie.inclinazionePct)}%` : ''}
+                        </td>
+                        <td className="py-2">{serie.km !== null ? formatNumero(serie.km, 2) : '—'}</td>
+                        <td className="py-2">{serie.kcal !== null ? formatNumero(serie.kcal, 0) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {(() => {
+                  const totali = totaliCardio(
+                    esercizio.serie.flatMap((serie) =>
+                      serie.durataSec === null
+                        ? []
+                        : [{ durataSec: serie.durataSec, velocitaKmh: serie.velocitaKmh, inclinazionePct: serie.inclinazionePct, km: serie.km, kcal: serie.kcal }],
+                    ),
+                  )
+                  const battiti = esercizio.serie.flatMap((serie) => (serie.bpm === null ? [] : [serie.bpm]))
+                  return (
+                    <p className="mt-2 text-sm font-semibold text-muto">
+                      Totale: {formatRecupero(totali.durataSec)}
+                      {totali.km !== null ? ` · ${formatNumero(totali.km, 2)} km` : ''}
+                      {totali.kcal !== null ? ` · ${formatNumero(totali.kcal, 0)} kcal` : ''}
+                      {battiti.length > 0 ? ` · ${formatNumero(battiti.reduce((somma, b) => somma + b, 0) / battiti.length, 0)} battiti medi` : ''}
+                    </p>
+                  )
+                })()}
+              </>
+            ) : esercizio.serie.some((serie) => serie.durataSec !== null) ? (
               <table className="mt-3 w-full text-sm">
                 <thead className="text-left text-xs text-muto">
                   <tr>

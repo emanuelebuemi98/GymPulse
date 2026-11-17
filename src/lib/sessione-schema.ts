@@ -24,11 +24,51 @@ export const serieSchema = z
       .max(3600, 'Durata troppo lunga')
       .nullable()
       .default(null),
+    // Un tratto di cardio: velocità, pendenza, km, calorie e battiti medi. Tutti facoltativi, e se mancano valgono "nessuno" (una pagina
+    // rimasta aperta da prima non li manda). Con la velocità, km e calorie si ricalcolano sul server e quelli del browser non contano.
+    velocitaKmh: z
+      .number({ error: 'La velocità deve essere da 0,5 a 30 km/h' })
+      .min(0.5, 'La velocità deve essere da 0,5 a 30 km/h')
+      .max(30, 'La velocità deve essere da 0,5 a 30 km/h')
+      .nullable()
+      .default(null),
+    inclinazionePct: z
+      .number({ error: 'La pendenza deve essere da 0 a 40%' })
+      .min(0, 'La pendenza deve essere da 0 a 40%')
+      .max(40, 'La pendenza deve essere da 0 a 40%')
+      .nullable()
+      .default(null),
+    km: z
+      .number({ error: 'I km non sono validi' })
+      .min(0, 'I km non possono essere negativi')
+      .max(500, 'I km sono troppi')
+      .nullable()
+      .default(null),
+    kcal: z
+      .number({ error: 'Le calorie non sono valide' })
+      .int('Le calorie devono essere un numero intero')
+      .min(0, 'Le calorie non possono essere negative')
+      .max(5000, 'Le calorie sono troppe')
+      .nullable()
+      .default(null),
+    bpm: z
+      .number({ error: 'I battiti non sono validi' })
+      .int('I battiti devono essere un numero intero')
+      .min(30, 'I battiti devono essere da 30 a 250 al minuto')
+      .max(250, 'I battiti devono essere da 30 a 250 al minuto')
+      .nullable()
+      .default(null),
   })
-  // Una serie a tempo conta come una ripetizione e non ha peso: lo chiede anche il database.
+  // Una serie a tempo (tenuta o tratto di cardio) conta come una ripetizione e non ha peso: lo chiede anche il database.
   .refine((s) => s.durataSec === null || (s.ripetizioni === 1 && s.pesoKg === null), {
     message: 'Una serie a tempo non ha peso né ripetizioni',
   })
+  // I dati del tratto stanno solo con la durata, e la pendenza solo con la velocità (come i controlli del database).
+  .refine(
+    (s) => s.durataSec !== null || (s.velocitaKmh === null && s.inclinazionePct === null && s.km === null && s.kcal === null && s.bpm === null),
+    { message: 'Velocità, km, calorie e battiti si scrivono solo per un tratto con la sua durata' },
+  )
+  .refine((s) => s.inclinazionePct === null || s.velocitaKmh !== null, { message: 'La pendenza si scrive solo insieme alla velocità' })
 
 // Un esercizio già della persona (esercizioId) oppure preso dal catalogo (catalogoId): uno solo dei due. Gli esercizi non
 // si scrivono più a mano.
@@ -57,6 +97,13 @@ const sessioneSchema = z.object({
   data: z.string(),
   note: noteSchema,
   durataSecondi: durataSchema,
+  // Il peso di quel giorno, serve a stimare le calorie del cardio. Se manca vale "nessuno".
+  pesoCorporeoKg: z
+    .number({ error: 'Il peso deve essere da 20 a 400 kg' })
+    .min(20, 'Il peso deve essere da 20 a 400 kg')
+    .max(400, 'Il peso deve essere da 20 a 400 kg')
+    .nullable()
+    .default(null),
   esercizi: z.array(esercizioSchema).max(50),
 })
 

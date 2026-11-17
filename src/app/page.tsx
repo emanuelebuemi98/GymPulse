@@ -69,7 +69,7 @@ const schermate = [
   },
   {
     titolo: 'Esercizi a tempo',
-    testo: 'Plank, wall sit e gli altri esercizi di isometria si tengono per un tempo: nella scheda scegli le serie, la durata (la stessa per tutte le serie) e il recupero. Niente kg né ripetizioni, e non entrano nelle super serie (come cardio e riscaldamento).',
+    testo: 'Plank, wall sit e gli altri esercizi di isometria si tengono per un tempo: nella scheda scegli le serie, la durata (la stessa per tutte le serie) e il recupero. Il cardio si fa a tratti, con minuti e, sul tapis roulant, velocità e pendenza. Niente kg né ripetizioni, e questi esercizi non entrano nelle super serie.',
     schermata: <SchermataTenuteScheda />,
   },
   {
@@ -159,8 +159,8 @@ const funzioni = [
   },
   {
     icona: IconaCronometro,
-    titolo: 'Esercizi a tempo',
-    testo: 'Plank, wall sit, trazioni isometriche e corde navali si tengono per un tempo, non per ripetizioni: nella scheda scegli serie, durata (la stessa per tutte le serie) e recupero. In palestra tocchi Avvia e il conto alla rovescia scende: a zero suona e vibra (dove il telefono lo permette), la serie si conferma da sola e parte il recupero. Se ti fermi prima, registri i secondi tenuti; nello storico e nei grafici vedi la tenuta più lunga e il tempo totale.',
+    titolo: 'Esercizi a tempo e cardio',
+    testo: 'Plank, wall sit, trazioni isometriche e corde navali si tengono per un tempo, non per ripetizioni: nella scheda scegli serie, durata (la stessa per tutte le serie) e recupero. In palestra tocchi Avvia e il conto alla rovescia scende: a zero suona e vibra (dove il telefono lo permette), la serie si conferma da sola e parte il recupero. Se ti fermi prima, registri i secondi tenuti; nello storico e nei grafici vedi la tenuta più lunga e il tempo totale. Il cardio si fa a tratti: per ognuno scegli i minuti e, sul tapis roulant e nella corsa all\'aperto, la velocità (e la pendenza). L\'app calcola i chilometri e stima le calorie con il peso che scrivi quella sera; sulla cyclette e le altre macchine scrivi quelli del display, se vuoi.',
   },
   {
     icona: IconaSpunta,

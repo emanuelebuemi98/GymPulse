@@ -5,7 +5,7 @@ import { stileCarta } from '@/components/stili'
 import { giornoConsigliato } from '@/lib/allenamento'
 import { dataIso } from '@/lib/formato'
 import { leggiElenco, leggiScheda } from '@/lib/scheda-db'
-import { riepilogoHome, ultimeVolte } from '@/lib/storico'
+import { riepilogoHome, ultimeVolte, ultimoPeso } from '@/lib/storico'
 import { primoParametro } from '@/lib/url'
 import { richiediUtente } from '@/lib/accesso'
 
@@ -19,10 +19,11 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function SessionePage({ searchParams }: Props) {
   const userId = await richiediUtente()
   const richiesto = primoParametro((await searchParams).r)
-  const [giorni, elenco, { ultima, fatteSettimana }] = await Promise.all([
+  const [giorni, elenco, { ultima, fatteSettimana }, ultimoPesoKg] = await Promise.all([
     leggiScheda(userId),
     leggiElenco(userId),
     riepilogoHome(userId),
+    ultimoPeso(userId),
   ])
 
   if (giorni.length === 0) {
@@ -48,6 +49,7 @@ export default async function SessionePage({ searchParams }: Props) {
       giorno={giorno}
       ultime={ultime}
       elenco={elenco}
+      ultimoPesoKg={ultimoPesoKg}
       oggi={dataIso(new Date())}
     />
   )

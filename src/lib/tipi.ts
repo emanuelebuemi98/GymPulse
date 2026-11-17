@@ -1,6 +1,39 @@
 // Una serie come è salvata nel database. Il peso è vuoto per gli esercizi a corpo libero.
-// `durataSec`: i secondi tenuti, solo per gli esercizi a tempo (isometria): in quel caso le ripetizioni valgono 1 e non c'è il peso.
-export type SerieRegistrata = { pesoKg: number | null; ripetizioni: number; durataSec: number | null }
+// `durataSec`: i secondi tenuti, solo per gli esercizi a tempo (isometria) e di cardio: in quel caso le ripetizioni valgono 1 e non c'è il
+// peso. Per un tratto di cardio ci sono anche la velocità, la pendenza, i km, le calorie e i battiti medi (tutti facoltativi).
+export type SerieRegistrata = {
+  pesoKg: number | null
+  ripetizioni: number
+  durataSec: number | null
+  velocitaKmh: number | null
+  inclinazionePct: number | null
+  km: number | null
+  kcal: number | null
+  bpm: number | null
+}
+
+// Dalla riga del database alla serie che usa l'app: un posto solo, così una colonna nuova non si dimentica in uno dei punti che leggono.
+export function serieDaRiga(riga: {
+  pesoKg: number | null
+  ripetizioni: number
+  durataSec: number | null
+  velocitaKmh: number | null
+  inclinazionePct: number | null
+  km: number | null
+  kcal: number | null
+  bpm: number | null
+}): SerieRegistrata {
+  return {
+    pesoKg: riga.pesoKg,
+    ripetizioni: riga.ripetizioni,
+    durataSec: riga.durataSec,
+    velocitaKmh: riga.velocitaKmh,
+    inclinazionePct: riga.inclinazionePct,
+    km: riga.km,
+    kcal: riga.kcal,
+    bpm: riga.bpm,
+  }
+}
 
 // L'ultima volta che hai fatto un esercizio: serve a precompilare i suggerimenti.
 // datiIniziali = true: serie importate a mano, con ripetizioni non registrate davvero.

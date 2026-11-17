@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { utenteDellaPagina } from '@/lib/accesso'
 import { esercizioDalCatalogo } from '@/lib/catalogo'
+import { completaTratto } from '@/lib/cardio'
 import { LIMITE_CSV } from '@/lib/csv'
 import { db } from '@/lib/db'
 import { pianoImportScheda } from '@/lib/import-scheda'
@@ -36,7 +37,7 @@ export async function salvaSessione(
   const esito = validaSessione(input)
   if (!esito.ok) return { errore: esito.errore }
 
-  const { giornoId, note, durataSecondi } = esito.dati
+  const { giornoId, note, durataSecondi, pesoCorporeoKg } = esito.dati
   // Gli esercizi senza serie confermate non vengono salvati (e non ne nasce uno nuovo tra quelli della persona).
   const esercizi = esito.dati.esercizi.filter((esercizio) => esercizio.serie.length > 0)
 
@@ -54,12 +55,36 @@ export async function salvaSessione(
 
   const id = await db.$transaction(async (tx) => {
     let ordine = 0
-    const serie: { esercizioId: number; ordine: number; pesoKg: number | null; ripetizioni: number; durataSec: number | null }[] = []
+    const serie: {
+      esercizioId: number
+      ordine: number
+      pesoKg: number | null
+      ripetizioni: number
+      durataSec: number | null
+      velocitaKmh: number | null
+      inclinazionePct: number | null
+      km: number | null
+      kcal: number | null
+      bpm: number | null
+    }[] = []
     for (const esercizio of esercizi) {
       // Un esercizio è della persona oppure del catalogo (lo garantisce la validazione): quello del catalogo nasce qui.
       const esercizioId = esercizio.esercizioId ?? (await esercizioDalCatalogo(tx, userId, esercizio.catalogoId!))
       for (const s of esercizio.serie) {
-        serie.push({ esercizioId, ordine: ++ordine, pesoKg: s.pesoKg, ripetizioni: s.ripetizioni, durataSec: s.durataSec })
+        // Con la velocità, km e calorie si ricalcolano qui (con il peso della seduta): quelli arrivati dal browser non contano.
+        const { km, kcal } = completaTratto(s, pesoCorporeoKg)
+        serie.push({
+          esercizioId,
+          ordine: ++ordine,
+          pesoKg: s.pesoKg,
+          ripetizioni: s.ripetizioni,
+          durataSec: s.durataSec,
+          velocitaKmh: s.velocitaKmh,
+          inclinazionePct: s.inclinazionePct,
+          km,
+          kcal,
+          bpm: s.bpm,
+        })
       }
     }
 
@@ -70,6 +95,7 @@ export async function salvaSessione(
         data: esito.istante,
         note: note ? note : null,
         durataSecondi,
+        pesoCorporeoKg,
         // Dentro una creazione annidata lo userId delle serie viene dalla seduta: indicarlo di nuovo è un errore.
         serie: { create: serie },
       },
