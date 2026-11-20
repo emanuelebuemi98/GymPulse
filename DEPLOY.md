@@ -20,12 +20,11 @@ Cosa è già stato pubblicato, deploy per deploy, è in `STORICO_RILASCI.md`. I 
 
 *Si riscrive a ogni deploy, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
 
-- **Migrazioni:** una, `20261120100000_categoria_stretching`. **Cambia dei valori** (non aggiunge soltanto colonne): la chiave della categoria passa a «stretching» nelle 45 voci del catalogo e negli esercizi delle persone (anche quelli personali), e i due controlli sulla categoria (`CatalogoEsercizio_categoria` ed `Esercizio_categoria`) vengono rifatti. Nessun dato si perde. **Il backup (passo 3) qui è obbligatorio**: tornare indietro vuol dire ripristinarlo. Il codice vecchio, ancora online, non conosce la chiave nuova: finché non si pubblica il codice nuovo le 45 voci **spariscono dal catalogo** (la linguetta TUTTE le conta ma le sezioni si disegnano solo per le categorie che il codice vecchio conosce), compaiono ancora nell'elenco «Aggiungi esercizio» dell'editor e si possono mettere in una super serie, senza errori. Per questo i passi 5 e 10 si fanno **uno dopo l'altro, senza pause**.
-- **Catalogo:** il file ha la chiave nuova nelle 45 voci, ma **non serve lanciare `db:catalogo`**: lo fa già la migrazione. Se lo si lancia **prima** della migrazione si ferma, senza scrivere niente, perché il controllo vecchio rifiuta «stretching»; dopo la migrazione la prova (`PROVA=1`) deve dire «510 nel database prima», «0 nuovi» e nessun esercizio cambiato.
-- **Anche in questo deploy** (solo codice): le etichette delle categorie sono **in maiuscolo** (linguette del catalogo, filtro dell'editor, etichette in scheda e nello storico, colonna `categoria` del file Excel); il Catalogo è **in cima** alla pagina Scheda; nell'editor gli esercizi si **trascinano** con la maniglia a sei punti.
-- **Database locale:** `npm run db:deploy`, poi (facoltativo) la prova del catalogo.
-- **Variabili nuove su Vercel:** nessuna.
-- **Da provare dopo la pubblicazione:** `/catalogo` con le linguette in maiuscolo (STRETCHING 45, ISOMETRIA 22, ADDOME 48, CARDIO 10, in tutto 510); in DBeaver `select categoria, count(*) from "CatalogoEsercizio" group by 1` non deve avere «riscaldamento»; la pagina Scheda con il Catalogo in cima; l'editor sul telefono con il trascinamento; una scheda di chi aveva esercizi di stretching, che li mostra con la categoria STRETCHING. Le prove che scrivono si fanno con un account di prova, non il tuo.
+**Nessun deploy in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
+- **Migrazioni:** i nomi, e se aggiungono soltanto colonne o indici (il codice vecchio funziona ancora) oppure cambiano valori, rinominano o tolgono qualcosa (passi 5-10 di fila, backup obbligatorio).
+- **Catalogo:** cambiato o no (passi 6 e 7).
+- **Variabili nuove su Vercel:** i nomi (passo 9).
+- **Da provare dopo la pubblicazione:** l'elenco delle prove (passo 11).
 
 ---
 
@@ -114,7 +113,7 @@ Se i due elenchi non coincidono, ci si ferma.
 
 ## 5. Applica le migrazioni
 
-Una migrazione che **aggiunge soltanto colonne o indici** non rompe il codice vecchio, ancora online: tra la migrazione e la pubblicazione non c'è una finestra di errori, e per tornare indietro non serve ripristinare il database. Una che **rinomina colonne o toglie tabelle** può dare errori al sito vecchio per qualche minuto: in quel caso i passi 5, 6, 7 e 9 si fanno uno dopo l'altro, senza pause. Il riquadro «Cosa cambia» dice di che tipo sono quelle di questo deploy.
+Una migrazione che **aggiunge soltanto colonne o indici** non rompe il codice vecchio, ancora online: tra la migrazione e la pubblicazione non c'è una finestra di errori, e per tornare indietro non serve ripristinare il database. Una che **rinomina colonne, toglie tabelle o cambia dei valori** (per esempio la chiave di una categoria, come nel rilascio 17) può dare errori al sito vecchio, o far sparire dei dati dalle pagine, finché non si pubblica il codice nuovo: in quel caso i passi 5, 6, 7 e 10 si fanno uno dopo l'altro, senza pause, e il backup del passo 3 è obbligatorio. Il riquadro «Cosa cambia» dice di che tipo sono quelle di questo deploy.
 
 ```bat
 npm run db:deploy
