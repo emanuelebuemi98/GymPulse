@@ -50,6 +50,20 @@ export default async function SchedaPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Il catalogo intero per categoria sta in cima: serve a scegliere cosa mettere in scheda, prima ancora di aprire una giornata. */}
+      <Link
+        href="/catalogo"
+        className={`${stileCarta} flex items-center justify-between gap-3 px-4 py-2.5 active:bg-carta-alta`}
+      >
+        <span className="min-w-0">
+          <span className="block font-extrabold">Catalogo degli esercizi</span>
+          <span className="block truncate text-sm text-muto">Tutti gli esercizi per categoria, con foto e istruzioni</span>
+        </span>
+        <span aria-hidden="true" className="text-muto">
+          ›
+        </span>
+      </Link>
+
       <TabGiorni
         giorni={giorni}
         attivo={giorno.id}
@@ -104,20 +118,7 @@ export default async function SchedaPage({ searchParams }: Props) {
 
       {giorni.length > 1 && <RimuoviGiornata utenteId={userId} id={giorno.id} titolo={giorno.titolo} sedute={sedute} />}
 
-      {/* Il catalogo intero per categoria e la scheda da un file CSV: stanno in fondo, sono usi meno frequenti. */}
-      <Link
-        href="/catalogo"
-        className={`${stileCarta} flex items-center justify-between gap-3 px-4 py-3.5 active:bg-carta-alta`}
-      >
-        <span>
-          <span className="block font-extrabold">Catalogo degli esercizi</span>
-          <span className="block text-sm text-muto">Tutti gli esercizi per categoria, con foto e istruzioni</span>
-        </span>
-        <span aria-hidden="true" className="text-muto">
-          ›
-        </span>
-      </Link>
-
+      {/* La scheda da un file CSV sta in fondo: è un uso meno frequente. */}
       <CsvScheda utenteId={userId} />
     </div>
   )
