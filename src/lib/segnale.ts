@@ -1,8 +1,9 @@
-// Il segnale di fine di un timer: tre colpi di vibrazione e tre bip. Funziona dove il telefono lo permette (la vibrazione non c'è su
-// iPhone) e non rompe mai niente: ogni passo è in try/catch.
+// Il segnale di fine di un timer: tre colpi di vibrazione e tre bip. Lo usano il timer della tenuta e il timer di recupero tra una serie
+// e l'altra. Funziona dove il telefono lo permette (la vibrazione non c'è su iPhone) e non rompe mai niente: ogni passo è in try/catch.
 //
-// Il suono ha bisogno di un tocco della persona per partire (le regole dei browser): per questo `preparaSegnale` si chiama quando
-// si preme «Avvia», e `segnala` lo riusa a fine tenuta. Un timer partito senza tocco non suona, ma vibra.
+// Il suono ha bisogno di un tocco della persona per partire (le regole dei browser): per questo `preparaSegnale` si chiama dentro il tocco
+// che avvia il timer («Avvia» della tenuta, il ✓ che conferma una serie e fa partire il recupero), e `segnala` lo riusa quando il timer
+// finisce. Un timer partito senza tocco non suona, ma vibra.
 
 type ContestoAudio = typeof AudioContext
 
@@ -46,7 +47,19 @@ export function segnala(): void {
     // la vibrazione non è disponibile ovunque
   }
   try {
-    if (contesto && contesto.state === 'running') bip(contesto)
+    const audio = contesto
+    if (!audio) return
+    if (audio.state === 'running') {
+      bip(audio)
+    } else {
+      // Il browser può avere messo in pausa l'audio (scheda in secondo piano, schermo spento): si prova a rimetterlo in moto e a suonare.
+      void audio
+        .resume()
+        .then(() => {
+          if (audio.state === 'running') bip(audio)
+        })
+        .catch(() => {})
+    }
   } catch {
     // niente suono
   }

@@ -25,7 +25,7 @@ import {
   type MacchinaCardio,
 } from '@/lib/cardio'
 import { giroCompleto, nomeGruppo } from '@/lib/gruppi'
-import { preparaSegnale } from '@/lib/segnale'
+import { preparaSegnale, segnala } from '@/lib/segnale'
 import { DURATA_PREDEFINITA } from '@/lib/voci'
 import { eliminaBozza, leggiBozza, salvaBozza } from '@/lib/bozza'
 import { secondiDaTimer } from '@/lib/durata'
@@ -221,15 +221,15 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, ultimoPesoKg, o
 
   useEffect(() => {
     if (!timer) return
+    // A zero il segnale (tre bip e la vibrazione) parte una volta sola: il controllo gira ogni quarto di secondo, e senza questo ripartirebbe
+    // finché il riquadro resta aperto.
+    let finito = false
     const aggiorna = () => {
       const mancano = Math.max(0, Math.ceil((timer.fine - Date.now()) / 1000))
       setRestano(mancano)
-      if (mancano === 0) {
-        try {
-          navigator.vibrate?.([200, 100, 200])
-        } catch {
-          // la vibrazione non è disponibile ovunque
-        }
+      if (mancano === 0 && !finito) {
+        finito = true
+        segnala()
       }
     }
     aggiorna()
@@ -400,6 +400,8 @@ export function FormSessione({ utenteId, giorno, ultime, elenco, ultimoPesoKg, o
       modificaRiga(es.chiave, indice, { confermata: false })
       return
     }
+    // Confermare una serie fa partire il recupero, che a fine conto suona: il suono ha bisogno di questo tocco per essere permesso.
+    preparaSegnale()
 
     if (èCardioEs(es)) {
       // Un tratto di cardio: i secondi fatti (dal timer, oppure i minuti scritti), la velocità e la pendenza della macchina. Niente peso

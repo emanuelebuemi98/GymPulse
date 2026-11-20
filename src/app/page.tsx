@@ -155,7 +155,7 @@ const funzioni = [
   {
     icona: IconaPlay,
     titolo: 'Timer di recupero',
-    testo: 'Parte dopo ogni serie con il tempo previsto dalla scheda, e vibra quando è finito. Nei superset, nei triset e nei gigantset parte alla fine del giro.',
+    testo: 'Parte dopo ogni serie con il tempo previsto dalla scheda, e quando è finito suona e vibra (dove il telefono lo permette). Nei superset, nei triset e nei gigantset parte alla fine del giro.',
   },
   {
     icona: IconaCronometro,
