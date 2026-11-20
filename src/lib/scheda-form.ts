@@ -59,7 +59,7 @@ export function macchinaDi(voce: Pick<VoceForm, 'categoria' | 'nomeEn'>) {
   return èCardio(voce.categoria) ? macchinaCardio(voce.nomeEn) : null
 }
 
-// Gli esercizi di isometria (a tempo), cardio e riscaldamento non si mettono in una super serie.
+// Gli esercizi di isometria (a tempo), cardio e stretching non si mettono in una super serie.
 export function èFuoriDaSuperSerie(voce: Pick<VoceForm, 'categoria' | 'durataSec'>): boolean {
   return èVoceATempo(voce) || fuoriDaSuperSerie(voce.categoria)
 }

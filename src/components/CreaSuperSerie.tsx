@@ -15,7 +15,7 @@ type Props = {
 
 // Il pulsante «Super Serie»: si scelgono 2 o più esercizi della giornata e si mettono insieme, da fare uno dopo l'altro senza
 // pausa. Con 2 esercizi è un superset, con 3 un triset, con 4 o più un gigantset: il nome compare da solo mentre si sceglie.
-// Si possono scegliere gli esercizi che non sono già in una super serie. Quelli di isometria (a tempo), cardio e riscaldamento non
+// Si possono scegliere gli esercizi che non sono già in una super serie. Quelli di isometria (a tempo), cardio e stretching non
 // ci sono: hanno un timer, una macchina o si fanno a parte, non si alternano con altri senza pausa.
 export function CreaSuperSerie({ voci, alCrea }: Props) {
   const [aperto, setAperto] = useState(false)
@@ -69,7 +69,7 @@ export function CreaSuperSerie({ voci, alCrea }: Props) {
         <div className="space-y-3">
           {disponibili.length < GRUPPO_MIN ? (
             <p className="rounded-2xl bg-carta-alta p-3 text-sm text-muto">
-              Servono almeno due esercizi che non siano già in una super serie. Gli esercizi di isometria, cardio e riscaldamento non ne fanno parte.
+              Servono almeno due esercizi che non siano già in una super serie. Gli esercizi di isometria, cardio e stretching non ne fanno parte.
             </p>
           ) : (
             <>

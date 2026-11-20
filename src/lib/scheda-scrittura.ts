@@ -16,7 +16,7 @@ import { campiObiettivo } from './voci'
 
 export type Esito<T> = ({ ok: true } & T) | { ok: false; errore: string }
 
-// Gli esercizi di isometria, cardio e riscaldamento non fanno parte di una super serie. L'editor non li offre, ma il browser non è
+// Gli esercizi di isometria, cardio e stretching non fanno parte di una super serie. L'editor non li offre, ma il browser non è
 // fidato (e un file Excel può scriverli): qui si guarda la categoria vera, nel database. Restituisce il messaggio di errore, o null.
 export async function controllaSuperSerie(
   tx: Prisma.TransactionClient,
@@ -37,7 +37,7 @@ export async function controllaSuperSerie(
   ]
   return nomi.length === 0
     ? null
-    : `Gli esercizi di isometria, cardio e riscaldamento non fanno parte di una super serie (${nomi.map((nome) => `«${nome}»`).join(', ')})`
+    : `Gli esercizi di isometria, cardio e stretching non fanno parte di una super serie (${nomi.map((nome) => `«${nome}»`).join(', ')})`
 }
 
 // Scrive gli esercizi di una giornata già esistente: cambia il titolo, toglie le voci di prima e crea quelle nuove, nell'ordine

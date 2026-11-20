@@ -185,7 +185,7 @@ export async function pianoImportScheda(
       })),
     })
     if (!intera.ok) return { ok: false, errore: `Giornata ${lettera}: ${minuscola(intera.errore)}` }
-    // Isometria, cardio e riscaldamento non stanno in una super serie: si guarda la categoria vera, nel database.
+    // Isometria, cardio e stretching non stanno in una super serie: si guarda la categoria vera, nel database.
     const superSerieSbagliata = await controllaSuperSerie(tx, userId, intera.dati.voci)
     if (superSerieSbagliata) return { ok: false, errore: `Giornata ${lettera}: ${minuscola(superSerieSbagliata)}` }
 

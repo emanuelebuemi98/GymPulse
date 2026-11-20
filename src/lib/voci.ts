@@ -68,7 +68,7 @@ export function esercizioDaVoce(voce: VoceDb): Esercizio {
   // Una voce a tempo non ha ripetizioni, carico a salire né super serie, qualunque cosa dica la riga.
   const cardio = èCardio(voce.esercizio.categoria)
   const tempo = cardio || (voce.durataSec ?? null) !== null || èATempo(voce.esercizio.categoria)
-  // Né un esercizio a tempo né uno di cardio o riscaldamento fa parte di una super serie, anche se una scheda di prima ce l'ha messo:
+  // Né un esercizio a tempo né uno di cardio o stretching fa parte di una super serie, anche se una scheda di prima ce l'ha messo:
   // il gruppo si toglie qui, in lettura, senza toccare il database (lo scioglie poi scheda-db.ts se resta un esercizio solo).
   const senzaGruppo = tempo || fuoriDaSuperSerie(voce.esercizio.categoria)
   // Il cardio si fa a tratti. Una voce di cardio salvata prima (3 × 8-10 con il recupero) si legge come un solo tratto da 20 minuti,

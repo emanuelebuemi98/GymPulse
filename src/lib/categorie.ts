@@ -5,6 +5,8 @@
 // Il database accetta soltanto queste dodici chiavi (vincoli scritti a mano nelle migrazioni `catalogo_esercizi`,
 // `categorie_riscaldamento`, `categoria_glutei`, `bicipiti_tricipiti_avambracci`, che ha diviso «braccia» in tre, e `gif_e_categoria_isometria`).
 
+// La chiave 'riscaldamento' è rimasta com'era (sta nei vincoli del database e nel file del catalogo): quello che si vede è l'etichetta,
+// «Stretching».
 export const CATEGORIE = [
   { chiave: 'petto', etichetta: 'Petto' },
   { chiave: 'dorsali', etichetta: 'Dorsali' },
@@ -17,7 +19,7 @@ export const CATEGORIE = [
   { chiave: 'addome', etichetta: 'Addome' },
   { chiave: 'isometria', etichetta: 'Isometria' },
   { chiave: 'cardio', etichetta: 'Cardio' },
-  { chiave: 'riscaldamento', etichetta: 'Riscaldamento' },
+  { chiave: 'riscaldamento', etichetta: 'Stretching' },
 ] as const
 
 export type Categoria = (typeof CATEGORIE)[number]['chiave']
@@ -53,7 +55,7 @@ export function èCardio(categoria: string): boolean {
 }
 
 // Le categorie i cui esercizi non fanno parte di una super serie (superset, triset, gigantset): quelli a tempo hanno un timer, il
-// cardio si fa su una macchina e il riscaldamento si fa a parte. Un esercizio senza categoria (da un vecchio file) non è escluso.
+// cardio si fa su una macchina e lo stretching si fa a parte. Un esercizio senza categoria (da un vecchio file) non è escluso.
 export const CATEGORIE_FUORI_DA_SUPER_SERIE: readonly Categoria[] = ['isometria', 'cardio', 'riscaldamento']
 
 export function fuoriDaSuperSerie(categoria: string): boolean {

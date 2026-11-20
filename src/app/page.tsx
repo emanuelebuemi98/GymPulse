@@ -74,7 +74,7 @@ const schermate = [
   },
   {
     titolo: 'Il catalogo',
-    testo: 'Tutti i 510 esercizi divisi per categoria (Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio, Riscaldamento), con la foto o l\'animazione di ognuno, la ricerca per nome e le linguette per scegliere.',
+    testo: 'Tutti i 510 esercizi divisi per categoria (Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio, Stretching), con la foto o l\'animazione di ognuno, la ricerca per nome e le linguette per scegliere.',
     schermata: <SchermataCatalogo />,
   },
   {
@@ -150,7 +150,7 @@ const funzioni = [
   {
     icona: IconaScheda,
     titolo: 'Catalogo di 510 esercizi',
-    testo: 'In dodici categorie: Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio e Riscaldamento. Ognuno ha la sua animazione che mostra il movimento, i passi dell\'esecuzione e gli errori da evitare.',
+    testo: 'In dodici categorie: Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio e Stretching. Ognuno ha la sua animazione che mostra il movimento, i passi dell\'esecuzione e gli errori da evitare.',
   },
   {
     icona: IconaPlay,
@@ -170,7 +170,7 @@ const funzioni = [
   {
     icona: IconaRegolazioni,
     titolo: 'Ripetizioni e super serie',
-    testo: 'Per ogni esercizio scegli le serie fisse, con un minimo e un massimo, oppure la serie piramidale: una ripetizione diversa per ogni serie, a scendere o a salire (12-10-8-6). E puoi unire più esercizi in un superset, un triset o un gigantset (non gli esercizi di isometria, cardio e riscaldamento).',
+    testo: 'Per ogni esercizio scegli le serie fisse, con un minimo e un massimo, oppure la serie piramidale: una ripetizione diversa per ogni serie, a scendere o a salire (12-10-8-6). E puoi unire più esercizi in un superset, un triset o un gigantset (non gli esercizi di isometria, cardio e stretching).',
   },
   {
     icona: IconaStorico,
