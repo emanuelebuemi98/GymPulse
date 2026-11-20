@@ -235,7 +235,7 @@ export function SchermataCatalogo() {
         {['TUTTE 510', 'PETTO 59', 'DORSALI 47', 'GLUTEI 36'].map((voce) => (
           <span
             key={voce}
-            className={`shrink-0 rounded-full border px-2 py-1 ${voce.startsWith('GLUTEI') ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta'}`}
+            className={`shrink-0 rounded-full border px-2 py-1 ${voce.startsWith('PETTO') ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta'}`}
           >
             {voce}
           </span>
