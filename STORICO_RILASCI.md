@@ -23,8 +23,10 @@ Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per ri
 | 11 | 16 nov 2026 | `854a3b9` | **Catalogo di 451 esercizi** (72 nuovi), **animazioni** nel «Come si fa», **categoria Isometria** | 1 | riuscito |
 | 12 | 17 nov 2026 | `018a23e` | **Esercizi a tempo** (isometria con serie e durata, timer con avvio manuale), super serie senza isometria, cardio e riscaldamento, tre schede in più nella pagina iniziale | 1 | riuscito |
 | 13 | 17 nov 2026 | `2d0612a` | **Cardio a tratti** (minuti, velocità e pendenza; km e kcal calcolati; peso a ogni seduta) e **quattro voci del catalogo** (182, 185, 190, 193) | 1 | riuscito |
+| 14 | 17 nov 2026 | `2c6330a` | **24 voci nuove di Isometria e Addome** (catalogo di 475 esercizi), **30 animazioni** per voci che avevano solo la foto, la voce 213 rinominata | nessuna | riuscito |
+| 15 | 20 nov 2026 | `994a5ae` | **Catalogo di 510 esercizi** (35 voci nuove di Riscaldamento e Cardio, cinque voci sostituite, la 214 spostata in Riscaldamento) e **un'animazione per ogni voce** | nessuna | riuscito |
 
-Nei rilasci 2, 3, 4, 5 e 6 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata. Dal rilascio 7 il catalogo cambia a ogni rilascio (tranne il 12) e si carica a mano con `db:catalogo`, ma l'esito di quel passo è registrato solo in parte: per il 7 e l'8 si deduce da una prova su Neon, per il 10 si sa solo che il primo tentativo si è fermato, per il 9, l'11 e il 13 non è registrato. Dei rilasci 7, 9 e 10 non ci sono migrazioni; quella del rilascio 8 risulta applicata dalla stessa prova; per le migrazioni dei rilasci 11, 12 e 13 non è registrato se siano state applicate (per l'11 si deduce di sì dal «funziona tutto»; vedi le singole voci).
+Nei rilasci 2, 3, 4, 5 e 6 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata. Dal rilascio 7 il catalogo cambia a ogni rilascio (tranne il 12) e si carica a mano con `db:catalogo`, ma l'esito di quel passo è registrato solo in parte: per il 7 e l'8 si deduce da una prova su Neon, per il 10 si sa solo che il primo tentativo si è fermato, per il 14 si sa solo che, dopo il deploy, Neon risultava ancora a 451 voci mentre il database locale ne aveva 475 (la causa non è stata chiarita), per il 9, l'11, il 13 e il 15 non è registrato. Dei rilasci 7, 9, 10, 14 e 15 non ci sono migrazioni; quella del rilascio 8 risulta applicata dalla stessa prova; per le migrazioni dei rilasci 11, 12 e 13 non è registrato se siano state applicate (per l'11 si deduce di sì dal «funziona tutto»; vedi le singole voci).
 
 ---
 
@@ -325,7 +327,56 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 - **Da verificare:**
   - che `cardio_a_tratti` sia applicata a Neon (`npx prisma migrate status` con la stringa diretta): se mancasse, la scheda, la sessione e lo storico online darebbero errore, perché il codice legge le colonne nuove a ogni apertura;
   - che `db:catalogo` sia stato lanciato su Neon: senza, le voci 182, 185 e 190 online hanno ancora nome, testi e foto di prima (la foto non si vede) e la 193 è ancora in Addome;
-  - la rinomina della voce 213, «Toes to Bar» → «Sollevamento punte dei piedi alla sbarra», è nel commit `568f223` su `dev`, **non ancora pubblicato** (non fa parte del rilascio 13): il database locale (verificato) e Neon (dichiarato) sono già allineati a mano con DBeaver.
+  - la rinomina della voce 213, «Toes to Bar» → «Sollevamento punte dei piedi alla sbarra», è nel commit `568f223`, che **non fa parte del rilascio 13** ed è stato pubblicato con il rilascio 14: il database locale (verificato) e Neon (dichiarato) sono già allineati a mano con DBeaver.
+
+## Rilascio 14 — 17 novembre 2026: 24 voci nuove di Isometria e Addome, e 30 animazioni
+
+- **Commit:** `2c6330a` (7 commit dal rilascio 13, nessuno di merge). Avanzamento semplice: `main` e `dev` sono finiti sullo stesso commit. I sette sono la rinomina della voce 213 (`568f223`), la documentazione del rilascio 13 (`916e0a5`), le 30 animazioni (`59be885`), le 24 voci (`05487fd`), i due aggiornamenti della pagina iniziale a 475 esercizi (`df46973`, `4cfa919`) e la documentazione (`2c6330a`).
+- **Cosa conteneva:**
+  - **catalogo da 451 a 475 esercizi:** 24 voci nuove, scritte guardando le animazioni. Le 452-455 sono di **Isometria** (posa dell'arco, plank jacks con gamba distesa, plank laterale con ginocchio al gomito, plank con sollevamento di una gamba), le 456-475 di **Addome** (lancio rotatorio con palla medica, crunch con palla medica, V-up con fitball, crunch alla macchina Ab Coaster, sollevamenti di gambe e ginocchia, sit-up a T, jackknife con elastico…). Per categoria: Addome 49, Isometria 21. Il nome «seated-twist-machine» dell'elenco non aveva né foto né gif né numero e non è stato inserito;
+  - **30 animazioni** per voci che avevano solo la foto (181-197, 202-211, 213-215): le gif passano da 405 a 459;
+  - la voce 213 «Toes to Bar» diventa **«Sollevamento punte dei piedi alla sbarra»** (era nel commit `568f223`, rimasto fuori dal rilascio 13);
+  - pagina iniziale, README e `DEPLOY.md` aggiornati a 475 esercizi.
+- **Migrazioni:** nessuna.
+- **Catalogo e immagini:** cambiati (24 voci nuove, la 213 rinominata; foto: 23 aggiunte; gif: 54 aggiunte). Serviva `db:catalogo`. La voce **457** (crunch con palla medica) è andata online con la gif ma **senza foto**: la foto è arrivata con il rilascio 15.
+- **Variabili su Vercel:** nessuna.
+- **Passi eseguiti:** non registrati nel dettaglio. Si sa solo che dopo il deploy il database **locale risultava a 475 voci e Neon ancora a 451** («in locale risultano 475, in prod 451 ancora»). La causa non è stata chiarita: l'ipotesi più probabile è che `db:catalogo` sia finito sul database locale perché `DATABASE_URL` non era quella di Neon nella finestra in cui è stato lanciato (lo script, senza la variabile, usa il `.env` locale e non dà errore). Cosa sia stato fatto dopo su Neon non è registrato.
+- **Provato prima del rilascio, su una copia del database locale:** `db:catalogo` in prova e per davvero (24 nuovi), le 451 voci di prima identiche (testo, categoria, foto), una seconda esecuzione che non cambia niente; `tsc` senza errori.
+- **Vercel** (ora italiana):
+  - 17 nov 19:44, push di `dev`: **annullata** («Canceled by Ignored Build Step»), com'è voluto;
+  - 17 nov 19:49, merge su `main`: deploy **riuscito** (partito alle 19:49:15, finito alle 19:49:37).
+- **Problemi incontrati:** Neon rimasto a 451 voci (vedi sopra); la voce 457 senza foto.
+- **Controlli online del passo 11:** non registrati.
+- **Da verificare:** lo stato di Neon (vedi il rilascio 15).
+
+---
+
+## Rilascio 15 — 20 novembre 2026: catalogo di 510 esercizi e un'animazione per ogni voce
+
+- **Commit:** `994a5ae` (4 commit dal rilascio 14, nessuno di merge). Avanzamento semplice. Sono le 11 animazioni (`ab6c51c`), il catalogo a 510 voci (`5518de1`), la pagina iniziale (`68828b4`) e la documentazione (`994a5ae`).
+- **Cosa conteneva:**
+  - **35 voci nuove:** 476-507 di **Riscaldamento** (stretching, mobilità, foam roller, ginocchia alte contro il muro, cerchi con le braccia, posizione del cammello…) e 508-510 di **Cardio** (ellittica a falcata variabile, cyclette reclinata, scatti di corsa). Le tre di cardio non hanno la velocità (non sono tapis roulant né corsa all'aperto): si registrano i minuti, e km e kcal a mano;
+  - **cinque voci sostituite sul posto** (stesso numero, nuovo contenuto): 228 «Skip con ginocchia alte» (era la spinta della slitta), 231 «Dalla posa del bambino alla posa del cobra» (era il cane a testa in giù), 232 «Rotazione del busto inclinato con bastone» (era la dislocazione delle spalle con bastone), 235 «Mezza posa della rana a pancia in giù» (era lo stretching dell'addome in cobra), 236 «Mulino a vento a corpo libero» (era la posa del bambino);
+  - la **214 «Gatto-mucca»** passa da Addome a Riscaldamento. Per categoria: Addome 48, Isometria 21, Riscaldamento 46, Cardio 10 (510 in tutto);
+  - **un'animazione per ognuno dei 510 esercizi** (prima mancavano quelle di cardio e riscaldamento): 51 gif aggiunte (11 per voci che avevano solo la foto, 5 per le sostituite, 35 per le nuove). Tre gif (198, 444, 447) sono immagini ferme di un solo fotogramma e la 327 ne ha due: erano già così nel rilascio 13;
+  - foto: 41 aggiunte (le 35 nuove, le 5 delle sostituite e la **457**, che mancava) e 5 tolte (le vecchie delle sostituite). Ora ogni voce ha la sua foto: 510 su 510;
+  - pagina iniziale, README e `DEPLOY.md` a 510 esercizi; dove si diceva che l'animazione c'è «per quasi tutti», ora c'è per tutti.
+- **Migrazioni:** nessuna.
+- **Catalogo e immagini:** cambiati. Serviva `db:catalogo` e, se qualcuno aveva in scheda o nello storico una delle cinque voci sostituite, `SOSTITUISCI_IN_USO=1` (senza, lo script si ferma e non cambia niente).
+- **Variabili su Vercel:** nessuna.
+- **Passi eseguiti:** non registrati. L'unica cosa detta è che il push e il deploy sono stati fatti («ho pushato comunque e deployato»); cosa sia stato eseguito su Neon e in locale non è stato dichiarato.
+- **Provato prima del rilascio, su una copia del database locale con una persona di prova che aveva in scheda tutte e sei le voci:** senza `SOSTITUISCI_IN_USO` lo script si ferma, senza cambiare niente, e nomina le cinque voci sostituite; con l'opzione le cinque cambiano sul posto, gli esercizi della persona prendono il nome e la categoria nuovi (anche la 214, in Riscaldamento), la scheda e le serie già fatte restano agganciate, le 35 voci entrano, le altre sono identiche al database locale e una seconda esecuzione non cambia niente; `tsc` senza errori. Sul database locale vero nessuno usava le sei voci.
+- **Vercel** (ora italiana):
+  - 20 nov 13:15, push di `dev`: **annullata** («Canceled by Ignored Build Step»), com'è voluto;
+  - 20 nov 13:49, merge su `main`: deploy **riuscito** (partito alle 13:49:50, finito alle 13:50:11).
+- **Problemi incontrati:** nessuno segnalato.
+- **Controlli online del passo 11:** fatti dall'esterno, senza accesso, il 20 novembre: la pagina iniziale ha «Catalogo di 510 esercizi», «Tutte 510» e «Tutti i 510 esercizi»; le foto nuove rispondono 200 (228, 457, 475, 510) e quella vecchia della 228 risponde 404. **Le gif rispondono 303 verso il login** anche per quelle già online da settimane (per esempio la 45): dall'esterno non si possono controllare, solo da dentro con l'accesso. Le prove con l'accesso (`/catalogo` con le linguette, «Come si fa», schede di chi usava le voci sostituite) non sono registrate.
+- **Da verificare:**
+  - **lo stato di Neon**, con `PROVA=1 npm run db:catalogo` sulla stringa diretta: se dice **0 nuovi** e «510 nel database prima», il catalogo è allineato; se dice 59 o 35 nuovi, `db:catalogo` non è mai arrivato su Neon (dal rilascio 14 risultava fermo a 451). Online, senza, le voci nuove non compaiono e le cinque sostituite hanno ancora il contenuto di prima, ma con la foto nuova;
+  - se qualcuno usava le cinque voci sostituite: la prova lo dice, e serve `SOSTITUISCI_IN_USO=1`;
+  - `cardio_a_tratti` su Neon (resta il «da verificare» del rilascio 13).
+
+---
 
 ---
 
@@ -337,8 +388,8 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 - **Variabili nuove:** vanno messe in Vercel **prima** del merge su `main`, altrimenti serve un secondo deploy.
 - **Mai committare file di backup o di dump** (`.sql`, `.dump`): il repository è pubblico e contengono l'hash delle password e le email. Ora il `.gitignore` li esclude nella cartella principale del progetto, e i backup si tengono in una cartella fuori dal progetto.
 - **Lo stato di Neon non si legge da Git:** prima di dare per applicata una migrazione si guarda `npx prisma migrate status` con la stringa diretta.
-- **Il catalogo non sta nelle migrazioni:** `db:catalogo` si lancia a mano su Neon e Git non dice se è stato fatto (nei rilasci 7, 8, 9, 10, 11 e 13 l'esito è registrato solo in parte o per niente). Se il passo si dimentica, le voci nuove non compaiono e, se le foto sono state rinominate, quelle del database puntano a file che non esistono più. Si controlla con `PROVA=1 npm run db:catalogo` sulla stringa diretta: «Numeri cambiati: 0», «sostituiti: 0» e «0 nuovi» vogliono dire che Neon è allineato al file. Se una voce sostituita è usata da qualcuno, lo script si ferma senza cambiare niente e si riparte con `SOSTITUISCI_IN_USO=1`.
-- **Foto e catalogo si cambiano insieme:** se si rinomina un file in `public/esercizi` senza cambiare lo slug nel file del catalogo (o il contrario), la voce resta senza foto: è successo alle voci 161 e 174 tra il rilascio 10 e l'11. Prima di pubblicare, ogni voce deve avere la sua `numero_slug.jpg` e ogni foto la sua voce (nei rilasci 9, 11 e 12 il controllo dà zero e zero).
+- **Il catalogo non sta nelle migrazioni:** `db:catalogo` si lancia a mano su Neon e Git non dice se è stato fatto (nei rilasci 7, 8, 9, 10, 11, 13, 14 e 15 l'esito è registrato solo in parte o per niente). Se il passo si dimentica, le voci nuove non compaiono e, se le foto sono state rinominate, quelle del database puntano a file che non esistono più. Si controlla con `PROVA=1 npm run db:catalogo` sulla stringa diretta: «Numeri cambiati: 0», «sostituiti: 0» e «0 nuovi» vogliono dire che Neon è allineato al file. Se una voce sostituita è usata da qualcuno, lo script si ferma senza cambiare niente e si riparte con `SOSTITUISCI_IN_USO=1`.
+- **Foto e catalogo si cambiano insieme:** se si rinomina un file in `public/esercizi` senza cambiare lo slug nel file del catalogo (o il contrario), la voce resta senza foto: è successo alle voci 161 e 174 tra il rilascio 10 e l'11. Prima di pubblicare, ogni voce deve avere la sua `numero_slug.jpg` e ogni foto la sua voce (nei rilasci 9, 11, 12 e 15 il controllo dà zero e zero; nel 14 la voce 457 era senza foto).
 - **Il file del catalogo è la fonte:** un cambio fatto a mano nel database (con DBeaver: nome, slug, categoria) non è nel file, e il prossimo `db:catalogo` lo riscrive com'è nel file. Si scrive prima nel file, poi si lancia lo script. Il 15 novembre è successo con la categoria della 155 nel database locale e con la 162 su Neon.
 - **Due foto per la stessa voce:** `db:catalogo` si ferma, senza scrivere niente, se in `public/esercizi` ci sono due file con lo stesso slug (303, 242 e 243 il 16 novembre). Se ne tiene uno solo.
 
