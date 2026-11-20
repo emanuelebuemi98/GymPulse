@@ -27,6 +27,7 @@ Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per ri
 | 15 | 20 nov 2026 | `994a5ae` | **Catalogo di 510 esercizi** (35 voci nuove di Riscaldamento e Cardio, cinque voci sostituite, la 214 spostata in Riscaldamento) e **un'animazione per ogni voce** | nessuna | riuscito |
 | 16 | 20 nov 2026 | `1150b14` | **Trascinamento degli esercizi** nell'editor della scheda, **Catalogo in cima** alla pagina Scheda, categoria **Stretching** (era Riscaldamento) e la voce 227 in Isometria | nessuna | riuscito |
 | 17 | 20 nov 2026 | `e56f223` | **La categoria «Riscaldamento» diventa «Stretching» anche nel database** (la chiave cambia: 45 voci del catalogo e gli esercizi delle persone) e **le etichette delle categorie in maiuscolo** | 1 | riuscito |
+| 18 | 20 nov 2026 | `ca7af76` | **Il timer di recupero suona** (tre bip) oltre a vibrare, a ogni serie | nessuna | riuscito |
 
 Nei rilasci 2, 3, 4, 5 e 6 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata. Dal rilascio 7 il catalogo cambia a ogni rilascio (tranne il 12) e si carica a mano con `db:catalogo`, ma l'esito di quel passo è registrato solo in parte: per il 7 e l'8 si deduce da una prova su Neon, per il 10 si sa solo che il primo tentativo si è fermato, per il 14 si sa solo che, dopo il deploy, Neon risultava ancora a 451 voci mentre il database locale ne aveva 475 (la causa non è stata chiarita), per il 9 e l'11 non è registrato. Il 20 novembre è stato dichiarato che **Neon ha 510 voci**: da questo si deduce che `db:catalogo` è stato lanciato su Neon con il file del rilascio 15 o successivo, ma quando e con quali opzioni non è registrato (e per la voce 227 del rilascio 16 non si sa). Dei rilasci 7, 9, 10, 14, 15 e 16 non ci sono migrazioni (il 17 ne ha una, che cambia dei valori); quella del rilascio 8 risulta applicata dalla stessa prova; per le migrazioni dei rilasci 11, 12, 13 e 17 non è registrato con certezza se siano state applicate (per l'11 si deduce di sì dal «funziona tutto»; per la 12 e la 13 si deduce di sì dal rilascio 16, dichiarato «perfettamente funzionante», perché il codice legge le loro colonne a ogni apertura della scheda; per la 17 l'utente ha dichiarato, a deploy fatto, «a db tutto sistemato»; vedi le singole voci).
 
@@ -423,6 +424,29 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 - **Problemi incontrati:** nessuno segnalato. Un rischio noto e accettato: finché il codice nuovo non era online, il sito vecchio non mostrava le 45 voci nel catalogo.
 - **Controlli online del passo 11:** dall'esterno, senza accesso, il 20 novembre: la pagina iniziale risponde 200, ha «Catalogo di 510 esercizi», «TUTTE 510», «PETTO 59» e «Stretching», e non ha più «Tutte 510» né «Riscaldamento»; `/registrati` e `/login` rispondono 200; `/catalogo` senza accesso porta al login (303). Con l'accesso: dichiarato «a db tutto sistemato e le etichette ora sono in maiuscolo»; le singole prove non sono registrate.
 - **Da verificare:** niente di aperto di cui si sappia. L'esito di `migrate status` su Neon non è registrato; dal sito che funziona (dichiarato) si deduce che la migrazione sia applicata.
+
+---
+
+## Rilascio 18 — 20 novembre 2026: il timer di recupero suona a fine conto
+
+- **Commit:** `ca7af76` (2 commit dal rilascio 17, nessuno di merge, 6 file). Avanzamento semplice: `main`, `dev` e il clone locale sono sullo stesso commit (lo dice Git, e lo ha dichiarato: «ho pushato la modifica», «main e dev allineati»). I due sono la documentazione (`130c6fb`: il rilascio 17 e un primo accenno al suono) e il suono a fine recupero (`ca7af76`).
+- **Perché:** l'utente ha chiesto che a fine timer di recupero, dopo ogni serie, ci sia un rumore per avvisare: fino ad allora il timer di recupero faceva solo vibrare, mentre quello della tenuta (esercizi a tempo) aveva già suono e vibrazione.
+- **Cosa conteneva:**
+  - **il timer di recupero usa lo stesso segnale della tenuta:** a zero partono **tre bip** (880 Hz, a volume basso) e la **vibrazione** (dove il telefono la ha: non su iPhone). Il segnale parte **una volta sola** per ogni recupero: prima la vibrazione era in un controllo che gira ogni quarto di secondo e, finché il riquadro del recupero restava aperto, si ripeteva;
+  - **il suono è permesso dal tocco sul ✓** che conferma la serie (le regole dei browser lo chiedono): lì si prepara l'audio, e lo stesso a ogni ✓. Se il browser ha messo in pausa l'audio (scheda in secondo piano, schermo spento), a fine recupero si prova a riprenderlo e a suonare; se non si può, resta la vibrazione. Con «Salta» prima della fine non suona;
+  - vale per ogni serie confermata; nei superset, nei triset e nei gigantset parte a fine giro, perché è lì che parte il recupero;
+  - README e pagina iniziale dicono «suona e vibra» (`src/lib/segnale.ts`, `FormSessione.tsx`, `src/app/page.tsx`).
+- **Migrazioni:** nessuna.
+- **Catalogo e immagini:** invariati (510 voci; nessun file in `prisma/dati` né in `public`: passi 6 e 7 saltati).
+- **Variabili su Vercel:** nessuna.
+- **Passi eseguiti:** nessuno sul database, perché non ci sono migrazioni né catalogo. Solo push di `dev` e merge su `main`, dichiarati.
+- **Provato prima del rilascio, su una copia del database senza persone vere, a 393 punti con il tocco simulato su Edge senza finestra:** 21 controlli su 21. Con un recupero di 4 secondi: prima del tocco nessun bip e nessuna vibrazione; il tocco sul ✓ prepara il suono ma durante il conto non suona; a fine recupero 3 bip e 1 vibrazione; lasciando il riquadro aperto non si ripete; alla seconda serie suona di nuovo (6 bip e 2 vibrazioni in tutto); con «Salta» nessun segnale in più; nessun errore JavaScript; `tsc` senza errori. **Non provato:** il suono sentito da un telefono vero. I bip sono contati (gli oscillatori creati), non ascoltati. Su iPhone non c'è la vibrazione; con il telefono in silenzioso o il volume basso i bip possono non sentirsi; con lo schermo bloccato il suono può non partire (limite dei browser).
+- **Vercel** (ora italiana):
+  - 20 nov 17:31, push di `dev`: **annullata** («Canceled by Ignored Build Step»), com'è voluto;
+  - 20 nov 17:32, merge su `main`: deploy **riuscito** (partito alle 17:32:09, finito alle 17:32:28).
+- **Problemi incontrati:** nessuno segnalato.
+- **Controlli online del passo 11:** non registrati.
+- **Da verificare:** il suono su un telefono vero (volume, silenzioso, schermo bloccato, iPhone).
 
 ---
 
