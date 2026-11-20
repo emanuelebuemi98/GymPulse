@@ -232,10 +232,10 @@ export function SchermataCatalogo() {
       <p className="text-[13px] font-extrabold">Catalogo esercizi</p>
       <div className="rounded-xl border border-bordo bg-fondo px-2 py-1.5 text-[10.5px] text-suggerito">Cerca un esercizio</div>
       <div className="flex gap-1 overflow-hidden text-[9px] font-semibold">
-        {['Tutte 510', 'Petto 59', 'Dorsali 47', 'Glutei 36'].map((voce) => (
+        {['TUTTE 510', 'PETTO 59', 'DORSALI 47', 'GLUTEI 36'].map((voce) => (
           <span
             key={voce}
-            className={`shrink-0 rounded-full border px-2 py-1 ${voce.startsWith('Glutei') ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta'}`}
+            className={`shrink-0 rounded-full border px-2 py-1 ${voce.startsWith('GLUTEI') ? 'border-accento bg-accento text-su-accento' : 'border-bordo bg-carta'}`}
           >
             {voce}
           </span>
@@ -309,7 +309,7 @@ export function SchermataSeduta() {
           <Miniatura nome="Panca piana con bilanciere" file="27_barbell-bench-press" className="size-10" />
           <span className="min-w-0 flex-1">
             <span className="block text-[11px] leading-tight font-extrabold">Panca piana con bilanciere</span>
-            <span className="block text-[8.5px] text-muto">Barbell Bench Press · Petto</span>
+            <span className="block text-[8.5px] text-muto">Barbell Bench Press · PETTO</span>
           </span>
           <span className="text-[9px] font-semibold text-accento">Andamento</span>
         </div>
@@ -484,7 +484,7 @@ export function SchermataTenuteScheda() {
           <span className="min-w-0">
             <span className="block text-[11px] leading-tight font-extrabold">Plank addominale isometrico</span>
             <span className="block text-[9px] text-muto">
-              Categoria: <span className="font-bold text-testo">Isometria</span>
+              Categoria: <span className="font-bold text-testo">ISOMETRIA</span>
             </span>
           </span>
         </div>
@@ -602,10 +602,10 @@ export function SchermataProgressi() {
       <Barra attiva="Progressi" />
       <div className="space-y-1.5 rounded-2xl border border-bordo bg-carta p-2.5">
         <p className="text-[11px] font-extrabold">Kg per categoria</p>
-        <BarraOrizzontale nome="Petto" kg="4.280" quota={100} />
-        <BarraOrizzontale nome="Dorsali" kg="3.940" quota={92} />
-        <BarraOrizzontale nome="Gambe" kg="3.100" quota={72} />
-        <BarraOrizzontale nome="Spalle" kg="1.250" quota={29} />
+        <BarraOrizzontale nome="PETTO" kg="4.280" quota={100} />
+        <BarraOrizzontale nome="DORSALI" kg="3.940" quota={92} />
+        <BarraOrizzontale nome="GAMBE" kg="3.100" quota={72} />
+        <BarraOrizzontale nome="SPALLE" kg="1.250" quota={29} />
       </div>
       <div className="rounded-2xl border border-bordo bg-carta p-2.5">
         <p className="text-[11px] font-extrabold">Carico massimo</p>

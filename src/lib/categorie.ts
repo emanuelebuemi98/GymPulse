@@ -2,24 +2,22 @@
 // server sia dal browser.
 //
 // In `Esercizio.categoria` e in `CatalogoEsercizio.categoria` finisce la chiave (per esempio `petto`), mai l'etichetta.
-// Il database accetta soltanto queste dodici chiavi (vincoli scritti a mano nelle migrazioni `catalogo_esercizi`,
-// `categorie_riscaldamento`, `categoria_glutei`, `bicipiti_tricipiti_avambracci`, che ha diviso «braccia» in tre, e `gif_e_categoria_isometria`).
-
-// La chiave 'riscaldamento' è rimasta com'era (sta nei vincoli del database e nel file del catalogo): quello che si vede è l'etichetta,
-// «Stretching».
+// Il database accetta soltanto queste dodici chiavi.
+// Le etichette sono in maiuscolo: sono quelle che si vedono (linguette del catalogo, filtro dell'editor, etichette nella scheda, colonna `categoria`
+// del file Excel).
 export const CATEGORIE = [
-  { chiave: 'petto', etichetta: 'Petto' },
-  { chiave: 'dorsali', etichetta: 'Dorsali' },
-  { chiave: 'spalle', etichetta: 'Spalle' },
-  { chiave: 'bicipiti', etichetta: 'Bicipiti' },
-  { chiave: 'tricipiti', etichetta: 'Tricipiti' },
-  { chiave: 'avambracci', etichetta: 'Avambracci' },
-  { chiave: 'gambe', etichetta: 'Gambe' },
-  { chiave: 'glutei', etichetta: 'Glutei' },
-  { chiave: 'addome', etichetta: 'Addome' },
-  { chiave: 'isometria', etichetta: 'Isometria' },
-  { chiave: 'cardio', etichetta: 'Cardio' },
-  { chiave: 'riscaldamento', etichetta: 'Stretching' },
+  { chiave: 'petto', etichetta: 'PETTO' },
+  { chiave: 'dorsali', etichetta: 'DORSALI' },
+  { chiave: 'spalle', etichetta: 'SPALLE' },
+  { chiave: 'bicipiti', etichetta: 'BICIPITI' },
+  { chiave: 'tricipiti', etichetta: 'TRICIPITI' },
+  { chiave: 'avambracci', etichetta: 'AVAMBRACCI' },
+  { chiave: 'gambe', etichetta: 'GAMBE' },
+  { chiave: 'glutei', etichetta: 'GLUTEI' },
+  { chiave: 'addome', etichetta: 'ADDOME' },
+  { chiave: 'isometria', etichetta: 'ISOMETRIA' },
+  { chiave: 'cardio', etichetta: 'CARDIO' },
+  { chiave: 'stretching', etichetta: 'STRETCHING' },
 ] as const
 
 export type Categoria = (typeof CATEGORIE)[number]['chiave']
@@ -37,7 +35,7 @@ export function categoriaDa(testo: string): Categoria | null {
 }
 
 // Le categorie senza kg da sommare: non entrano nel grafico dei kg per categoria della panoramica.
-export const CATEGORIE_SENZA_KG: readonly Categoria[] = ['addome', 'isometria', 'cardio', 'riscaldamento']
+export const CATEGORIE_SENZA_KG: readonly Categoria[] = ['addome', 'isometria', 'cardio', 'stretching']
 
 // Le categorie degli esercizi a tempo: si tengono o si fanno per una durata, non per ripetizioni e kg. Nella scheda hanno serie e
 // durata (uguale per tutte le serie), in sessione un timer.
@@ -56,7 +54,7 @@ export function èCardio(categoria: string): boolean {
 
 // Le categorie i cui esercizi non fanno parte di una super serie (superset, triset, gigantset): quelli a tempo hanno un timer, il
 // cardio si fa su una macchina e lo stretching si fa a parte. Un esercizio senza categoria (da un vecchio file) non è escluso.
-export const CATEGORIE_FUORI_DA_SUPER_SERIE: readonly Categoria[] = ['isometria', 'cardio', 'riscaldamento']
+export const CATEGORIE_FUORI_DA_SUPER_SERIE: readonly Categoria[] = ['isometria', 'cardio', 'stretching']
 
 export function fuoriDaSuperSerie(categoria: string): boolean {
   const chiave = categoriaDa(categoria)

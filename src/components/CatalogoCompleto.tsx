@@ -68,7 +68,7 @@ export function CatalogoCompleto({ voci }: { voci: VoceCatalogo[] }) {
 
       {/* Le categorie come linguette che scorrono di lato: sul telefono ce ne stanno quattro alla volta. */}
       <div role="group" aria-label="Categoria" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        <Linguetta attiva={categoria === ''} alTocco={() => setCategoria('')} etichetta="Tutte" numero={trovate.length} />
+        <Linguetta attiva={categoria === ''} alTocco={() => setCategoria('')} etichetta="TUTTE" numero={trovate.length} />
         {CATEGORIE.map((voce) => (
           <Linguetta
             key={voce.chiave}
