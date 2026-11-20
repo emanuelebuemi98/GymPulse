@@ -214,7 +214,7 @@ GymPulse/
 │   │   ├── 20261101120000_muscoli_standard/          # un solo gruppo muscolare per esercizio (poi sostituito dal catalogo)
 │   │   ├── 20261103190000_catalogo_esercizi/         # catalogo degli esercizi e dieci categorie al posto dei sette gruppi
 │   │   ├── 20261102100000_senza_dati_orologio/       # via i battiti e le calorie dell'orologio
-│   │   ├── 20261108120000_categorie_riscaldamento/   # otto categorie: "altri" diventa "riscaldamento", via olimpico e corpo intero
+│   │   ├── 20261108120000_categorie_riscaldamento/   # otto categorie: "altri" diventa una categoria nuova (oggi «stretching»), via olimpico e corpo intero
 │   │   ├── 20261108150000_registrazione_senza_codice/ # via la tabella delle registrazioni in attesa del codice
 │   │   ├── 20261108180000_categoria_glutei/          # nasce la categoria "glutei", separata da "gambe": nove categorie
 │   │   ├── 20261110100000_catalogo_senza_alias/      # via la colonna "alias" dal catalogo
@@ -227,6 +227,7 @@ GymPulse/
 │   │   ├── 20261116100000_gif_e_categoria_isometria/ # colonna `gif` sul catalogo e categoria «isometria»: dodici in tutto (colonna e CHECK)
 │   │   ├── 20261117100000_isometria_a_tempo/         # `durataSec` su `VoceScheda` e `SerieEseguita`, con i loro CHECK (solo colonne nuove)
 │   │   ├── 20261118100000_cardio_a_tratti/           # velocità, pendenza, km, kcal e battiti per i tratti di cardio, e il peso della seduta (solo colonne nuove, con i loro CHECK)
+│   │   ├── 20261120100000_categoria_stretching/      # la chiave di una categoria cambia in «stretching» (CAMBIA valori: 45 voci del catalogo e gli esercizi delle persone, più i due CHECK)
 │   │   └── migration_lock.toml
 │   ├── catalogo.ts, immagini.ts                      # script: carica il catalogo (db:catalogo) e ritrova le immagini
 │   ├── dati/catalogo-esercizi.json                   # i 510 esercizi del catalogo
