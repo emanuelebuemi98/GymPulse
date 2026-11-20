@@ -74,7 +74,7 @@ const schermate = [
   },
   {
     titolo: 'Il catalogo',
-    testo: 'Tutti i 475 esercizi divisi per categoria (Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio, Riscaldamento), con la foto o l\'animazione di ognuno, la ricerca per nome e le linguette per scegliere.',
+    testo: 'Tutti i 510 esercizi divisi per categoria (Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio, Riscaldamento), con la foto o l\'animazione di ognuno, la ricerca per nome e le linguette per scegliere.',
     schermata: <SchermataCatalogo />,
   },
   {
@@ -89,7 +89,7 @@ const schermate = [
   },
   {
     titolo: 'Come si fa',
-    testo: 'Ogni esercizio ha la foto (e, per quasi tutti, un\'animazione che mostra il movimento), i passi dell\'esecuzione e gli errori da evitare.',
+    testo: 'Ogni esercizio ha un\'animazione che mostra il movimento, i passi dell\'esecuzione e gli errori da evitare.',
     schermata: <SchermataComeSiFa />,
   },
   {
@@ -133,7 +133,7 @@ const passi = [
   {
     titolo: 'Costruisci la scheda',
     testo:
-      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 475, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni (serie fisse, con un minimo e un massimo, oppure serie piramidale come 12-10-8-6; per plank e simili la durata) e recupero, e se vuoi metti insieme più esercizi in un superset, un triset o un gigantset.',
+      'Aggiungi le giornate (A, B, C…) e scegli gli esercizi da un catalogo di 510, con foto, ricerca per nome e filtro per categoria. Oppure parti da un file Excel: scarichi il catalogo, cancelli gli esercizi che non ti servono e lo importi. Per ognuno decidi serie, ripetizioni (serie fisse, con un minimo e un massimo, oppure serie piramidale come 12-10-8-6; per plank e simili la durata) e recupero, e se vuoi metti insieme più esercizi in un superset, un triset o un gigantset.',
   },
   {
     titolo: 'Allenati',
@@ -149,8 +149,8 @@ const passi = [
 const funzioni = [
   {
     icona: IconaScheda,
-    titolo: 'Catalogo di 475 esercizi',
-    testo: 'In dodici categorie: Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio e Riscaldamento. Ognuno ha la sua foto (e, per quasi tutti, un\'animazione che mostra il movimento), i passi dell\'esecuzione e gli errori da evitare.',
+    titolo: 'Catalogo di 510 esercizi',
+    testo: 'In dodici categorie: Petto, Dorsali, Spalle, Bicipiti, Tricipiti, Avambracci, Gambe, Glutei, Addome, Isometria, Cardio e Riscaldamento. Ognuno ha la sua animazione che mostra il movimento, i passi dell\'esecuzione e gli errori da evitare.',
   },
   {
     icona: IconaPlay,
