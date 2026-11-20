@@ -93,6 +93,30 @@ export function spostaNelGruppo<T extends { gruppo: number | null }>(voci: T[], 
   return copia
 }
 
+// I punti dove un blocco trascinato può cadere: i confini tra un esercizio e l'altro (0 = in cima, `voci.length` = in fondo), tranne quelli
+// in mezzo a un gruppo, dove un esercizio singolo non entra mai. Chi trascina sceglie il confine più vicino al dito.
+export function confiniDiCaduta(voci: { gruppo: number | null }[]): number[] {
+  const dentro = new Set<number>()
+  for (const blocco of blocchi(voci)) for (let k = blocco.da + 1; k < blocco.da + blocco.quanti; k++) dentro.add(k)
+  return Array.from({ length: voci.length + 1 }, (_, k) => k).filter((k) => !dentro.has(k))
+}
+
+// Sposta il blocco a cui appartiene l'esercizio in posizione `indice` (un esercizio singolo, o un gruppo intero) al confine `confine`, come
+// quando lo si trascina. `confine` va da 0 a `voci.length` ed è il punto PRIMA dell'esercizio che ci sta oggi (`voci.length` = in fondo).
+// Un confine dentro un altro gruppo, fuori dai limiti o attaccato al blocco stesso non cambia niente.
+export function spostaBloccoA<T extends { gruppo: number | null }>(voci: T[], indice: number, confine: number): T[] {
+  if (!Number.isInteger(indice) || indice < 0 || indice >= voci.length) return voci
+  if (!Number.isInteger(confine) || !confiniDiCaduta(voci).includes(confine)) return voci
+  const questo = bloccoDi(voci, indice) ?? { gruppo: 0, da: indice, quanti: 1 }
+  if (confine >= questo.da && confine <= questo.da + questo.quanti) return voci
+  const spostati = voci.slice(questo.da, questo.da + questo.quanti)
+  const resto = [...voci.slice(0, questo.da), ...voci.slice(questo.da + questo.quanti)]
+  // Se il confine sta sotto il blocco, togliendolo gli esercizi sopra il confine sono `quanti` di meno.
+  const posto = confine > questo.da ? confine - questo.quanti : confine
+  resto.splice(posto, 0, ...spostati)
+  return normalizzaGruppi(resto)
+}
+
 // Mette insieme gli esercizi scelti (per indice) in un solo gruppo, uno dopo l'altro, nel punto del primo. Gli altri restano
 // nell'ordine che avevano. `recuperoSec` è il recupero del gruppo. Restituisce le voci nuove con il campo `gruppo` dato dalla
 // funzione `conGruppo`, oppure null se la scelta non è valida (meno di 2, o più di 10).

@@ -86,6 +86,13 @@ export const IconaMeno = (p: Props) => (
   </Icona>
 )
 
+// Sei punti in due colonne: la maniglia per trascinare. Il tratto più spesso rende ogni punto ben visibile anche a 20 punti.
+export const IconaTrascina = (p: Props) => (
+  <Icona {...p}>
+    <path strokeWidth={3.5} d="M9 5.5h.01M15 5.5h.01M9 12h.01M15 12h.01M9 18.5h.01M15 18.5h.01" />
+  </Icona>
+)
+
 export const IconaSu = (p: Props) => (
   <Icona {...p}>
     <path d="M12 19V5M6 11l6-6 6 6" />

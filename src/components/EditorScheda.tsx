@@ -19,6 +19,7 @@ import {
   normalizzaGruppi,
   sciogliGruppo,
   spostaBlocco,
+  spostaBloccoA,
   spostaNelGruppo,
 } from '@/lib/gruppi'
 import type { Giorno } from '@/lib/scheda-tipi'
@@ -42,9 +43,10 @@ import { CreaSuperSerie } from './CreaSuperSerie'
 import { ElencoEsercizi } from './ElencoEsercizi'
 import { FinestraConferma } from './FinestraConferma'
 import { ImmagineEsercizio } from './ImmagineEsercizio'
-import { IconaCestino, IconaGiu, IconaSu } from './icone'
+import { IconaCestino, IconaGiu, IconaSu, IconaTrascina } from './icone'
 import { IstruzioniEsercizio } from './IstruzioniEsercizio'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta, stileInput, stileTesto } from './stili'
+import { useTrascinaBlocchi } from './useTrascinaBlocchi'
 
 // `utenteId` è l'account per cui la pagina è stata disegnata (chi sta modificando). Se a modificare è un personal trainer,
 // `allievoId` è l'utente di cui è la scheda e `base` la pagina a cui tornare (/trainer/12); altrimenti si modifica la propria.
@@ -168,6 +170,13 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
   function spostaDentro(indice: number, verso: -1 | 1) {
     setVoci((prec) => spostaNelGruppo(prec, indice, verso))
   }
+
+  // Trascinando: un esercizio singolo, o un intero gruppo, va al punto in cui lo si lascia (sopra o sotto un altro esercizio). Mai in mezzo
+  // a un gruppo. Le frecce restano per chi non trascina (tastiera, lettore di schermo).
+  function spostaA(indice: number, confine: number) {
+    setVoci((prec) => spostaBloccoA(prec, indice, confine))
+  }
+  const { contenitore, stato: trascinando, maniglia } = useTrascinaBlocchi({ voci, alRilascio: spostaA })
 
   // Togliere un esercizio da un gruppo: se il gruppo scende sotto i due esercizi si scioglie da solo.
   function togli(chiave: string) {
@@ -343,6 +352,16 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
       {/* In alto, prima dell'elenco: si scelgono gli esercizi da mettere insieme e si crea il superset, il triset o il gigantset. */}
       <CreaSuperSerie voci={voci} alCrea={creaSuperSerie} />
 
+      {/* L'elenco sta in un contenitore: la linea che mostra dove cadrebbe l'esercizio trascinato è disegnata qui dentro. */}
+      <div ref={contenitore} className="relative">
+      {trascinando?.linea != null && (
+        <div
+          aria-hidden="true"
+          data-linea-trascinamento
+          className="pointer-events-none absolute inset-x-0 z-10 h-1 -translate-y-1/2 rounded-full bg-accento shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accento)_25%,transparent)]"
+          style={{ top: trascinando.linea }}
+        />
+      )}
       <ul className="space-y-3">
         {voci.map((voce, indice) => {
           const blocco = bloccoDi(voci, indice)
@@ -350,6 +369,8 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
           const èPrimo = blocco !== null && posizione === 0
           const èUltimo = blocco !== null && posizione === blocco.quanti - 1
           const nome = blocco ? nomeGruppo(blocco.quanti) : null
+          // Mentre si trascina, le carte che si stanno spostando si vedono più chiare.
+          const inMovimento = trascinando !== null && indice >= trascinando.da && indice < trascinando.da + trascinando.quanti
           return (
           <li
             key={voce.chiave}
@@ -357,7 +378,7 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
             // senza colori: c'è anche il nome e il «1/2»).
             className={`${stileCarta} space-y-3 p-4 ${blocco ? 'border-l-4 border-l-accento' : ''} ${
               blocco && !èUltimo ? 'rounded-b-none' : ''
-            } ${blocco && !èPrimo ? '-mt-3 rounded-t-none border-t-0' : ''}`}
+            } ${blocco && !èPrimo ? '-mt-3 rounded-t-none border-t-0' : ''} ${inMovimento ? 'opacity-50' : ''}`}
             aria-label={blocco ? `${nome} ${posizione + 1} di ${blocco.quanti}: ${voce.nome}` : undefined}
           >
             {blocco && (
@@ -392,6 +413,17 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
               </div>
             )}
             <div className="flex items-start justify-between gap-2">
+              {/* La maniglia: si afferra e si porta sopra o sotto un altro esercizio (in un gruppo si porta l'intero gruppo). Solo per il
+                  dito e il mouse: chi usa la tastiera o un lettore di schermo ha i pulsanti «Sposta su» e «Sposta giù». */}
+              <div
+                {...maniglia(indice)}
+                aria-hidden="true"
+                data-maniglia
+                title={blocco ? `Trascina l'intero ${nome?.toLowerCase()}` : 'Trascina per spostare'}
+                className="-mr-1 -ml-3 grid h-16 w-9 shrink-0 cursor-grab touch-none select-none place-items-center rounded-lg pl-3 text-suggerito active:cursor-grabbing active:bg-carta-alta"
+              >
+                <IconaTrascina className="size-5" />
+              </div>
               <ImmagineEsercizio src={voce.immagine} nome={voce.nome} className="size-16" />
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-extrabold leading-tight">{voce.nome}</h2>
@@ -428,6 +460,9 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
               </div>
             </div>
 
+            {/* Mentre si trascina, di ogni carta resta solo l'intestazione: così tutti gli esercizi stanno sullo schermo e si può
+                portarne uno sopra o sotto un altro senza scorrere. Il resto è solo nascosto, non si perde niente di quello che hai scritto. */}
+            <div className={`space-y-3 ${trascinando ? 'hidden' : ''}`} data-corpo-carta>
             {/* La categoria è quella del catalogo: si mostra, non si cambia. */}
             {categoriaDa(voce.categoria) && (
               <p className="text-sm text-muto">
@@ -585,10 +620,12 @@ export function EditorScheda({ utenteId, giorno, elenco, allievoId, base = '/sch
                 alCambio={(v) => modifica(voce.chiave, { incrementoKg: v })}
               />
             )}
+            </div>
           </li>
           )
         })}
       </ul>
+      </div>
 
       <section className={`${stileCarta} space-y-3 p-4`}>
         <h2 className="text-lg font-extrabold">Aggiungi esercizio</h2>
