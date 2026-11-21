@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AggiungiGiornata } from '@/components/AggiungiGiornata'
+import { CsvScheda } from '@/components/CsvScheda'
 import { ElencoGiornata } from '@/components/ElencoGiornata'
 import { IconaRegolazioni, IconaSinistra } from '@/components/icone'
 import { RimuoviGiornata } from '@/components/RimuoviGiornata'
@@ -34,6 +35,8 @@ export default async function SchedaAllievoPage({ params, searchParams }: Props)
   const richiesto = primoParametro((await searchParams).r)
   const giorni = await leggiScheda(allievoId)
   const base = `/trainer/${allievoId}`
+  // Scaricare la scheda di questo allievo e importarne una su di lui: la stessa scheda si può caricare su un altro allievo.
+  const csv = <CsvScheda utenteId={trainerId} allievo={{ id: allievoId, nome: allievo.fullName }} />
 
   const intestazione = (
     <header className="space-y-1">
@@ -54,6 +57,7 @@ export default async function SchedaAllievoPage({ params, searchParams }: Props)
             <AggiungiGiornata utenteId={trainerId} allievoId={allievoId} modifica={`${base}/modifica`} />
           </div>
         </div>
+        {csv}
       </div>
     )
   }
@@ -95,6 +99,8 @@ export default async function SchedaAllievoPage({ params, searchParams }: Props)
       {giorni.length > 1 && (
         <RimuoviGiornata utenteId={trainerId} allievoId={allievoId} id={giorno.id} titolo={giorno.titolo} base={base} />
       )}
+
+      {csv}
     </div>
   )
 }

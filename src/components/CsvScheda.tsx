@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { anteprimaImportScheda, importaScheda, type AnteprimaScheda } from '@/app/actions'
+import { anteprimaImportSchedaAllievo, importaSchedaAllievo } from '@/app/trainer/actions'
 import { IconaCarica, IconaScarica } from './icone'
 import { stileBottoneChiaro, stileBottonePrimario, stileCarta } from './stili'
 
@@ -13,7 +14,10 @@ const esercizi = (n: number) => (n === 1 ? '1 esercizio' : `${n} esercizi`)
 
 // Costruire la scheda da un file CSV: si scarica il catalogo (o la scheda attuale), si tolgono le righe che non servono, si
 // reimporta. Prima di scrivere si fa vedere cosa cambia e si chiede conferma.
-export function CsvScheda({ utenteId }: { utenteId: number }) {
+// Per un personal trainer (`allievo`, l'utente di cui è la scheda) il riquadro lavora sulla scheda di quell'allievo: scarica la sua
+// scheda e importa un file sopra di essa, così la scheda fatta per uno si carica identica per un altro. Del file non c'è altro che
+// la scheda: kg e storico non ci sono.
+export function CsvScheda({ utenteId, allievo }: { utenteId: number; allievo?: { id: number; nome: string } }) {
   const router = useRouter()
   const file = useRef<HTMLInputElement>(null)
   const [testo, setTesto] = useState<string | null>(null)
@@ -40,7 +44,9 @@ export function CsvScheda({ utenteId }: { utenteId: number }) {
 
     const letto = await scelto.text()
     startTransition(async () => {
-      const esito = await anteprimaImportScheda(utenteId, letto)
+      const esito = allievo
+        ? await anteprimaImportSchedaAllievo(utenteId, allievo.id, letto)
+        : await anteprimaImportScheda(utenteId, letto)
       if ('errore' in esito) {
         setMessaggio({ testo: esito.errore, errore: true })
         return
@@ -53,7 +59,7 @@ export function CsvScheda({ utenteId }: { utenteId: number }) {
   function conferma() {
     if (testo === null) return
     startTransition(async () => {
-      const esito = await importaScheda(utenteId, testo)
+      const esito = allievo ? await importaSchedaAllievo(utenteId, allievo.id, testo) : await importaScheda(utenteId, testo)
       if ('errore' in esito) {
         setMessaggio({ testo: esito.errore, errore: true })
         annulla()
@@ -70,29 +76,52 @@ export function CsvScheda({ utenteId }: { utenteId: number }) {
 
   return (
     <section className={`${stileCarta} space-y-3 p-4`}>
-      <h2 className="text-lg font-extrabold">Crea la scheda da un file CSV</h2>
-      <ol className="list-decimal space-y-1 pl-5 text-sm text-muto">
-        <li>
-          Scarica il <span className="font-semibold text-testo">catalogo completo</span>.
-        </li>
-        <li>Aprilo in Excel e cancella le righe degli esercizi che non ti servono.</li>
-        <li>
-          Nella colonna «giornata» sostituisci <span className="font-mono text-xs text-testo">&lt;A/B/C/D/E/F/G&gt;</span> con la
-          lettera della tua giornata: A, B, C… (fino a 7).
-        </li>
-        <li>Torna qui e importa il file: prima vedi cosa cambia, poi confermi.</li>
-      </ol>
+      {allievo ? (
+        <>
+          <h2 className="text-lg font-extrabold">Scheda in un file CSV</h2>
+          <ol className="list-decimal space-y-1 pl-5 text-sm text-muto">
+            <li>
+              Scarica la scheda di <span className="font-semibold text-testo">{allievo.nome}</span>: è un file con le sue giornate e i
+              suoi esercizi, senza kg né storico.
+            </li>
+            <li>
+              Apri la scheda di un altro allievo e importa lo stesso file: avrà le stesse giornate, con gli stessi esercizi, serie,
+              recuperi e note.
+            </li>
+            <li>Prima di scrivere vedi cosa cambia, poi confermi.</li>
+          </ol>
+          <a href={`/api/scheda-csv?cosa=scheda&allievo=${allievo.id}`} download className={`${stileBottoneChiaro} w-full`}>
+            <IconaScarica className="size-4" />
+            Scarica la scheda di {allievo.nome}
+          </a>
+        </>
+      ) : (
+        <>
+          <h2 className="text-lg font-extrabold">Crea la scheda da un file CSV</h2>
+          <ol className="list-decimal space-y-1 pl-5 text-sm text-muto">
+            <li>
+              Scarica il <span className="font-semibold text-testo">catalogo completo</span>.
+            </li>
+            <li>Aprilo in Excel e cancella le righe degli esercizi che non ti servono.</li>
+            <li>
+              Nella colonna «giornata» sostituisci <span className="font-mono text-xs text-testo">&lt;A/B/C/D/E/F/G&gt;</span> con la
+              lettera della tua giornata: A, B, C… (fino a 7).
+            </li>
+            <li>Torna qui e importa il file: prima vedi cosa cambia, poi confermi.</li>
+          </ol>
 
-      <div className="grid grid-cols-2 gap-2">
-        <a href="/api/scheda-csv?cosa=catalogo" download className={stileBottoneChiaro}>
-          <IconaScarica className="size-4" />
-          Catalogo
-        </a>
-        <a href="/api/scheda-csv?cosa=scheda" download className={stileBottoneChiaro}>
-          <IconaScarica className="size-4" />
-          La mia scheda
-        </a>
-      </div>
+          <div className="grid grid-cols-2 gap-2">
+            <a href="/api/scheda-csv?cosa=catalogo" download className={stileBottoneChiaro}>
+              <IconaScarica className="size-4" />
+              Catalogo
+            </a>
+            <a href="/api/scheda-csv?cosa=scheda" download className={stileBottoneChiaro}>
+              <IconaScarica className="size-4" />
+              La mia scheda
+            </a>
+          </div>
+        </>
+      )}
       <button type="button" disabled={inCorso} onClick={() => file.current?.click()} className={`${stileBottoneChiaro} w-full`}>
         <IconaCarica className="size-4" />
         {inCorso && anteprima === null ? 'Leggo il file…' : 'Importa un file'}

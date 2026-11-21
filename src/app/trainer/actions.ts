@@ -1,8 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import type { AnteprimaScheda } from '@/app/actions'
 import { allievoDelTrainer, utenteDellaPagina } from '@/lib/accesso'
+import { LIMITE_CSV } from '@/lib/csv'
 import { db } from '@/lib/db'
+import { pianoImportScheda, riepilogoPiano, scriviImportScheda, type EsitoImportScheda } from '@/lib/import-scheda'
 import { creaGiornata, salvaGiornata, togliGiornata } from '@/lib/scheda-scrittura'
 import { validaScheda } from '@/lib/scheda-schema'
 
@@ -45,6 +48,41 @@ export async function salvaSchedaAllievo(
 
   aggiornaPagine()
   return { ok: true }
+}
+
+// Il file CSV di una scheda (scaricato da un allievo, o scritto in Excel) caricato sulla scheda di un altro allievo. Stesse regole
+// dell'importazione dell'utente (lib/import-scheda.ts): le giornate nel file si rifanno, le altre non cambiano, tutto o niente.
+// Prima si fa vedere cosa cambia, poi si conferma. Il file contiene solo la scheda: kg e storico non ci sono, né qui né nel file.
+export async function anteprimaImportSchedaAllievo(
+  trainerAtteso: number,
+  allievoId: unknown,
+  testo: unknown,
+): Promise<AnteprimaScheda | { errore: string }> {
+  const ok = await autorizza(trainerAtteso, allievoId)
+  if ('errore' in ok) return ok
+  if (typeof testo !== 'string') return { errore: 'File non valido' }
+  if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
+
+  const piano = await pianoImportScheda(db, ok.allievoId, testo, true)
+  if (!piano.ok) return { errore: piano.errore }
+  return { giornate: riepilogoPiano(piano.giornate) }
+}
+
+export async function importaSchedaAllievo(
+  trainerAtteso: number,
+  allievoId: unknown,
+  testo: unknown,
+): Promise<EsitoImportScheda> {
+  const ok = await autorizza(trainerAtteso, allievoId)
+  if ('errore' in ok) return ok
+  if (typeof testo !== 'string') return { errore: 'File non valido' }
+  if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
+
+  // La giornata risulta «Modificata da» il trainer (chi = trainerId), come per ogni altra modifica fatta da lui.
+  const esito = await db.$transaction((tx) => scriviImportScheda(tx, ok.allievoId, ok.trainerId, testo, true), { timeout: 30_000 })
+
+  if (!('errore' in esito)) aggiornaPagine()
+  return esito
 }
 
 export async function aggiungiGiornataAllievo(

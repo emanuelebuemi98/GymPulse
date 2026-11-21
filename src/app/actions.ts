@@ -7,8 +7,8 @@ import { esercizioDalCatalogo } from '@/lib/catalogo'
 import { completaTratto } from '@/lib/cardio'
 import { LIMITE_CSV } from '@/lib/csv'
 import { db } from '@/lib/db'
-import { pianoImportScheda } from '@/lib/import-scheda'
-import { creaGiornata, salvaGiornata, scriviVoci, togliGiornata } from '@/lib/scheda-scrittura'
+import { pianoImportScheda, riepilogoPiano, scriviImportScheda, type EsitoImportScheda } from '@/lib/import-scheda'
+import { creaGiornata, salvaGiornata, togliGiornata } from '@/lib/scheda-scrittura'
 import { validaScheda } from '@/lib/scheda-schema'
 import { validaSessione } from '@/lib/sessione-schema'
 
@@ -145,50 +145,22 @@ export async function anteprimaImportScheda(utenteId: number, testo: unknown): P
 
   const piano = await pianoImportScheda(db, utente.userId, testo)
   if (!piano.ok) return { errore: piano.errore }
-  return {
-    giornate: piano.giornate.map((g) => ({
-      id: g.id,
-      titolo: g.titolo,
-      nuova: g.nuova,
-      eserciziPrima: g.eserciziPrima,
-      eserciziDopo: g.voci.length,
-    })),
-  }
+  return { giornate: riepilogoPiano(piano.giornate) }
 }
 
 // Rifà le giornate scritte nel file CSV della scheda (vedi lib/import-scheda.ts per le regole). Tutto o niente: se qualcosa
 // non va non cambia niente. Il blocco (advisory lock) per persona fa passare una richiesta alla volta, così due importazioni
 // insieme non creano la stessa giornata due volte. Chi chiama deve aver fatto vedere l'anteprima e chiesto conferma.
-export async function importaScheda(
-  utenteId: number,
-  testo: unknown,
-): Promise<{ giornate: number; esercizi: number; nuove: number } | { errore: string }> {
+export async function importaScheda(utenteId: number, testo: unknown): Promise<EsitoImportScheda> {
   const utente = await utenteDellaPagina(utenteId)
   if ('errore' in utente) return { errore: utente.errore }
   const userId = utente.userId
   if (typeof testo !== 'string') return { errore: 'File non valido' }
   if (testo.length > LIMITE_CSV) return { errore: 'Il file è troppo grande per essere importato' }
 
-  const esito = await db.$transaction(
-    async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${userId}::bigint)`
-
-      // Il piano si rifà qui dentro, con i dati di questo momento: tra l'anteprima e la conferma la scheda può essere cambiata.
-      const piano = await pianoImportScheda(tx, userId, testo)
-      if (!piano.ok) return { errore: piano.errore } as const
-
-      for (const giornata of piano.giornate) {
-        if (giornata.nuova) await tx.giornoScheda.create({ data: { userId, id: giornata.id, titolo: giornata.titolo } })
-        await scriviVoci(tx, userId, giornata.id, giornata.titolo, giornata.voci)
-      }
-      return {
-        giornate: piano.giornate.length,
-        esercizi: piano.giornate.reduce((somma, g) => somma + g.voci.length, 0),
-        nuove: piano.giornate.filter((g) => g.nuova).length,
-      } as const
-    },
-    { timeout: 30_000 },
-  )
+  // La scrittura (con il blocco per persona e il piano rifatto con i dati di questo momento) sta in lib/import-scheda.ts: la
+  // usa anche il personal trainer per la scheda di un suo allievo.
+  const esito = await db.$transaction((tx) => scriviImportScheda(tx, userId, userId, testo), { timeout: 30_000 })
 
   if (!('errore' in esito)) aggiornaPagine()
   return esito

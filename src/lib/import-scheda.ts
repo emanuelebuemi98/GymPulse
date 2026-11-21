@@ -4,7 +4,7 @@ import { macchinaCardio, partenzaCardio, TRATTO_PREDEFINITO_SEC } from './cardio
 import { èATempo, èCardio } from './categorie'
 import { leggiCsvScheda, type RigaScheda } from './csv-scheda'
 import { GIORNATE_MASSIME, prossimaSigla, titoloGiornata } from './giornate'
-import { controllaSuperSerie } from './scheda-scrittura'
+import { controllaSuperSerie, scriviVoci } from './scheda-scrittura'
 import { validaScheda, type VoceNormalizzata } from './scheda-schema'
 import { DURATA_PREDEFINITA, RECUPERO_PREDEFINITO_TEMPO } from './voci'
 
@@ -32,10 +32,13 @@ export type PianoImportScheda = { ok: true; giornate: GiornataDaScrivere[] } | {
 
 const MAX_MANCANTI_MOSTRATI = 10
 
+// `perAltri`: la scheda è di un'altra persona (un allievo del personal trainer che importa). I messaggi non parlano di «tuoi» esercizi
+// e non dicono che una lettera ha lo storico: sono dati che il trainer non deve vedere.
 export async function pianoImportScheda(
   tx: Prisma.TransactionClient,
   userId: number,
   testo: string,
+  perAltri = false,
 ): Promise<PianoImportScheda> {
   const letto = leggiCsvScheda(testo)
   if (!letto.ok) return letto
@@ -55,7 +58,7 @@ export async function pianoImportScheda(
     const altri = mancanti.size > MAX_MANCANTI_MOSTRATI ? ` e altri ${mancanti.size - MAX_MANCANTI_MOSTRATI}` : ''
     return {
       ok: false,
-      errore: `Questi esercizi non ci sono né tra i tuoi né nel catalogo: ${elenco}${altri}. Non importo niente: correggi i nomi nel file (meglio ancora, parti dal file del catalogo) e riprova.`,
+      errore: `Questi esercizi non ci sono né ${perAltri ? 'tra gli esercizi di questa persona' : 'tra i tuoi'} né nel catalogo: ${elenco}${altri}. Non importo niente: correggi i nomi nel file (meglio ancora, parti dal file del catalogo) e riprova.`,
     }
   }
 
@@ -71,9 +74,12 @@ export async function pianoImportScheda(
   for (const lettera of lettere) {
     const giorno = perLettera.get(lettera)
     if (giorno && !giorno.attiva) {
+      // Per un'altra persona non si dice perché: che la giornata abbia uno storico è un dato che il trainer non deve vedere.
       return {
         ok: false,
-        errore: `La giornata ${lettera} è stata tolta dalla scheda e resta solo per lo storico: usa un'altra lettera`,
+        errore: perAltri
+          ? `La giornata ${lettera} non si può usare in questa scheda: scrivi un'altra lettera nel file`
+          : `La giornata ${lettera} è stata tolta dalla scheda e resta solo per lo storico: usa un'altra lettera`,
       }
     }
     if (giorno) continue
@@ -199,6 +205,47 @@ export async function pianoImportScheda(
   }
 
   return { ok: true, giornate }
+}
+
+// Per l'anteprima: cosa cambierebbe in ogni giornata, senza i dati da scrivere.
+export function riepilogoPiano(giornate: GiornataDaScrivere[]) {
+  return giornate.map((giornata) => ({
+    id: giornata.id,
+    titolo: giornata.titolo,
+    nuova: giornata.nuova,
+    eserciziPrima: giornata.eserciziPrima,
+    eserciziDopo: giornata.voci.length,
+  }))
+}
+
+export type EsitoImportScheda = { giornate: number; esercizi: number; nuove: number } | { errore: string }
+
+// Scrive il piano nel database, dentro la transazione `tx`: rifà le giornate del file nella scheda di `userId`. `chi` è chi la sta
+// cambiando (la persona stessa, oppure il suo personal trainer): finisce in «Modificata da». Il blocco per persona fa passare una
+// richiesta alla volta, così due importazioni insieme non creano la stessa giornata due volte. Il piano si rifà qui dentro, con i
+// dati di questo momento: tra l'anteprima e la conferma la scheda può essere cambiata. Chi chiama deve già aver controllato di chi
+// è la scheda e chi la sta cambiando, e aver fatto vedere l'anteprima.
+export async function scriviImportScheda(
+  tx: Prisma.TransactionClient,
+  userId: number,
+  chi: number,
+  testo: string,
+  perAltri = false,
+): Promise<EsitoImportScheda> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${userId}::bigint)`
+
+  const piano = await pianoImportScheda(tx, userId, testo, perAltri)
+  if (!piano.ok) return { errore: piano.errore }
+
+  for (const giornata of piano.giornate) {
+    if (giornata.nuova) await tx.giornoScheda.create({ data: { userId, id: giornata.id, titolo: giornata.titolo } })
+    await scriviVoci(tx, userId, giornata.id, giornata.titolo, giornata.voci, chi)
+  }
+  return {
+    giornate: piano.giornate.length,
+    esercizi: piano.giornate.reduce((somma, g) => somma + g.voci.length, 0),
+    nuove: piano.giornate.filter((g) => g.nuova).length,
+  }
 }
 
 const minuscola = (testo: string) => testo.charAt(0).toLowerCase() + testo.slice(1)
