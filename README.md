@@ -248,7 +248,7 @@ GymPulse/
 │   │   ├── home/page.tsx                             # la home di chi è entrato: cosa tocca oggi
 │   │   ├── actions.ts                                # azioni sul server: salva sessione e scheda, elimina, anteprima e importazione della scheda da CSV
 │   │   ├── api/
-│   │   │   └── scheda-csv/route.ts                   # catalogo e scheda in CSV (?cosa=catalogo o ?cosa=scheda)
+│   │   │   └── scheda-csv/route.ts                   # catalogo e scheda in CSV (?cosa=catalogo o ?cosa=scheda; con &allievo=ID il trainer scarica la scheda di un allievo)
 │   │   ├── registrati/page.tsx                       # creazione dell'account (utente o personal trainer)
 │   │   ├── catalogo/page.tsx                         # il catalogo degli esercizi per categoria
 │   │   ├── esercizi/actions.ts                       # legge i passi e le accortezze di un esercizio (a richiesta)
@@ -264,7 +264,7 @@ GymPulse/
 │   │   ├── trainer/                                  # le pagine del personal trainer
 │   │   │   ├── page.tsx                              # I tuoi allievi
 │   │   │   ├── actions.ts                            # salva, aggiungi e togli giornata, anteprima e importazione del CSV (sempre dopo allievoDelTrainer)
-│   │   │   └── [allievoId]/                          # la scheda di un allievo e il suo editor
+│   │   │   └── [allievoId]/                          # la scheda di un allievo (con il riquadro CSV) e il suo editor
 │   │   │       ├── page.tsx
 │   │   │       └── modifica/page.tsx
 │   │   ├── scheda/
@@ -278,6 +278,7 @@ GymPulse/
 │   ├── components/
 │   │   ├── FormSessione.tsx                          # la sessione: serie, ✓, timer, bozza
 │   │   ├── EditorScheda.tsx                          # modifica di una giornata, con la bozza che non si perde
+│   │   ├── useTrascinaBlocchi.ts                     # il trascinamento degli esercizi nell'editor (pointer events, senza librerie)
 │   │   ├── GraficoSerie.tsx                          # grafico a linee o a barre (Recharts) con suggerimento e tabella
 │   │   ├── DistribuzioneGiornate.tsx                 # barre delle sedute per giornata
 │   │   ├── AggiungiGiornata.tsx, RimuoviGiornata.tsx # il "+" e "Togli la giornata" nella pagina Scheda
@@ -296,7 +297,7 @@ GymPulse/
 │   │   ├── FormTrainer.tsx                           # il passaggio a personal trainer (palestra, codice e conferma), nell'Account
 │   │   ├── EliminaAccount.tsx                        # pannello «Elimina account» con i numeri di cosa sparisce
 │   │   ├── FinestraConferma.tsx                      # finestra di conferma con i colori dell'app (al posto di window.confirm)
-│   │   ├── CsvScheda.tsx                             # scarica il catalogo, importa la scheda da CSV con anteprima
+│   │   ├── CsvScheda.tsx                             # scarica il catalogo, importa la scheda da CSV con anteprima (anche per il trainer, sulla scheda di un allievo)
 │   │   ├── CatalogoCompleto.tsx                      # il catalogo per categoria (pagina /catalogo)
 │   │   ├── DettaglioEsercizio.tsx                    # foto, passi e accortezze di un esercizio
 │   │   ├── EliminaSessione.tsx                       # pulsante per eliminare una seduta
@@ -325,13 +326,13 @@ GymPulse/
 └── .gitignore                                        # elenco di file da ignorare durante il push su git
 ```
 
-Dentro `src/lib/` (40 file):
+Dentro `src/lib/` (45 file):
 
 | Gruppo | File |
 |---|---|
 | Accesso | `accesso.ts` (chi è l'utente della richiesta, e `allievoDelTrainer`: l'unico punto che dice se un trainer può toccare la scheda di una persona), `sessione-auth.ts` (cookie firmato), `password.ts` (scrypt), `registrazione.ts` (nome e giornate di partenza), `account-eliminazione.ts` (cancella un account con tutti i suoi dati, in una transazione), `limite.ts` (limite di tentativi in memoria), `utente.ts` (dati dell'account e conteggio di cosa contiene), `palestre.ts` (le palestre ammesse), `codice-trainer.ts` (il codice d'invito dei trainer, confronto a tempo costante), `trainer-db.ts` (allievi e trainer di una palestra: solo i nomi) |
 | Email | `email.ts` (invio SMTP con Nodemailer), `otp.ts` (codici a 6 cifre, HMAC e testo del messaggio), `codici-email.ts` (i codici nel database, con i limiti), `indirizzo-email.ts` (controllo degli indirizzi, di qualunque fornitore) |
-| Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `catalogo-db.ts` (il catalogo intero), `scheda-scrittura.ts` (scrive la scheda di una persona, per lei o per il suo trainer: salva, aggiunge e toglie giornate sotto blocco), `import-scheda.ts` (dal CSV al piano di importazione della scheda), `voci.ts` (da riga del database a esercizio) |
+| Dati | `db.ts` (connessione), `scheda-db.ts` (legge la scheda), `storico.ts` (legge sedute e progressi), `catalogo.ts` (dall'esercizio del catalogo a quello della persona, e ricerca per nome), `catalogo-db.ts` (il catalogo intero), `scheda-scrittura.ts` (scrive la scheda di una persona, per lei o per il suo trainer: salva, aggiunge e toglie giornate sotto blocco), `import-scheda.ts` (dal CSV al piano di importazione della scheda, e la scrittura nel database: la usano l'utente e il personal trainer), `voci.ts` (da riga del database a esercizio) |
 | Validazione | `sessione-schema.ts`, `scheda-schema.ts`, `csv.ts` (regole comuni dei file CSV), `csv-scheda.ts` (scrive e legge il CSV del catalogo e della scheda, con le colonne `rip_per_serie`, `gruppo`, `recupero_gruppo_sec` e `durata_sec` in coda), `numeri.ts`, `url.ts` |
 | Calcoli | `allenamento.ts` (timer di recupero, giornata consigliata, carico successivo), `durata.ts` (secondi da salvare dal cronometro), `segnale.ts` (suono e vibrazione a fine timer), `cardio.ts` (km e calorie di un tratto, totali, quali macchine hanno la velocità, limiti e conversioni dei minuti), `progressi.ts` (volume, peso totale, carico, record), `panoramica.ts` (sedute per settimana, sedute per giornata, kg per gruppo muscolare), `grafico.ts` (assi dei grafici), `formato.ts` (date e numeri in italiano) |
 | Tipi e form | `scheda-tipi.ts`, `tipi.ts`, `scheda-form.ts`, `giornate.ts` (da 1 a 7 giornate, sigla della prossima), `categorie.ts` (le dodici categorie), `tema.ts` (dove si ricorda il tema scelto), `bozza.ts` (la sessione in corso nel browser, e come toglierla quando l'account viene eliminato), `bozza-scheda.ts` (la scheda che si sta scrivendo, nel browser) |
