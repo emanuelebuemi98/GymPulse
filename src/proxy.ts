@@ -41,6 +41,6 @@ export function proxy(richiesta: NextRequest) {
 // e non contengono dati di nessuno.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|icon\\.svg|icon-.*\\.png|apple-icon\\.png|manifest\\.webmanifest|esercizi/).*)',
+    '/((?!_next/static|_next/image|icon\\.svg|icon-.*\\.png|apple-icon\\.png|manifest\\.webmanifest|image-esercizi/).*)',
   ],
 }

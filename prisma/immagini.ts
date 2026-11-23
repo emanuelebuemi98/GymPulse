@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs'
 
-// Le immagini degli esercizi stanno in public/esercizi, una per esercizio. Il nome del file è il numero dell'esercizio e il
+// Le immagini degli esercizi stanno in public/image-esercizi, una per esercizio. Il nome del file è il numero dell'esercizio e il
 // suo slug, separati da un trattino basso: 35_push-up.jpg (anche .png o .webp). Si accettano anche i nomi più corti, solo
 // lo slug (push-up.jpg) o solo il numero (35.jpg). Lo script del catalogo le ritrova da qui, quindi per aggiungerne una
 // basta mettere il file nella cartella e rilanciare `npm run db:catalogo`.
@@ -10,7 +10,7 @@ const ESTENSIONI = ['jpg', 'jpeg', 'png', 'webp'] as const
 export type EserciziPerImmagini = { id: number; slug: string }
 
 export type RisultatoImmagini = {
-  // slug -> percorso pubblico ('/esercizi/35_push-up.jpg')
+  // slug -> percorso pubblico ('/image-esercizi/35_push-up.jpg')
   perSlug: Map<string, string>
   // file con un nome che non è di nessun esercizio (un errore di battitura)
   senzaEsercizio: string[]
@@ -69,7 +69,7 @@ export function trovaImmagini(cartella: string, esercizi: Iterable<EserciziPerIm
       risultato.doppie.push(`${slug}: ${file.join(', ')}`)
       continue
     }
-    risultato.perSlug.set(slug, `/esercizi/${file[0]}`)
+    risultato.perSlug.set(slug, `/image-esercizi/${file[0]}`)
     const avviso = avvisi.get(file[0])
     if (avviso) risultato.numeroDiverso.push(avviso)
   }

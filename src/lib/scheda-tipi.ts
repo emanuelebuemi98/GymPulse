@@ -30,7 +30,7 @@ export type Esercizio = {
   nome: string
   // Il nome inglese, piccolo sotto il nome, e la categoria ('petto' oppure vuota). Vuoti per gli esercizi personali.
   nomeEn: string
-  // Il percorso dell'immagine ('/esercizi/barbell-bench-press.jpg') o vuoto se per l'esercizio non ce n'è una.
+  // Il percorso dell'immagine ('/image-esercizi/27_barbell-bench-press.jpg') o vuoto se per l'esercizio non ce n'è una.
   immagine: string
   categoria: string
   // La voce del catalogo a cui l'esercizio è collegato, solo da leggere: serve a mostrare il «Come si fa» anche a chi non è il

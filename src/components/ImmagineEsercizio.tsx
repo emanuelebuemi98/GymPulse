@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 type Props = {
-  // Il percorso dell'immagine ('/esercizi/barbell-bench-press.jpg') o dell'animazione ('/gif-esercizi/45_lat-pulldown.gif'); vuoto se per
+  // Il percorso dell'immagine ('/image-esercizi/27_barbell-bench-press.jpg') o dell'animazione ('/gif-esercizi/45_lat-pulldown.gif'); vuoto se per
   // l'esercizio non ce n'è una.
   src: string
   // La foto ferma da mostrare al posto dell'animazione: a chi ha «riduci animazioni» attivo, e se l'animazione non si carica.

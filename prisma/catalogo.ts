@@ -37,7 +37,7 @@ import { trovaGif, trovaImmagini } from './immagini'
 // Per vedere cosa cambierebbe senza scrivere niente: PROVA=1 npm run db:catalogo (in PowerShell: $env:PROVA="1"; npm.cmd
 // run db:catalogo). Fa tutto dentro una transazione e alla fine la annulla.
 //
-// Per le immagini: ogni esercizio ha la sua in public/esercizi, con il numero e lo slug (35_push-up.jpg, anche .png o
+// Per le immagini: ogni esercizio ha la sua in public/image-esercizi, con il numero e lo slug (35_push-up.jpg, anche .png o
 // .webp; vanno bene anche push-up.jpg e 35.jpg). Lo script le ritrova da solo: basta mettere il file nella cartella e
 // rilanciarlo. Chi non ha il file resta senza immagine, e se si toglie un file l'immagine sparisce dal database al lancio
 // successivo. Un file con un nome che non è di nessun esercizio, o due file per lo stesso esercizio, vengono segnalati.
@@ -109,7 +109,7 @@ if (gif.doppie.length > 0) {
 }
 
 const immagini = trovaImmagini(
-  fileURLToPath(new URL('../public/esercizi', import.meta.url)),
+  fileURLToPath(new URL('../public/image-esercizi', import.meta.url)),
   voci.map((voce) => ({ id: voce.id, slug: voce.slug })),
 )
 if (immagini.doppie.length > 0) {
@@ -305,7 +305,7 @@ async function main() {
     console.log(`\nNon riconosciuti, restano personali: ${restano.length}`)
     for (const riga of restano) console.log(`  ${riga}`)
   }
-  console.log(`\nImmagini trovate in public/esercizi: ${immagini.perSlug.size} su ${voci.length} esercizi.`)
+  console.log(`\nImmagini trovate in public/image-esercizi: ${immagini.perSlug.size} su ${voci.length} esercizi.`)
   console.log(`Gif trovate in public/gif-esercizi: ${gif.perSlug.size} su ${voci.length} esercizi (le altre restano senza gif).`)
   if (gif.senzaEsercizio.length > 0) {
     console.log(`Gif che non corrispondono a nessun esercizio (controlla il nome): ${gif.senzaEsercizio.length}`)

@@ -55,9 +55,9 @@ export function SchermataScheda() {
     <Telefono>
       <Barra attiva="Scheda" />
       <p className="text-[13px] font-extrabold">A · Petto e tricipiti</p>
-      <Esercizio immagine="/esercizi/27_barbell-bench-press.jpg" nome="Panca piana con bilanciere" dettaglio="4 × 12-10-8-6 · recupero 2 min" />
-      <Esercizio immagine="/esercizi/6_incline-cable-fly.jpg" nome="Croci ai cavi su panca inclinata" dettaglio="3 × 10-12 · recupero 90 s" />
-      <Esercizio immagine="/esercizi/35_push-up.jpg" nome="Piegamenti sulle braccia" dettaglio="3 × 12 · recupero 60 s" />
+      <Esercizio immagine="/image-esercizi/27_barbell-bench-press.jpg" nome="Panca piana con bilanciere" dettaglio="4 × 12-10-8-6 · recupero 2 min" />
+      <Esercizio immagine="/image-esercizi/6_incline-cable-fly.jpg" nome="Croci ai cavi su panca inclinata" dettaglio="3 × 10-12 · recupero 90 s" />
+      <Esercizio immagine="/image-esercizi/35_push-up.jpg" nome="Piegamenti sulle braccia" dettaglio="3 × 12 · recupero 60 s" />
     </Telefono>
   )
 }
@@ -84,7 +84,7 @@ export function SchermataSessione() {
   return (
     <Telefono>
       <div className="flex items-center gap-2">
-        <ImmagineEsercizio src="/esercizi/45_lat-pulldown.jpg" nome="Lat Machine avanti" className="size-10 rounded-lg" />
+        <ImmagineEsercizio src="/image-esercizi/45_lat-pulldown.jpg" nome="Lat Machine avanti" className="size-10 rounded-lg" />
         <span>
           <span className="block text-[13px] font-extrabold">Lat Machine avanti</span>
           <span className="block text-[9.5px] text-muto">Target 4 × 12-10-8-6 · ultima seduta 40 kg</span>
@@ -117,7 +117,7 @@ export function SchermataComeSiFa() {
     <Telefono>
       <p className="text-[13px] font-extrabold">Piegamenti sulle braccia</p>
       <div className="flex gap-2">
-        <ImmagineEsercizio src="/esercizi/35_push-up.jpg" nome="Piegamenti sulle braccia" className="size-20" />
+        <ImmagineEsercizio src="/image-esercizi/35_push-up.jpg" nome="Piegamenti sulle braccia" className="size-20" />
         <p className="text-[9.5px] text-muto">
           Corpo Libero · muscoli: Pettorali (secondari: Tricipiti, Addome)
         </p>
@@ -136,7 +136,7 @@ export function SchermataComeSiFa() {
   )
 }
 
-const foto = (nome: string) => `/esercizi/${nome}.jpg`
+const foto = (nome: string) => `/image-esercizi/${nome}.jpg`
 
 function Miniatura({ nome, file, className = 'size-8' }: { nome: string; file: string; className?: string }) {
   return <ImmagineEsercizio src={foto(file)} nome={nome} className={`${className} rounded-lg`} />
@@ -523,7 +523,7 @@ export function SchermataTimerTenuta() {
   return (
     <Telefono>
       <div className="flex items-center gap-2">
-        <ImmagineEsercizio src="/esercizi/198_plank.jpg" nome="Plank addominale isometrico" className="size-10 rounded-lg" />
+        <ImmagineEsercizio src="/image-esercizi/198_plank.jpg" nome="Plank addominale isometrico" className="size-10 rounded-lg" />
         <span>
           <span className="block text-[13px] leading-tight font-extrabold">Plank addominale isometrico</span>
           <span className="block text-[9.5px] text-muto">Target 3 × 45 s</span>
