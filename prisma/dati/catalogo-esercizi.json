@@ -639,7 +639,7 @@
   {
     "id": 50,
     "slug": "straight-arm-cable-pulldown",
-    "nomeIt": "Pullover ai cavi con braccia tese",
+    "nomeIt": "Pulldown ai cavi con braccia tese",
     "nomeEn": "Straight-Arm Cable Pulldown",
     "categoria": "dorsali",
     "attrezzatura": "Cavi",
@@ -651,16 +651,16 @@
   },
   {
     "id": 51,
-    "slug": "machine-pullover",
-    "nomeIt": "Pullover alla macchina",
-    "nomeEn": "Machine Pullover",
+    "slug": "lever-front-pulldown",
+    "nomeIt": "Pulldown frontale alla macchina a leva",
+    "nomeEn": "Lever Front Pulldown",
     "categoria": "dorsali",
     "attrezzatura": "Macchina",
     "muscoloPrincipale": "Gran Dorsale",
-    "muscoliSecondari": "Tricipiti",
-    "tipoMovimento": "Isolamento",
-    "esecuzione": "Regola il sedile e i cuscini seguendo le indicazioni della macchina, poi siediti con la schiena ben appoggiata allo schienale.\nAppoggia i gomiti ai cuscini o afferra la barra e parti con le braccia sopra la testa, in posizione di allungamento.\nPorta le braccia in avanti e in basso verso il busto, spingendo con i gomiti e contraendo i dorsali.\nFai una breve pausa a fine corsa, poi torna lentamente alla posizione iniziale, sentendo l'allungamento.",
-    "accortezze": "Non farti trascinare dal carico oltre l'allungamento che controlli: se senti fastidio alle spalle, riduci l'ampiezza.\nMantieni la schiena appoggiata e non inarcare la zona lombare.\nLavora con i dorsali, non con le braccia: scegli un carico che ti permetta di controllare anche il ritorno."
+    "muscoliSecondari": "Bicipiti, Romboidi",
+    "tipoMovimento": "Trazione",
+    "esecuzione": "Regola il sedile seguendo le indicazioni della macchina e siediti con i piedi ben appoggiati a terra e il busto dritto.\nAfferra le maniglie sopra la testa, con le braccia distese e i dorsali in allungamento.\nTira le maniglie verso il basso, portando i gomiti in basso e indietro, finché le mani arrivano all'altezza delle spalle.\nFai una breve pausa stringendo le scapole e i dorsali, poi risali lentamente fino a braccia distese, controllando la leva.",
+    "accortezze": "Il lavoro deve venire dai dorsali: pensa a portare i gomiti verso il basso e non solo a tirare con le mani, così i bicipiti non prendono il sopravvento.\nNon oscillare con il busto per aiutarti a tirare: mantieni la stessa inclinazione per tutta la serie.\nControlla la risalita senza far sbattere il carico sul blocco pesi, e non forzare l'allungamento in alto se senti fastidio alle spalle."
   },
   {
     "id": 52,
