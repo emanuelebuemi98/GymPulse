@@ -20,11 +20,17 @@ Cosa è già stato pubblicato, deploy per deploy, è in `STORICO_RILASCI.md`. I 
 
 *Si riscrive a ogni deploy, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
 
-**Nessun deploy in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
-- **Migrazioni:** i nomi, e se aggiungono soltanto colonne o indici (il codice vecchio funziona ancora) oppure cambiano valori, rinominano o tolgono qualcosa (passi 5-10 di fila, backup obbligatorio).
-- **Catalogo:** cambiato o no (passi 6 e 7).
-- **Variabili nuove su Vercel:** i nomi (passo 9).
-- **Da provare dopo la pubblicazione:** l'elenco delle prove (passo 11).
+- **Migrazioni:** nessuna.
+- **Catalogo:** **cambiato, serve `db:catalogo`** (passi 2, 3, 6, 7 e 8). Tre cose:
+  - la cartella delle foto passa da `public/esercizi` a **`public/image-esercizi`**: la colonna `immagine` di tutte le 510 voci cambia da `/esercizi/…` a `/image-esercizi/…`. La riscrive `db:catalogo`, non serve SQL a mano;
+  - la voce **50** si chiama «Pulldown ai cavi con braccia tese» (era «Pullover ai cavi con braccia tese»); i testi non cambiano;
+  - la voce **51** è un altro esercizio: slug `lever-front-pulldown`, «Pulldown frontale alla macchina a leva» (`Lever Front Pulldown`), con testi, foto e gif nuovi. Era un doppione della 278.
+  - Chi ha la 50 o la 51 in scheda ne vede cambiare il nome; serie e storico restano agganciati. Se la prova del passo 6 dice «qualcuno li usa» (succede per la 51), si rilancia con `SOSTITUISCI_IN_USO=1`: la prova elenca chi la usa.
+- **Foto che mancano per un minuto:** il percorso delle foto sta nel database, quindi tra il passo 7 (`db:catalogo`) e il merge (passo 10) il sito non mostra le foto: il sito vecchio cerca `/image-esercizi/…`, che non esiste ancora; nessun errore, le foto mancano e basta. Meglio fare il passo 7 e il merge uno dopo l'altro, senza pause. Le bozze della scheda salvate nei browser col vecchio percorso si convertono da sole in lettura.
+- **File CSV già scaricati:** uno che contiene «Pullover ai cavi con braccia tese» o «Pullover alla macchina» non si importa più (il nome non esiste più). Si corregge il nome nel file.
+- **Variabili nuove su Vercel:** nessuna.
+- **Database locale:** `npm run db:catalogo` (prima con `PROVA=1`). Finché non lo si lancia, il sito locale non mostra le foto del catalogo, perché il database ha ancora i vecchi percorsi.
+- **Da provare dopo la pubblicazione:** pagina iniziale con le foto; Scheda, Storico e catalogo con le foto; in `/catalogo` cercare «Pulldown frontale» (testi e animazione nuovi) e «Pulldown ai cavi» (nome nuovo); in DBeaver `select count(*) from "CatalogoEsercizio" where immagine like '/esercizi/%'` deve dare **0** e con `'/image-esercizi/%'` **510**.
 
 ---
 
@@ -123,7 +129,7 @@ npm run db:deploy
 
 ## 6. Carica il catalogo, prima in prova — solo se il catalogo è cambiato
 
-Si fa solo se il passo A ha mostrato modifiche a `prisma/dati/catalogo-esercizi.json`, o nuove immagini in `public/esercizi`, o una migrazione che tocca il catalogo. Altrimenti si salta (passi 6 e 7).
+Si fa solo se il passo A ha mostrato modifiche a `prisma/dati/catalogo-esercizi.json`, o nuove immagini in `public/image-esercizi`, o una migrazione che tocca il catalogo. Altrimenti si salta (passi 6 e 7).
 
 `set PROVA=1` si scrive **su una riga da solo**: con `&&` il valore diventerebbe `"1 "` e la prova scriverebbe davvero.
 
