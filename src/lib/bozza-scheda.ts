@@ -11,8 +11,6 @@ import type { VoceForm } from './scheda-form'
 // giornata è cambiata (un trainer, un altro telefono) la bozza non si applica in silenzio. Vale 24 ore dall'ultima modifica.
 const PREFISSO = 'gympulse-scheda-'
 const VALIDITA_MS = 24 * 60 * 60 * 1000
-// Fino al rilascio che ha rinominato la cartella delle foto (public/esercizi → public/image-esercizi) le bozze portavano questo percorso.
-const PERCORSO_FOTO_VECCHIO = '/esercizi/'
 
 export type BozzaScheda = { titolo: string; voci: VoceForm[]; versione: string | null }
 
@@ -45,10 +43,9 @@ function voceValida(valore: unknown): valore is VoceForm {
   if (!CAMPI_TESTO.every((campo) => typeof v[campo] === 'string' && (v[campo] as string).length <= 300)) return false
   // Una bozza scritta quando c'erano ancora i tipi «ripetizioni totali» e «serie a scelta» ha un tipo (e dei campi) che ora non
   // servono: non è un errore, l'esercizio è trattato come «serie × ripetizioni» con i numeri che ha.
-  // L'immagine è un file dell'app o niente: un percorso diverso non si carica. Una bozza scritta quando la cartella si chiamava
-  // /esercizi/ è valida lo stesso: in lettura (completa) il percorso passa a quello nuovo.
+  // L'immagine è un file dell'app o niente: un percorso diverso non si carica.
   const immagine = v.immagine as string
-  if (immagine !== '' && !immagine.startsWith('/image-esercizi/') && !immagine.startsWith(PERCORSO_FOTO_VECCHIO)) return false
+  if (immagine !== '' && !immagine.startsWith('/image-esercizi/')) return false
   if (!èTestoFacoltativo(v.ripSerie) || !èTestoFacoltativo(v.recuperoGruppo) || !èTestoFacoltativo(v.durataSec) || !èTestoFacoltativo(v.velocitaKmh) || !èTestoFacoltativo(v.inclinazionePct)) return false
   if (v.gruppo !== undefined && !èGruppo(v.gruppo)) return false
   return èIdOnull(v.esercizioId) && èIdOnull(v.catalogoId) && èIdOnull(v.catalogoRif)
@@ -62,7 +59,6 @@ function completa(voce: VoceForm & { tipo?: unknown; ripTotali?: unknown; serieM
   void _tipo, _ripTotali, _serieMin, _serieMax
   return {
     ...resto,
-    immagine: voce.immagine.startsWith(PERCORSO_FOTO_VECCHIO) ? `/image-esercizi/${voce.immagine.slice(PERCORSO_FOTO_VECCHIO.length)}` : voce.immagine,
     ripSerie: voce.ripSerie ?? '',
     gruppo: voce.gruppo ?? null,
     recuperoGruppo: voce.recuperoGruppo ?? '',
