@@ -20,17 +20,11 @@ Cosa è già stato pubblicato, deploy per deploy, è in `STORICO_RILASCI.md`. I 
 
 *Si riscrive a ogni deploy, dopo aver fatto il passo A. Il resto del file non si tocca. Cosa è già stato pubblicato è in `STORICO_RILASCI.md`.*
 
-- **Migrazioni:** nessuna.
-- **Catalogo:** **cambiato, serve `db:catalogo`** (passi 2, 3, 6, 7 e 8). Tre cose:
-  - la cartella delle foto passa da `public/esercizi` a **`public/image-esercizi`**: la colonna `immagine` di tutte le 510 voci cambia da `/esercizi/…` a `/image-esercizi/…`. La riscrive `db:catalogo`, non serve SQL a mano;
-  - la voce **50** si chiama «Pulldown ai cavi con braccia tese» (era «Pullover ai cavi con braccia tese»); i testi non cambiano;
-  - la voce **51** è un altro esercizio: slug `lever-front-pulldown`, «Pulldown frontale alla macchina a leva» (`Lever Front Pulldown`), con testi, foto e gif nuovi. Era un doppione della 278.
-  - Chi ha la 50 o la 51 in scheda ne vede cambiare il nome; serie e storico restano agganciati. Se la prova del passo 6 dice «qualcuno li usa» (succede per la 51), si rilancia con `SOSTITUISCI_IN_USO=1`: la prova elenca chi la usa.
-- **Foto che mancano per un minuto:** il percorso delle foto sta nel database, quindi tra il passo 7 (`db:catalogo`) e il merge (passo 10) il sito non mostra le foto: il sito vecchio cerca `/image-esercizi/…`, che non esiste ancora; nessun errore, le foto mancano e basta. Meglio fare il passo 7 e il merge uno dopo l'altro, senza pause. Le bozze della scheda salvate nei browser col vecchio percorso si convertono da sole in lettura.
-- **File CSV già scaricati:** uno che contiene «Pullover ai cavi con braccia tese» o «Pullover alla macchina» non si importa più (il nome non esiste più). Si corregge il nome nel file.
-- **Variabili nuove su Vercel:** nessuna.
-- **Database locale:** `npm run db:catalogo` (prima con `PROVA=1`). Finché non lo si lancia, il sito locale non mostra le foto del catalogo, perché il database ha ancora i vecchi percorsi.
-- **Da provare dopo la pubblicazione:** pagina iniziale con le foto; Scheda, Storico e catalogo con le foto; in `/catalogo` cercare «Pulldown frontale» (testi e animazione nuovi) e «Pulldown ai cavi» (nome nuovo); in DBeaver `select count(*) from "CatalogoEsercizio" where immagine like '/esercizi/%'` deve dare **0** e con `'/image-esercizi/%'` **510**.
+**Nessun deploy in preparazione.** Quando ce n'è uno, qui si scrive, in poche righe:
+- **Migrazioni:** i nomi, e se aggiungono soltanto colonne o indici (il codice vecchio funziona ancora) oppure cambiano valori, rinominano o tolgono qualcosa (passi 5-10 di fila, backup obbligatorio).
+- **Catalogo:** cambiato o no (passi 6 e 7). Anche una cartella di foto rinominata o un nome cambiato lo cambia: il percorso delle foto sta nel database.
+- **Variabili nuove su Vercel:** i nomi (passo 9).
+- **Da provare dopo la pubblicazione:** l'elenco delle prove (passo 11).
 
 ---
 
@@ -129,30 +123,62 @@ npm run db:deploy
 
 ## 6. Carica il catalogo, prima in prova — solo se il catalogo è cambiato
 
-Si fa solo se il passo A ha mostrato modifiche a `prisma/dati/catalogo-esercizi.json`, o nuove immagini in `public/image-esercizi`, o una migrazione che tocca il catalogo. Altrimenti si salta (passi 6 e 7).
+Il catalogo è cambiato quando cambiano voci nuove, nomi, testi, foto, gif o il percorso delle foto. Si fa solo se questo comando stampa qualcosa (è il quarto comando del passo A). Altrimenti si salta (passi 6 e 7):
+
+```bat
+git diff --stat origin/main..dev -- prisma/dati public
+```
+
+**Dove sei.** Prima di lanciare qualsiasi cosa guarda su quale database punta il terminale:
+
+```bat
+node -p "process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).hostname : 'non impostata: usa il .env locale'"
+```
+
+- [ ] Su Neon compare un indirizzo `...neon.tech`, **senza** `-pooler`. Se compare «non impostata», lo script userebbe il `.env`, cioè il database locale: ci si ferma.
 
 `set PROVA=1` si scrive **su una riga da solo**: con `&&` il valore diventerebbe `"1 "` e la prova scriverebbe davvero.
 
 ```bat
 set PROVA=1
 npm run db:catalogo
-set PROVA=
 ```
 
+`PROVA` si lascia a 1 anche se qualcosa non torna: si svuota soltanto nel passo 7.
+
 - [ ] Compare `*** PROVA: non è stato scritto niente ***`.
-- [ ] Nella riga «Catalogo: N esercizi nel file, X nel database prima…», X è il numero di voci che Neon ha davvero (lo vedi in DBeaver con `select count(*) from "CatalogoEsercizio"`). Se X è quello del tuo database locale, lo script ha usato il `.env` e non la stringa di Neon: non dà errore, ma scrive nel database sbagliato (è un modo in cui Neon può restare indietro senza errori: dopo il rilascio 14 Neon risultava a 451 voci contro le 475 del locale, e la causa non è stata chiarita). Ci si ferma e si ricontrolla `DATABASE_URL`.
-- [ ] Nessun errore tipo "qualcuno li usa". Se compare, lo script **non ha cambiato niente**: significa che una persona ha in scheda o nello storico un esercizio che nel file è stato sostituito da un altro sullo stesso numero. Se la sostituzione è voluta (per esempio un esercizio rinominato, o la cui foto e il cui testo erano di un altro), si rilancia la prova con `set SOSTITUISCI_IN_USO=1` (su una riga da solo, come `PROVA`): la prova elenca le voci coinvolte, e gli esercizi di quella persona restano agganciati alla stessa riga, con serie e storico intatti; cambiano il nome e la categoria. Poi `set SOSTITUISCI_IN_USO=` (vuota) alla fine del passo 7.
-- [ ] Immagini trovate: tutte (ora sono 510 su 510). Anche le gif (ora 510 su 510): «Gif trovate» può essere meno del totale (gli esercizi senza gif restano senza), ma nessun file deve comparire tra quelli che non corrispondono a nessun esercizio.
-- [ ] Gli esercizi personali non riconosciuti sono **0**. Se ne resta qualcuno, ci si ferma: il suo nome non coincide con il nome italiano o inglese di nessuna voce, e va corretto.
-- [ ] Gli esercizi collegati al catalogo e le voci nuove sono quelli che ti aspetti dalle modifiche del passo A (la prima volta: 23 collegati e 246 nuovi; a catalogo già caricato e invariato, la prova dice 0 e 0).
+- [ ] Nella riga «Catalogo: N esercizi nel file, X nel database prima…», X è il numero di voci che ha il database in cui sei: su Neon, **510** (lo vedi anche in DBeaver con `select count(*) from "CatalogoEsercizio"`). Se X è quello del tuo database locale, lo script ha usato il `.env` e non la stringa di Neon: non dà errore, ma scrive nel database sbagliato (è un modo in cui Neon può restare indietro senza errori: dopo il rilascio 14 Neon risultava a 451 voci contro le 475 del locale, e la causa non è stata chiarita). Ci si ferma e si ricontrolla `DATABASE_URL`.
+- [ ] Nessun errore e nessuna riga «Non riconosciuti, restano personali»: gli esercizi personali non riconosciuti sono **0**. Se ne resta qualcuno, ci si ferma: il suo nome non coincide con il nome italiano o inglese di nessuna voce, e va corretto.
+- [ ] «Immagini trovate» ha lo stesso numero due volte (ora **510 su 510**). Anche le gif (510 su 510): «Gif trovate» può essere meno del totale (gli esercizi senza gif restano senza), ma nessun file deve comparire tra quelli che non corrispondono a nessun esercizio.
+- [ ] L'ultima riga «(in prova: K nuovi)» ha il K che ti aspetti dalle modifiche del passo A, e gli esercizi collegati sono quelli che ti aspetti (la prima volta: 23 collegati e 246 nuovi; a catalogo già caricato e invariato, la prova dice 0 e 0). Un cambio di nomi, testi o foto, senza voci nuove, dà K = 0.
+
+Se qualcosa non torna ci si ferma e non si fa il passo 7.
+
+**Se compare l'errore «qualcuno li usa»** (un esercizio sostituito è in scheda o nello storico di qualcuno):
+- non ha scritto niente; l'errore dice chi lo usa e quale voce. Una persona ha un esercizio che nel file è stato sostituito da un altro sullo stesso numero;
+- se la sostituzione è voluta (per esempio un esercizio rinominato, o la cui foto e il cui testo erano di un altro), `PROVA` deve essere ancora 1, poi:
+
+```bat
+set SOSTITUISCI_IN_USO=1
+npm run db:catalogo
+```
+
+- [ ] Compare `*** PROVA ***` e «Voci sostituite che qualcuno usa, cambiate sul posto (SOSTITUISCI_IN_USO): N» con l'elenco. Gli esercizi di quella persona restano agganciati alla stessa riga, con serie e storico intatti; cambiano il nome e la categoria (nello storico le vecchie serie compariranno con il nome nuovo).
+- [ ] I controlli del passo 6 si leggono su questa esecuzione, perché la prima si è fermata.
 
 ## 7. Carica il catalogo per davvero — solo se il catalogo è cambiato
 
 Se Neon era "addormentato" la prima richiesta può essere lenta. Se va in timeout non scrive niente e si rilancia.
 
 ```bat
+set PROVA=
 npm run db:catalogo
 ```
+
+- [ ] Non compare `*** PROVA ***`.
+- [ ] L'ultima riga «(K nuovi)» ha lo stesso K della prova.
+- [ ] Se hai usato `SOSTITUISCI_IN_USO`, deve essere ancora a 1: senza, si ferma con lo stesso errore.
+- [ ] **Se il percorso delle foto è cambiato** (una cartella rinominata), fai il merge del passo 10 subito dopo, senza pause: il percorso sta nel database e tra i due passi il sito non mostra le foto.
 
 ## 8. Controllo finale e pulizia del terminale
 
@@ -161,10 +187,13 @@ npx prisma migrate status
 set DATABASE_URL=
 set CARTELLA_BACKUP=
 set NOME_BACKUP=
+set PROVA=
+set SOSTITUISCI_IN_USO=
 ```
 
 - [ ] Il primo dice che il database è aggiornato.
-- [ ] Gli altri tre tolgono dal terminale la stringa di Neon e le due variabili del backup.
+- [ ] Gli altri tolgono dal terminale la stringa di Neon e le due variabili del backup.
+- [ ] Gli ultimi due svuotano `PROVA` e `SOSTITUISCI_IN_USO` anche se non le hai usate (non fa male). `SOSTITUISCI_IN_USO` va svuotata sempre: se resta a 1, un `db:catalogo` lanciato dopo, per un altro motivo, cambierebbe sul posto e senza avviso le voci sostituite che qualcuno usa.
 
 ## 9. Vercel: variabili e impostazioni, **prima** del merge
 
@@ -238,10 +267,10 @@ Dopo il ripristino, `migrate status` deve di nuovo elencare le migrazioni da app
 
 ## Quando non c'è nessuna migrazione
 
-Se il passo A non mostra migrazioni e il catalogo non è cambiato, i passi 2-8 si saltano: bastano il passo 9 (variabili, se ce ne sono di nuove), il 10 e i controlli dell'11. Se è cambiato solo il catalogo (`prisma/dati/catalogo-esercizi.json`), servono i passi 2, 3, 6, 7 e 8.
+Se il passo A non mostra migrazioni e il catalogo non è cambiato, i passi 2-8 si saltano: bastano il passo 9 (variabili, se ce ne sono di nuove), il 10 e i controlli dell'11. Se è cambiato solo il catalogo (`prisma/dati/catalogo-esercizi.json`, o le foto e le gif in `public`), servono i passi 2, 3, 6, 7 e 8.
 
 ## Dopo il deploy
 
-- [ ] Chiudi il terminale (o controlla con `echo %DATABASE_URL%` che sia vuota). Se lo tieni aperto, `set DATABASE_URL=`, `set CARTELLA_BACKUP=` e `set NOME_BACKUP=` le svuotano.
+- [ ] Chiudi il terminale (o controlla con `echo %DATABASE_URL%` che sia vuota). Se lo tieni aperto, `set DATABASE_URL=`, `set CARTELLA_BACKUP=`, `set NOME_BACKUP=`, `set PROVA=` e `set SOSTITUISCI_IN_USO=` le svuotano.
 - [ ] **Aggiungi una voce a `STORICO_RILASCI.md`** (come si fa è scritto in fondo a quel file), poi **svuota** il riquadro «Cosa cambia in questo deploy» e l'elenco delle prove di questo file, così è pronto per il prossimo.
 - [ ] Tieni l'ultimo backup finché non sei sicuro che tutto funzioni, poi puoi cancellare i vecchi (nella cartella dei backup).
