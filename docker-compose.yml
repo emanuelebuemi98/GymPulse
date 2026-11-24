@@ -2,7 +2,7 @@
 # Avvio: docker compose up -d
 services:
   db:
-    image: postgres:17
+    image: postgres:18
     container_name: gympulse-db
     restart: no
     environment:
@@ -12,7 +12,9 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - gympulse-db:/var/lib/postgresql/data
+      # Dalla 18 l'immagine vuole il volume su /var/lib/postgresql (i dati vanno in una sottocartella con il numero di versione):
+      # con /var/lib/postgresql/data, che era il percorso della 17, il contenitore si ferma subito.
+      - gympulse-db:/var/lib/postgresql
 
 volumes:
   gympulse-db:
