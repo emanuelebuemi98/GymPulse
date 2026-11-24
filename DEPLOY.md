@@ -87,7 +87,7 @@ Sostituisci i tre valori. La seconda riga è la cartella dove metti i backup (ve
 
 ## 3. Backup del database online
 
-Neon usa **PostgreSQL 18**, mentre il `pg_dump` del tuo contenitore locale è il 17 e si rifiuta ("server version mismatch"). Si usa un contenitore temporaneo `postgres:18`:
+Neon usa **PostgreSQL 18**, e un `pg_dump` di versione più vecchia si rifiuta ("server version mismatch"; il contenitore locale era la 17 e dava questo errore). Dal 24 novembre 2026 anche il contenitore locale è la 18, ma si usa comunque un contenitore temporaneo `postgres:18`, che non dipende dal database locale acceso:
 
 ```bat
 docker run --rm -v "%CARTELLA_BACKUP%":/out postgres:18 pg_dump --format=custom --no-owner --file=/out/%NOME_BACKUP% "%DATABASE_URL%"
