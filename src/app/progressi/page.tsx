@@ -68,7 +68,8 @@ async function Panoramica({
 }) {
   const [elenco, record, serie] = await Promise.all([elencoSessioni(userId), recordPerEsercizio(userId), serieConGruppo(userId)])
   const settimane = perSettimana(elenco)
-  const giornate = perGiornata(elenco)
+  // Il grafico delle giornate usa il titolo di oggi: lo storico mostra quello che la giornata aveva in ogni seduta, qui no.
+  const giornate = perGiornata(elenco.map((seduta) => ({ giornoId: seduta.giornoId, giornoTitolo: seduta.giornoTitoloAttuale })))
   const generale = riepilogoGenerale(elenco, settimane)
   const recenti = [...record].sort((a, b) => b.data.getTime() - a.data.getTime()).slice(0, RECORD_RECENTI)
 

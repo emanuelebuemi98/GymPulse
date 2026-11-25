@@ -42,7 +42,7 @@ export async function salvaSessione(
   const esercizi = esito.dati.esercizi.filter((esercizio) => esercizio.serie.length > 0)
 
   // Solo una giornata attiva: una tolta dalla scheda (rimasta per lo storico) non riceve sedute nuove.
-  const giorno = await db.giornoScheda.findFirst({ where: { userId, id: giornoId, attiva: true }, select: { id: true } })
+  const giorno = await db.giornoScheda.findFirst({ where: { userId, id: giornoId, attiva: true }, select: { id: true, titolo: true } })
   if (!giorno) return { errore: 'Questa giornata non è più nella scheda: le serie confermate restano nel telefono, ma non si possono salvare qui' }
 
   const idPropri = esercizi.flatMap((esercizio) => (esercizio.esercizioId !== null ? [esercizio.esercizioId] : []))
@@ -92,6 +92,8 @@ export async function salvaSessione(
       data: {
         userId,
         giornoId,
+        // Il titolo di adesso resta con la seduta: se poi la giornata viene rinominata, lo storico non cambia.
+        giornoTitolo: giorno.titolo,
         data: esito.istante,
         note: note ? note : null,
         durataSecondi,

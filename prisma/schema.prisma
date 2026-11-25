@@ -195,6 +195,10 @@ model Sessione {
   // Il peso di quel giorno, in kg: serve a stimare le calorie del cardio. Vuoto per le sedute senza cardio con velocità.
   pesoCorporeoKg Float?
   datiIniziali Boolean         @default(false)
+  // Il titolo che la giornata aveva quando la seduta è stata salvata («Petto - braccia»). Lo storico mostra questo e non il titolo di
+  // oggi: rinominare una giornata (tu o il tuo personal trainer) non cambia le sedute già fatte. Vuoto solo se non è mai stato
+  // scritto: in quel caso si legge il titolo attuale della giornata.
+  giornoTitolo String?
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   giorno       GiornoScheda    @relation(fields: [userId, giornoId], references: [userId, id], onDelete: NoAction)
   serie        SerieEseguita[]
