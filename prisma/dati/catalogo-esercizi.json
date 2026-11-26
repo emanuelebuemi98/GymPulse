@@ -470,15 +470,15 @@
   {
     "id": 37,
     "slug": "dumbbell-pullover",
-    "nomeIt": "Pullover con manubrio per il petto",
+    "nomeIt": "Pullover con manubrio",
     "nomeEn": "Dumbbell Pullover",
-    "categoria": "petto",
+    "categoria": "dorsali",
     "attrezzatura": "Manubrio",
-    "muscoloPrincipale": "Pettorali, Gran Dorsale",
+    "muscoloPrincipale": "Gran Dorsale, Pettorali",
     "muscoliSecondari": "Tricipiti",
     "tipoMovimento": "Allungamento",
-    "esecuzione": "Sdraiati in modo trasversale sulla panca appoggiando solo le spalle, con i piedi saldi a terra, le gambe piegate e il bacino sotto il livello della panca.\nAfferra un manubrio con entrambe le mani, a coppa sotto il disco superiore, e tienilo sopra di te a braccia distese, con i gomiti appena flessi.\nInspira e abbassa il manubrio lentamente con un arco dietro la testa, tenendo le braccia ferme, fino a sentire allungare il petto.\nEspira e riporta il manubrio sopra di te lungo lo stesso arco.",
-    "accortezze": "Controlla che i dischi del manubrio siano ben fissati: se si sfilano, il peso può cadere sul viso.\nUsa un carico leggero: un peso eccessivo sovraccarica la spalla. Non inarcare la schiena.\nContrai addominali e cosce per stabilizzarti sulla panca, perché la posizione è instabile. L'esercizio non è semplice: imparalo con un istruttore."
+    "esecuzione": "Sdraiati sulla panca piana, con la testa e la schiena ben appoggiate, le gambe piegate e i piedi saldi a terra.\nAfferra un manubrio con entrambe le mani, a coppa sotto il disco superiore, e tienilo sopra il petto a braccia distese, con i gomiti appena flessi.\nInspira e porta il manubrio lentamente indietro, con un arco dietro la testa, tenendo le braccia ferme, fino a sentire allungare petto e dorsali.\nEspira e riporta il manubrio sopra il petto lungo lo stesso arco, contraendo petto e dorsali.",
+    "accortezze": "Controlla che i dischi del manubrio siano ben fissati: se si sfilano, il peso può cadere sul viso.\nUsa un carico leggero: un peso eccessivo sovraccarica la spalla. Non inarcare la schiena.\nTieni schiena e bacino appoggiati alla panca e i piedi saldi a terra: scendi solo fino a dove senti l'allungamento, senza dolore alla spalla."
   },
   {
     "id": 38,
