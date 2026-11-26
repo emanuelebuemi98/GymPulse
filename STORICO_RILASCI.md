@@ -30,6 +30,8 @@ Qui c'è **cosa è stato pubblicato, quando e con quali passi**, rilascio per ri
 | 18 | 20 nov 2026 | `ca7af76` | **Il timer di recupero suona** (tre bip) oltre a vibrare, a ogni serie | nessuna | riuscito |
 | 19 | 21 nov 2026 | `be536ea` | **Il personal trainer scarica la scheda di un allievo e la importa su un altro** (riquadro «Scheda in un file CSV» nella scheda dell'allievo) | nessuna | riuscito |
 | 20 | 23 nov 2026 | `6fbef98` | **La cartella delle foto diventa `image-esercizi`** (cambia il percorso di tutte le 510 foto nel database) e **voci 50 e 51 del catalogo** (la 51 diventa il Pulldown frontale alla macchina a leva) | nessuna | riuscito |
+| 21 | 25 nov 2026 | `31c9451` | **Lo storico mostra il titolo che la giornata aveva quando la seduta è stata salvata** (e non quello di oggi: rinominare una giornata non cambia più le sedute vecchie) | 1 (una colonna) | riuscito |
+| 22 | 26 nov 2026 | `e9b4172` | **Foto nuova della voce 44** (Lat Machine a leve), stesso nome di file | nessuna | riuscito |
 
 Nei rilasci 2, 3, 4, 5 e 6 il database online (Neon) è stato aggiornato a mano con `db:deploy` (e, solo nel 2, con `db:catalogo`). Il primo caricamento dei dati su Neon non è in Git: si deduce che sia avvenuto tra il 2 e l'8 novembre, perché l'8 Neon aveva già le migrazioni fino a `senza_dati_orologio`. La data non è registrata. Dal rilascio 7 il catalogo cambia a ogni rilascio (tranne il 12) e si carica a mano con `db:catalogo`, ma l'esito di quel passo è registrato solo in parte: per il 7 e l'8 si deduce da una prova su Neon, per il 10 si sa solo che il primo tentativo si è fermato, per il 14 si sa solo che, dopo il deploy, Neon risultava ancora a 451 voci mentre il database locale ne aveva 475 (la causa non è stata chiarita), per il 9 e l'11 non è registrato. Il 20 novembre è stato dichiarato che **Neon ha 510 voci**: da questo si deduce che `db:catalogo` è stato lanciato su Neon con il file del rilascio 15 o successivo, ma quando e con quali opzioni non è registrato (e per la voce 227 del rilascio 16 non si sa). Per il rilascio 20, che ha cambiato il catalogo, l'esito di `db:catalogo` su Neon non è registrato: l'autore ha dichiarato «deployato» (vedi la voce). Dei rilasci 7, 9, 10, 14, 15 e 16 non ci sono migrazioni (il 17 ne ha una, che cambia dei valori); quella del rilascio 8 risulta applicata dalla stessa prova; per le migrazioni dei rilasci 11, 12, 13 e 17 non è registrato con certezza se siano state applicate (per l'11 si deduce di sì dal «funziona tutto»; per la 12 e la 13 si deduce di sì dal rilascio 16, dichiarato «perfettamente funzionante», perché il codice legge le loro colonne a ogni apertura della scheda; per la 17 l'utente ha dichiarato, a deploy fatto, «a db tutto sistemato»; vedi le singole voci).
 
@@ -509,7 +511,61 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
   - il nome e i testi della 51, scritti da Claude;
   - la voce 40 «Lat Machine a braccia tese» sembra lo stesso esercizio della 50: non è stata toccata;
   - un file CSV scaricato prima e con «Pullover ai cavi con braccia tese» o «Pullover alla macchina» non si importa più (nome inesistente);
-  - **`PERCORSO_FOTO_VECCHIO`:** il 23 novembre l'autore ha chiesto di toglierlo e Claude l'ha tolto da `src/lib/bozza-scheda.ts`. Va pubblicato dopo le 14:25 del 24 novembre, quando le bozze salvate col vecchio percorso sono scadute (valgono 24 ore); prima, una bozza di scheda non salvata, col vecchio percorso, verrebbe scartata invece che convertita. Provato con una prova a parte (percorso nuovo letto, vecchio e qualunque altro scartati e tolti dal browser) e con `tsc`; il commit non è ancora online.
+  - **`PERCORSO_FOTO_VECCHIO`:** il 23 novembre l'autore ha chiesto di toglierlo e Claude l'ha tolto da `src/lib/bozza-scheda.ts` (commit `5e1246d`, «clean: Tolto dalla bozza della scheda la conversione del vecchio percorso delle foto»). Claude aveva consigliato di pubblicarlo dopo le 14:25 del 24 novembre, quando le bozze salvate col vecchio percorso sarebbero scadute (valgono 24 ore); **è andato online il 23 novembre**, nel push delle 14:47 insieme alla documentazione (deploy riuscito alle 14:48 ora italiana), cioè **prima** di quella scadenza. Conseguenza: una bozza di scheda non salvata, scritta col vecchio percorso, viene scartata invece che convertita. Nessun problema segnalato. Provato con una prova a parte (percorso nuovo letto, vecchio e qualunque altro scartati e tolti dal browser) e con `tsc`.
+
+---
+
+## Rilascio 21 — 25 novembre 2026: lo storico mostra il titolo che la giornata aveva in quella seduta
+
+- **Commit:** `31c9451` (un solo commit di codice; prima di lui, il 24 novembre, `e6fffbd` e `f6f8a81` sul database locale: vedi «Altro in questi giorni»). Avanzamento semplice: `main` e `dev` sullo stesso commit (lo dice Git).
+- **Perché:** l'autore ha notato in produzione che dopo la modifica della scheda fatta dal suo personal trainer (la giornata A da «Petto - braccia» a «Petto - dorso», la C da «Dorso - spalle» a «Spalle-braccia») anche le sedute vecchie, fatte con altri esercizi, mostravano i titoli nuovi. Il nome salvato nello storico non deve cambiare con i salvataggi successivi. La causa era nel codice: la seduta ricordava solo la **lettera** della giornata (A, B, C), e storico, dettaglio e «Ultima seduta» leggevano il titolo **di oggi** di quella giornata.
+- **Cosa conteneva:**
+  - **colonna nuova `Sessione.giornoTitolo`** (facoltativa): il titolo che la giornata ha quando la seduta viene salvata (`salvaSessione` in `src/app/actions.ts`). Storico, dettaglio e «Ultima seduta» (`src/lib/storico.ts`) mostrano quello; dove è vuoto leggono il titolo attuale, come prima;
+  - **Progressi:** il grafico «Sedute per giornata» continua a usare il titolo **di oggi** (`giornoTitoloAttuale`), perché raggruppa le sedute per giornata della scheda: con i titoli salvati la stessa giornata comparirebbe due volte con nomi diversi;
+  - **la migrazione** riempie la colonna delle sedute già salvate con il titolo che la giornata ha **adesso**. È l'unico che il database conosce, quindi dove una giornata era già stata rinominata la migrazione scrive il titolo nuovo: va corretto a mano (vedi sotto).
+- **Migrazioni (1):** `20261124180000_titolo_giornata_nella_seduta`. **Aggiunge soltanto una colonna** e la riempie: il codice vecchio funziona ancora sul database nuovo (non la legge e, salvando, la lascia vuota). Il database va comunque aggiornato **prima** del merge, perché il codice nuovo la legge a ogni apertura dello storico (senza la colonna, Prisma dà errore).
+- **Catalogo e immagini:** invariati. **Variabili su Vercel:** nessuna.
+- **Passi eseguiti:**
+  - **database locale:** `db:deploy` lanciato da Claude il 24 novembre; 9 tabelle confrontate prima e dopo con un'impronta (numero di righe e md5), tutte identiche tranne la colonna nuova; nessuna seduta senza titolo. l'autore ha detto che in locale ha ancora la scheda vecchia (giornate non rinominate), quindi lì la correzione dei dati non serve;
+  - **Neon:** fatto dall'autore. Il 26 novembre Claude gli ha chiesto di controllare su Neon `migrate status` e i titoli delle 8 sedute, e l'autore ha risposto «tutto apposto». **Non registrati:** quali comandi abbia lanciato, l'ora, il backup, e se la correzione dei titoli sia stata lanciata come scritta qui sotto. Si deduce che la migrazione sia applicata (senza la colonna il sito online darebbe errore sullo storico); la correzione dei dati non è verificata.
+- **La correzione dei dati su Neon** (una volta sola, subito dopo la migrazione). Le 8 sedute dell'account 1 su A e C avevano ricevuto i titoli nuovi; i vecchi erano ancora nei backup del 14-20 novembre («Petto - Braccia» e «Dorso - Spalle»). Le due istruzioni, con la data della modifica come confine e il titolo da sostituire come guardia, così non toccano altro e non rovinano niente se si ripetono:
+  ```sql
+  UPDATE "Sessione" SET "giornoTitolo" = 'Petto - Braccia' WHERE "userId" = 1 AND "giornoId" = 'A' AND "giornoTitolo" = 'Petto - dorso' AND data < '2026-11-21 23:48:54';
+  UPDATE "Sessione" SET "giornoTitolo" = 'Dorso - Spalle' WHERE "userId" = 1 AND "giornoId" = 'C' AND "giornoTitolo" = 'Spalle-braccia' AND data < '2026-11-23 08:52:52';
+  ```
+  Provate su una copia del dump di Neon del 23 novembre: la prima esecuzione cambia 4 + 4 sedute, la seconda 0 + 0, e le altre 24 sedute (altre giornate e altri account) restano identiche. Gli `userId` e le date sono quelli di quel dump: su un database diverso vanno ricontrollati.
+- **Provato prima del rilascio, su una copia del progetto con un database di prova nuovo e una persona inventata, con Edge senza finestra a 393 punti:**
+  - **nel browser:** una seduta salvata dall'app sotto «Petto - braccia»; la giornata rinominata «Petto - dorso» dall'editor; la seduta vecchia dice ancora «A · Petto - braccia» nello Storico, nel dettaglio e in «Ultima seduta» della Home; una seduta nuova dice «A · Petto - dorso»; in Progressi una sola riga per la giornata A, con il titolo di oggi; con il titolo salvato vuoto lo storico non si rompe e mostra quello attuale. Tutti i controlli superati, e `tsc` senza errori;
+  - **la migrazione** su una copia del dump di Neon del 23 novembre (stesse impronte, ogni seduta con un titolo).
+  - **Primo giro:** la prova è fallita per un difetto dello script (aspettava un testo che c'era già nella pagina della sessione, invece del cambio di pagina): corretto e rifatta.
+  - **Non provato:** Neon (solo da quello che l'autore ha detto), un telefono vero.
+- **Vercel** (ora italiana):
+  - 25 nov 09:22, merge su `main`: deploy **riuscito** (partito alle 09:21:50, finito alle 09:22:11);
+  - 25 nov 09:47: una build annullata («Canceled by Ignored Build Step»), com'è voluto per `dev`.
+- **Problemi incontrati:** nessuno segnalato sul rilascio.
+- **Controlli online del passo 11:** l'autore ha risposto «tutto apposto» all'invito a controllare `migrate status` e i titoli delle 8 sedute su Neon; non è registrato cosa abbia guardato. **Non registrati:** le prove con l'accesso sulla pagina Storico e sul dettaglio.
+- **Da verificare:** una giornata rinominata **prima** di questo rilascio, in un altro account, ha ricevuto dalla migrazione il titolo **nuovo** anche sulle sedute vecchie. Nei backup di Neon dal 14 al 23 novembre risulta solo l'account 1 (giornate A e C); per gli altri non ci sono altri casi. Una giornata rinominata dopo ha già i titoli giusti.
+
+---
+
+## Rilascio 22 — 26 novembre 2026: foto nuova della voce 44
+
+- **Commit:** `e9b4172` (1 file). Avanzamento semplice: `main` e `dev` sullo stesso commit (lo dice Git).
+- **Perché:** l'autore ha passato una foto della macchina a leve «Lat Machine a leve» (voce 44) da mettere al posto di quella vecchia.
+- **Cosa conteneva:** `public/image-esercizi/44_plate-loaded-lat-pulldown.jpg` sostituita: l'originale era 180 × 180 e Claude l'ha portato a 200 × 200 (interpolazione Lanczos, qualità 92, a colori pieni, senza ritaglio), come le altre 509. Da 13.868 a 11.438 byte. Stesso nome e stessa estensione, quindi il percorso nel database non cambia.
+- **Migrazioni:** nessuna. **Catalogo e immagini:** il file cambia, ma il percorso e il catalogo no, quindi **`db:catalogo` non serve** (la prova di `db:catalogo` darebbe zero cambiamenti). **Variabili su Vercel:** nessuna.
+- **Passi eseguiti:** push di `dev` e merge su `main`, dichiarati.
+- **Provato:** dimensioni del file (200 × 200) e identità con quello preparato; il database locale punta già al percorso. Non provato nel browser.
+- **Vercel** (ora italiana): 26 nov 13:49, build di `dev` annullata (voluto); deploy su `main` **riuscito** (13:49:39 – 13:50:05).
+- **Problemi incontrati:** nessuno. Un file con lo stesso nome può restare nella cache del browser: si vede con `Ctrl+F5`.
+- **Da verificare:** che la 44 mostri la foto nuova sul sito (non registrato). La gif della 44 non è stata toccata.
+
+---
+
+## Altro in questi giorni (24 novembre)
+
+Non sono rilasci (il sito non cambia): sono modifiche al database locale e alla documentazione, committate su `dev` e portate su `main` con il resto (deploy del 24 novembre alle 17:49, riuscito).
+- **Database locale a PostgreSQL 18** (`e6fffbd`, `f6f8a81`): `docker-compose.yml` usa `postgres:18` e il volume è montato su `/var/lib/postgresql` (con il percorso della 17, `/var/lib/postgresql/data`, il contenitore si ferma subito). Un volume della 17 non si legge dalla 18: serve un backup, `docker compose down -v` e il ripristino. Su Neon e online non cambia niente (Neon era già la 18).
 
 ---
 
@@ -529,6 +585,8 @@ Versioni portate su `main` quando ancora **non c'erano né Neon né Vercel**: il
 - **Due foto per la stessa voce:** `db:catalogo` si ferma, senza scrivere niente, se in `public/image-esercizi` ci sono due file con lo stesso slug (303, 242 e 243 il 16 novembre). Se ne tiene uno solo.
 - **Il percorso delle foto sta nel database:** cambiare la cartella (rilascio 20, da `esercizi` a `image-esercizi`) vuol dire lanciare `db:catalogo` su Neon, che riscrive la colonna `immagine`, e fare il merge subito dopo: tra i due passi il sito online non mostra le foto, senza errori. Il nome della cartella è scritto anche in `src/proxy.ts` (le foto sono pubbliche), nelle foto d'esempio di `src/components/benvenuto/Index.tsx` e nel controllo delle bozze (`src/lib/bozza-scheda.ts`): dopo una rinomina si cerca il nome vecchio con `grep` in tutto il progetto.
 - **`SOSTITUISCI_IN_USO` resta nel terminale:** a 1 fa cambiare sul posto, senza avviso, le voci sostituite che qualcuno usa. `PROVA` e `SOSTITUISCI_IN_USO` si svuotano alla fine, insieme a `DATABASE_URL`. La prova (`PROVA=1`) non scrive neanche con `SOSTITUISCI_IN_USO=1`, e `PROVA` si svuota soltanto nel passo 7.
+- **Una colonna che copia un dato «di oggi» riempie le righe vecchie con il valore di adesso:** nel rilascio 21 la migrazione ha scritto in `Sessione.giornoTitolo` il titolo che la giornata ha **ora**, e dove una giornata era già stata rinominata (8 sedute dell'account 1) le righe vecchie hanno preso il titolo nuovo. Serve una correzione a mano subito dopo la migrazione, con i valori presi dai backup. Prima di scrivere una migrazione così, si guarda nei backup se quel dato è già cambiato per qualcuno.
+- **Una seduta ricorda la lettera della giornata, non il suo titolo, fino al rilascio 21:** prima, rinominare una giornata cambiava anche lo storico. Dal rilascio 21 la seduta porta il suo titolo (`Sessione.giornoTitolo`). Se in futuro si aggiunge allo storico qualcos'altro che dipende dalla scheda (esercizi, serie, recuperi), vale lo stesso discorso: la seduta deve portarselo dietro, o cambierà con la scheda.
 
 ---
 

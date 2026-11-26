@@ -120,6 +120,7 @@ npm run db:deploy
 ```
 
 - [ ] Dice che le migrazioni sono state applicate con successo, nell'ordine del passo A.
+- [ ] Se la migrazione **riempie** una colonna copiando un dato che può essere già cambiato (come il titolo di una giornata nel rilascio 21, che per le sedute già fatte prende il titolo di adesso), controlla subito dopo i valori delle righe esistenti e correggi quelle sbagliate **prima del merge** (vedi «Problemi che si ripresentano» in `STORICO_RILASCI.md`).
 
 ## 6. Carica il catalogo, prima in prova — solo se il catalogo è cambiato
 
